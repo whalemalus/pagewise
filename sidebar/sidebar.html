@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 知识助手</title>
+  <link rel="stylesheet" href="sidebar.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 顶部导航 -->
+    <header class="header">
+      <div class="header-left">
+        <h1 class="logo">AI 知识助手</h1>
+      </div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="chat">问答</button>
+        <button class="tab" data-tab="skills">技能</button>
+        <button class="tab" data-tab="knowledge">知识库</button>
+        <button class="tab" data-tab="settings">设置</button>
+      </nav>
+    </header>
+
+    <!-- 页面上下文信息 -->
+    <div class="page-context" id="pageContext">
+      <div class="page-info">
+        <span class="page-icon">📄</span>
+        <span class="page-title" id="pageTitle">加载中...</span>
+      </div>
+      <div class="page-actions">
+        <button class="btn-icon" id="btnExtract" title="提取页面内容">📥</button>
+        <button class="btn-icon" id="btnRefresh" title="刷新">🔄</button>
+      </div>
+    </div>
+
+    <!-- 问答面板 -->
+    <div class="panel active" id="panelChat">
+      <!-- 对话区域 -->
+      <div class="chat-area" id="chatArea">
+        <div class="welcome-message">
+          <div class="welcome-icon">🤖</div>
+          <h2>你好！我是你的技术知识助手</h2>
+          <p>浏览网页时遇到不懂的技术内容，直接问我就好。</p>
+          <div class="quick-actions">
+            <button class="btn-quick" id="btnSummarize">📋 总结当前页面</button>
+            <button class="btn-quick" id="btnExplain">💡 解释选中内容</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 输入区域 -->
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea
+            id="userInput"
+            placeholder="输入你的问题... (Enter 发送, Shift+Enter 换行)"
+            rows="1"
+          ></textarea>
+          <button class="btn-send" id="btnSend" title="发送">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+            </svg>
+          </button>
+        </div>
+        <div class="input-hint">
+          <span id="selectionHint" class="hidden">📎 已附带选中文本</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 知识库面板 -->
+    <div class="panel" id="panelKnowledge">
+      <div class="knowledge-toolbar">
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="搜索知识库...">
+        </div>
+        <div class="knowledge-actions">
+          <button class="btn-sm btn-primary-sm" id="btnImport">导入</button>
+          <button class="btn-sm" id="btnExportMd">导出 MD</button>
+          <button class="btn-sm" id="btnExportJson">导出 JSON</button>
+          <input type="file" id="fileImport" accept=".json,.md,.markdown,.txt" multiple style="display:none">
+        </div>
+      </div>
+
+      <div class="tag-filter" id="tagFilter"></div>
+
+      <div class="knowledge-list" id="knowledgeList">
+        <div class="empty-state" id="emptyKnowledge">
+          <div class="empty-icon">📚</div>
+          <p>还没有保存的知识条目</p>
+          <p class="text-muted">在问答中点击「保存」即可添加到知识库</p>
+        </div>
+      </div>
+
+      <!-- 知识条目详情 -->
+      <div class="knowledge-detail hidden" id="knowledgeDetail">
+        <div class="detail-header">
+          <button class="btn-back" id="btnBack">← 返回列表</button>
+          <div class="detail-actions">
+            <button class="btn-sm" id="btnEdit">编辑</button>
+            <button class="btn-sm btn-danger" id="btnDelete">删除</button>
+          </div>
+        </div>
+        <div class="detail-content" id="detailContent"></div>
+      </div>
+    </div>
+
+    <!-- 设置面板 -->
+
+    <!-- 技能面板 -->
+    <div class="panel" id="panelSkills">
+      <div class="skills-header">
+        <div class="skills-summary" id="skillsSummary">加载中...</div>
+        <div class="skills-filter">
+          <button class="tag-chip active" data-category="all">全部</button>
+          <button class="tag-chip" data-category="code">代码</button>
+          <button class="tag-chip" data-category="debug">调试</button>
+          <button class="tag-chip" data-category="doc">文档</button>
+          <button class="tag-chip" data-category="learning">学习</button>
+          <button class="tag-chip" data-category="export">导出</button>
+        </div>
+      </div>
+      <div class="skills-list" id="skillsList"></div>
+      <div class="skills-hint">
+        <p>技能会根据页面内容自动推荐，也可以手动触发。</p>
+        <p>AI 在回答时可通过 <code>[SKILL:id]</code> 指令自动调用技能。</p>
+      </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div class="panel" id="panelSettings">
+      <div class="settings-form">
+
+        <div class="form-group">
+          <label for="apiProtocol">API 协议</label>
+          <select id="apiProtocol">
+            <option value="openai">OpenAI 兼容 (ChatGPT / DeepSeek / 本地代理等)</option>
+            <option value="claude">Claude (Anthropic 官方)</option>
+          </select>
+          <small>大多数第三方服务和本地代理都使用 OpenAI 兼容协议</small>
+        </div>
+
+        <div class="form-group">
+          <label for="apiBaseUrl">API 地址</label>
+          <input type="text" id="apiBaseUrl" placeholder="https://api.openai.com">
+          <small>Claude: https://api.anthropic.com&nbsp;&nbsp;|&nbsp;&nbsp;OpenAI: https://api.openai.com</small>
+        </div>
+
+        <div class="form-group">
+          <label for="apiKey">API Key</label>
+          <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...">
+          <small>数据仅存储在本地，不会上传到任何服务器</small>
+        </div>
+
+        <div class="form-group">
+          <label for="model">模型名称</label>
+          <input type="text" id="model" placeholder="claude-sonnet-4-6">
+          <small>如 claude-sonnet-4-6、gpt-4o、deepseek-chat 等</small>
+        </div>
+
+        <div class="test-row">
+          <button class="btn-test" id="btnTestConnection">测试连接</button>
+          <span id="testResult" class="test-result hidden"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="maxTokens">最大输出长度</label>
+          <input type="number" id="maxTokens" value="4096" min="256" max="16384" step="256">
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="autoExtract">
+            打开侧边栏时自动提取页面内容
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label for="theme">主题</label>
+          <select id="theme">
+            <option value="light">浅色</option>
+            <option value="dark">深色</option>
+            <option value="auto">跟随系统</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="btnSaveSettings">保存设置</button>
+        <div id="settingsStatus" class="settings-status hidden">已保存 ✓</div>
+
+        <div class="evolution-section">
+          <h3 class="section-title">助手进化状态</h3>
+          <div class="evolution-stats" id="evolutionStats">加载中...</div>
+          <div class="evolution-log" id="evolutionLog"></div>
+          <button class="btn-sm btn-danger" id="btnResetEvolution" style="margin-top:10px">重置进化数据</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="sidebar.js"></script>
+</body>
+</html>

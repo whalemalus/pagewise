@@ -1,0 +1,128 @@
+/* Popup 样式 */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  font-size: 14px;
+  color: #1a1a1a;
+  width: 100%;
+  min-width: 280px;
+}
+
+.popup {
+  padding: 16px;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.popup-header h1 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+.version {
+  font-size: 11px;
+  color: #9ca3af;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.popup-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.popup-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.popup-btn:hover {
+  border-color: #6366f1;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.1);
+}
+
+.popup-btn.primary {
+  background: #6366f1;
+  color: white;
+  border-color: #6366f1;
+}
+
+.popup-btn.primary:hover {
+  background: #4f46e5;
+}
+
+.popup-btn.primary .btn-desc {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.btn-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.btn-label {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.btn-desc {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.popup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.link-btn {
+  border: none;
+  background: none;
+  color: #6366f1;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 0;
+}
+
+.link-btn:hover {
+  text-decoration: underline;
+}
+
+.stats {
+  font-size: 11px;
+  color: #9ca3af;
+}

@@ -1,0 +1,12 @@
+/* AI 助手内容脚本样式 */
+
+.ai-assistant-highlight {
+  background: #fef08a !important;
+  padding: 1px 4px !important;
+  border-radius: 3px !important;
+  transition: background 0.3s ease !important;
+}
+
+.ai-assistant-highlight:hover {
+  background: #fde047 !important;
+}

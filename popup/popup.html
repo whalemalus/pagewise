@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 知识助手</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup">
+    <div class="popup-header">
+      <h1>AI 知识助手</h1>
+      <span class="version">v1.0.0</span>
+    </div>
+
+    <div class="popup-body">
+      <button class="popup-btn primary" id="btnOpenSidebar">
+        <span class="btn-icon">💬</span>
+        <div class="btn-text">
+          <span class="btn-label">打开侧边栏</span>
+          <span class="btn-desc">开始问答</span>
+        </div>
+      </button>
+
+      <button class="popup-btn" id="btnQuickSummary">
+        <span class="btn-icon">📋</span>
+        <div class="btn-text">
+          <span class="btn-label">总结当前页面</span>
+          <span class="btn-desc">一键提取要点</span>
+        </div>
+      </button>
+
+      <button class="popup-btn" id="btnKnowledge">
+        <span class="btn-icon">📚</span>
+        <div class="btn-text">
+          <span class="btn-label">知识库</span>
+          <span class="btn-desc">查看已保存的知识</span>
+        </div>
+      </button>
+    </div>
+
+    <div class="popup-footer">
+      <button class="link-btn" id="btnSettings">⚙️ 设置</button>
+      <span class="stats" id="statsInfo">加载中...</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
