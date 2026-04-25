@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI 知识助手",
+  "name": "智阅 PageWise",
   "version": "1.0.0",
   "description": "浏览网页时，让 AI 帮你理解技术内容，并自动整理到知识库",
   "permissions": [

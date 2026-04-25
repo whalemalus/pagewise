@@ -1,4 +1,4 @@
-# AI 知识助手 (AI Knowledge Assistant)
+# 智阅 PageWise
 
 > 浏览网页时遇到不懂的技术内容？选中即问，AI 即答，自动归档。让每一次浏览都成为学习。
 
@@ -217,7 +217,7 @@ date: 2024-01-15
 ## 文件结构
 
 ```
-ai_assistant_on_browser/
+pagewise/
 ├── manifest.json                 # 扩展配置
 ├── background/
 │   └── service-worker.js         # 后台服务：右键菜单、消息路由

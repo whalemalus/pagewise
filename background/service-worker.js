@@ -8,7 +8,7 @@
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'askAI',
-    title: '用 AI 知识助手提问',
+    title: '用 智阅 提问',
     contexts: ['selection']
   });
 
