@@ -137,6 +137,9 @@ class SidebarApp {
     this.emptyHighlights = document.getElementById('emptyHighlights');
     this.btnClearHighlights = document.getElementById('btnClearHighlights');
 
+    // Export Conversation
+    this.btnExportConversation = document.getElementById('btnExportConversation');
+
     // History
     this.btnHistory = document.getElementById('btnHistory');
     this.historyPanel = document.getElementById('historyPanel');
@@ -210,6 +213,11 @@ class SidebarApp {
     // 高亮标注：清空全部
     if (this.btnClearHighlights) {
       this.btnClearHighlights.addEventListener('click', () => this.clearAllHighlights());
+    }
+
+    // 导出对话
+    if (this.btnExportConversation) {
+      this.btnExportConversation.addEventListener('click', () => this.exportConversation());
     }
 
     // 历史对话
@@ -1123,6 +1131,45 @@ class SidebarApp {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  /**
+   * 导出当前对话为 Markdown 文件
+   * 将 conversationHistory 转为结构化 Markdown 格式并下载
+   */
+  exportConversation() {
+    if (!this.conversationHistory || this.conversationHistory.length === 0) {
+      this.showToast('当前没有对话记录可导出', 'warning');
+      return;
+    }
+
+    const pageTitle = this.pageTitle?.textContent || '未知页面';
+    const pageUrl = this.currentTabUrl || '';
+    const now = new Date();
+    const exportTime = now.toLocaleString('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+    const dateStr = now.toISOString().slice(0, 10);
+
+    // 构建 Markdown
+    let md = `# 对话记录 — ${pageTitle}\n`;
+    md += `> 来源: ${pageUrl}\n`;
+    md += `> 时间: ${exportTime}\n\n`;
+    md += `---\n\n`;
+
+    for (const msg of this.conversationHistory) {
+      if (msg.role === 'user') {
+        md += `**用户**: ${msg.content}\n\n`;
+      } else if (msg.role === 'assistant') {
+        md += `**AI**: ${msg.content}\n\n`;
+      }
+      md += `---\n\n`;
+    }
+
+    const filename = `pagewise-对话-${dateStr}.md`;
+
+    this.downloadFile(md, filename, 'text/markdown;charset=utf-8');
   }
 
   // ==================== 进化状态 ====================
