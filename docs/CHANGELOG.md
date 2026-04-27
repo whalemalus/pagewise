@@ -104,3 +104,20 @@
   - 新增 `githubExtractInfo()` 提取仓库信息结构化展示
   - 新增 `githubAnalyzeRepo()` 使用 AI 生成仓库概览（项目简介、技术栈、目录结构说明、快速开始建议）
 - 20 个新测试（GitHub 页面类型识别 + helper 方法 + suggestSkills）
+
+### 飞轮迭代 #14 — 代码执行沙箱
+
+**需求**: AI 回答中的 HTML/JavaScript 代码可以直接在侧边栏运行，显示输出结果
+
+**修改文件**:
+- **sidebar/sidebar.js**：
+  - `addAIMessage()` 检测 html/javascript 代码块，条件显示「▶️ 运行」消息按钮
+  - 新增 `extractRunnableCodeBlocks()` 从 Markdown 提取可运行代码块
+  - 新增 `injectCodeBlockRunButtons()` 为每个可运行代码块注入独立运行按钮
+  - 新增 `executeCodeSandbox()` 在沙箱 iframe 中执行代码（`sandbox="allow-scripts"`）
+  - 新增 `_buildSandboxHtml()` 构建沙箱 HTML 文档（含 console 拦截）
+  - 新增 `runAllCodeBlocks()` 运行消息中所有代码块
+  - 5 秒超时自动终止，postMessage 通信，Blob URL 隔离
+- **sidebar/sidebar.css**：新增 `.code-run-btn` / `.sandbox-result` / `.sandbox-output` 等样式
+- **tests/test-code-sandbox.js**：22 个新测试（代码块检测、提取、沙箱 HTML 构建、语言类名检测）
+- **docs/REQUIREMENTS.md**：新增 R021 需求

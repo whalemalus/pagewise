@@ -1027,6 +1027,7 @@ class SidebarApp {
   }
 
   addAIMessage(content) {
+    const hasRunnableCode = /```(?:html|javascript)\n[\s\S]*?```/i.test(content);
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message message-ai';
     messageDiv.innerHTML = `
@@ -1035,11 +1036,16 @@ class SidebarApp {
         <button class="msg-action-btn" data-action="copy">复制</button>
         <button class="msg-action-btn" data-action="save">💾 保存</button>
         <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
+        ${hasRunnableCode ? '<button class="msg-action-btn msg-action-run" data-action="run">▶️ 运行</button>' : ''}
       </div>
     `;
     messageDiv.querySelectorAll('.msg-action-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleMessageAction(btn.dataset.action, messageDiv));
     });
+    // 为可运行的代码块注入独立的运行按钮
+    if (hasRunnableCode) {
+      this.injectCodeBlockRunButtons(messageDiv, content);
+    }
     this.chatArea.appendChild(messageDiv);
     this.scrollToBottom();
     return messageDiv;
@@ -1091,6 +1097,10 @@ class SidebarApp {
         await navigator.clipboard.writeText(text);
         this.addSystemMessage('已复制到剪贴板');
         if (interactionId) this.evolution.recordSignal('copied', interactionId);
+        break;
+      case 'run':
+        this.runAllCodeBlocks(messageEl);
+        if (interactionId) this.evolution.recordSignal('code_executed', interactionId);
         break;
       case 'save':
         await this.saveToKnowledgeBase(text);
@@ -2284,6 +2294,294 @@ ${readme || '无法提取 README 内容'}
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ==================== 代码执行沙箱 ====================
+
+  /**
+   * 从原始 Markdown 内容中提取 HTML/JavaScript 代码块
+   * @param {string} markdownContent - 原始 Markdown 文本
+   * @returns {Array<{lang: string, code: string}>} 代码块列表
+   */
+  extractRunnableCodeBlocks(markdownContent) {
+    const blocks = [];
+    const regex = /```(html|javascript)\n([\s\S]*?)```/gi;
+    let match;
+    while ((match = regex.exec(markdownContent)) !== null) {
+      blocks.push({ lang: match[1].toLowerCase(), code: match[2] });
+    }
+    return blocks;
+  }
+
+  /**
+   * 为消息中的可运行代码块注入独立运行按钮
+   * @param {HTMLElement} messageEl - 消息 DOM 元素
+   * @param {string} rawContent - 原始 Markdown 内容
+   */
+  injectCodeBlockRunButtons(messageEl, rawContent) {
+    const blocks = this.extractRunnableCodeBlocks(rawContent);
+    if (blocks.length === 0) return;
+
+    const codeBlockWrappers = messageEl.querySelectorAll('.code-block-wrapper');
+    let blockIndex = 0;
+
+    codeBlockWrappers.forEach((wrapper) => {
+      const codeEl = wrapper.querySelector('code');
+      if (!codeEl) return;
+
+      const langClass = codeEl.className || '';
+      const isHtml = /lang-html/i.test(langClass);
+      const isJs = /lang-javascript/i.test(langClass) || /lang-js/i.test(langClass);
+
+      if (!isHtml && !isJs) return;
+
+      const lang = isHtml ? 'html' : 'javascript';
+
+      // 找到对应的原始代码块（按顺序匹配）
+      const codeData = blocks[blockIndex];
+      blockIndex++;
+      if (!codeData) return;
+
+      // 添加运行按钮
+      const runBtn = document.createElement('button');
+      runBtn.className = 'code-run-btn';
+      runBtn.textContent = '▶️ 运行';
+      runBtn.title = '运行代码';
+      runBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.executeCodeSandbox(codeData.code, lang, wrapper);
+      });
+      wrapper.appendChild(runBtn);
+    });
+  }
+
+  /**
+   * 运行消息中所有可运行的代码块
+   * @param {HTMLElement} messageEl - 消息 DOM 元素
+   */
+  runAllCodeBlocks(messageEl) {
+    const bubble = messageEl.querySelector('.message-bubble');
+    if (!bubble) return;
+
+    const codeBlockWrappers = bubble.querySelectorAll('.code-block-wrapper');
+    codeBlockWrappers.forEach((wrapper) => {
+      const runBtn = wrapper.querySelector('.code-run-btn');
+      if (runBtn) runBtn.click();
+    });
+  }
+
+  /**
+   * 在沙箱 iframe 中执行代码
+   * @param {string} code - 要执行的代码
+   * @param {'html'|'javascript'} lang - 代码语言
+   * @param {HTMLElement} codeBlockWrapper - 代码块容器 DOM
+   */
+  executeCodeSandbox(code, lang, codeBlockWrapper) {
+    // 移除之前的结果面板
+    const existing = codeBlockWrapper.nextElementSibling;
+    if (existing && existing.classList.contains('sandbox-result')) {
+      existing.remove();
+    }
+
+    // 创建结果面板
+    const resultPanel = document.createElement('div');
+    resultPanel.className = 'sandbox-result';
+
+    const header = document.createElement('div');
+    header.className = 'sandbox-result-header';
+    header.innerHTML = '<span class="sandbox-result-title">📺 执行结果</span>';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'sandbox-close-btn';
+    closeBtn.textContent = '✕';
+    closeBtn.title = '关闭结果';
+    closeBtn.addEventListener('click', () => resultPanel.remove());
+    header.appendChild(closeBtn);
+
+    const outputArea = document.createElement('div');
+    outputArea.className = 'sandbox-output';
+
+    resultPanel.appendChild(header);
+    resultPanel.appendChild(outputArea);
+
+    // 插入到代码块下方
+    codeBlockWrapper.parentNode.insertBefore(resultPanel, codeBlockWrapper.nextSibling);
+
+    // 构建要执行的完整 HTML
+    let htmlContent;
+    if (lang === 'html') {
+      // HTML 模式：注入 console 拦截
+      htmlContent = this._buildSandboxHtml(code, true);
+    } else {
+      // JavaScript 模式：包裹在基本 HTML 中
+      htmlContent = this._buildSandboxHtml(code, false);
+    }
+
+    // 创建 sandboxed iframe
+    const iframe = document.createElement('iframe');
+    iframe.className = 'sandbox-iframe';
+    iframe.setAttribute('sandbox', 'allow-scripts');
+    iframe.style.display = 'none';
+    document.body.appendChild(iframe);
+
+    // 超时 5 秒自动终止
+    const timeout = setTimeout(() => {
+      this._showSandboxOutput(outputArea, [{ type: 'error', text: '⏱️ 执行超时（5 秒），已自动终止' }]);
+      this._cleanupIframe(iframe);
+    }, 5000);
+
+    // 监听 iframe 消息
+    const messageHandler = (event) => {
+      if (event.source !== iframe.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== 'sandbox-log') return;
+
+      if (data.action === 'output') {
+        this._appendOutput(outputArea, data.entries);
+      } else if (data.action === 'error') {
+        this._showSandboxError(outputArea, data.message, data.stack);
+      } else if (data.action === 'done') {
+        clearTimeout(timeout);
+        window.removeEventListener('message', messageHandler);
+        this._cleanupIframe(iframe);
+      }
+    };
+    window.addEventListener('message', messageHandler);
+
+    // 写入 iframe 内容
+    try {
+      const blob = new Blob([htmlContent], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      iframe.onload = () => {
+        URL.revokeObjectURL(url);
+      };
+      iframe.src = url;
+    } catch (err) {
+      clearTimeout(timeout);
+      window.removeEventListener('message', messageHandler);
+      this._showSandboxError(outputArea, err.message);
+      this._cleanupIframe(iframe);
+    }
+  }
+
+  /**
+   * 构建沙箱 HTML 文档
+   * @param {string} code - 代码内容
+   * @param {boolean} isHtml - 是否为 HTML 模式
+   * @returns {string} 完整 HTML 字符串
+   */
+  _buildSandboxHtml(code, isHtml) {
+    // console 拦截脚本
+    const consoleInterceptor = `
+<script>
+(function() {
+  var entries = [];
+  var origConsole = {};
+  ['log','info','warn','error','debug'].forEach(function(method) {
+    origConsole[method] = console[method];
+    console[method] = function() {
+      var args = Array.from(arguments).map(function(a) {
+        try { return typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a); }
+        catch(e) { return String(a); }
+      });
+      entries.push({ type: method, text: args.join(' ') });
+      parent.postMessage({ type: 'sandbox-log', action: 'output', entries: [{ type: method, text: args.join(' ') }] }, '*');
+    };
+  });
+
+  window.addEventListener('error', function(e) {
+    parent.postMessage({ type: 'sandbox-log', action: 'error', message: e.message, stack: e.error ? e.error.stack : '' }, '*');
+  });
+
+  window.addEventListener('unhandledrejection', function(e) {
+    var msg = e.reason ? (e.reason.message || String(e.reason)) : 'Unhandled rejection';
+    parent.postMessage({ type: 'sandbox-log', action: 'error', message: msg }, '*');
+  });
+
+  window.addEventListener('load', function() {
+    setTimeout(function() {
+      parent.postMessage({ type: 'sandbox-log', action: 'done' }, '*');
+    }, 500);
+  });
+})();
+<\/script>`;
+
+    if (isHtml) {
+      // HTML 模式：注入 console 拦截到 <head> 中
+      if (code.includes('</head>')) {
+        return code.replace('</head>', consoleInterceptor + '</head>');
+      } else if (code.includes('<html')) {
+        return code.replace(/<html[^>]*>/, '$&<head>' + consoleInterceptor + '</head>');
+      } else {
+        return '<!DOCTYPE html><html><head>' + consoleInterceptor + '</head><body>' + code + '</body></html>';
+      }
+    } else {
+      // JavaScript 模式
+      return '<!DOCTYPE html><html><head>' + consoleInterceptor + '</head><body><script>' + code + '<\/script></body></html>';
+    }
+  }
+
+  /**
+   * 在输出区域追加日志
+   * @param {HTMLElement} outputArea
+   * @param {Array} entries
+   */
+  _appendOutput(outputArea, entries) {
+    entries.forEach(entry => {
+      const line = document.createElement('div');
+      line.className = 'sandbox-log sandbox-log-' + entry.type;
+      line.textContent = entry.text;
+      outputArea.appendChild(line);
+    });
+    outputArea.scrollTop = outputArea.scrollHeight;
+  }
+
+  /**
+   * 显示完整的输出结果
+   * @param {HTMLElement} outputArea
+   * @param {Array} entries
+   */
+  _showSandboxOutput(outputArea, entries) {
+    entries.forEach(entry => {
+      const line = document.createElement('div');
+      line.className = 'sandbox-log sandbox-log-' + entry.type;
+      line.textContent = entry.text;
+      outputArea.appendChild(line);
+    });
+  }
+
+  /**
+   * 显示错误信息
+   * @param {HTMLElement} outputArea
+   * @param {string} message
+   * @param {string} [stack]
+   */
+  _showSandboxError(outputArea, message, stack) {
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'sandbox-log sandbox-log-error';
+    errorDiv.textContent = '❌ ' + message;
+    outputArea.appendChild(errorDiv);
+
+    if (stack) {
+      const stackDiv = document.createElement('div');
+      stackDiv.className = 'sandbox-log sandbox-log-error sandbox-stack';
+      stackDiv.textContent = stack;
+      outputArea.appendChild(stackDiv);
+    }
+  }
+
+  /**
+   * 清理 iframe
+   * @param {HTMLIFrameElement} iframe
+   */
+  _cleanupIframe(iframe) {
+    try {
+      if (iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    } catch (e) {
+      // 静默处理
+    }
   }
 
   // ==================== 提供商 / Profile / 模型发现 ====================

@@ -127,6 +127,20 @@
   - AI 概览：项目简介、技术栈、目录结构说明、快速开始建议、亮点与特色
   - 约束：只分析仓库根目录页面，README 截取前 5000 字符，目录列表截取前 50 项
 
+### 🔨 R021: 代码执行沙箱
+- **描述**: AI 回答中的 HTML/JavaScript 代码可以直接在侧边栏运行，显示输出结果，实现学习闭环
+- **优先级**: P1
+- **依赖**: R002
+- **实现**:
+  - AI 消息操作按钮中添加「▶️ 运行」按钮（仅含 html/javascript 代码块时显示）
+  - 每个可运行代码块旁独立「▶️ 运行」按钮
+  - 沙箱 iframe 执行：`sandbox="allow-scripts"`，不允许访问父页面 DOM 或网络请求
+  - console.log / console.info / console.warn / console.error 输出捕获
+  - 错误信息显示（含堆栈）
+  - 执行超时 5 秒自动终止
+  - 安全：Blob URL 隔离，iframe 隐藏，postMessage 通信
+  - 约束：只支持 HTML 和 JavaScript 代码块，不引入外部依赖
+
 ---
 
 ## 需求变更记录
