@@ -122,6 +122,54 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         .catch(err => sendResponse({ error: err.message }));
       return true;
 
+    case 'collectAllTabs':
+      chrome.tabs.query({})
+        .then(tabs => {
+          const tabInfos = tabs.map(t => ({
+            id: t.id,
+            title: t.title || '未知页面',
+            url: t.url || '',
+            favIconUrl: t.favIconUrl || ''
+          }));
+          sendResponse(tabInfos);
+        })
+        .catch(err => sendResponse({ error: err.message }));
+      return true;
+
+    case 'collectTabContent': {
+      const tabIds = request.tabIds || [];
+      if (tabIds.length === 0) {
+        sendResponse([]);
+        return false;
+      }
+      // 最多同时分析 5 个标签页
+      const limitedIds = tabIds.slice(0, 5);
+      const promises = limitedIds.map(async (tabId) => {
+        try {
+          const response = await chrome.tabs.sendMessage(tabId, { action: 'extractContent' });
+          if (response && response.content) {
+            // 截取前 3000 字符，避免 token 超限
+            return {
+              tabId,
+              title: response.title || '未知页面',
+              url: response.url || '',
+              content: (response.content || '').slice(0, 3000),
+              codeBlocks: response.codeBlocks || []
+            };
+          }
+          return { tabId, error: '页面内容为空' };
+        } catch (err) {
+          const msg = err.message || '';
+          if (msg.includes('Cannot access') || msg.includes('Receiving end does not exist')) {
+            return { tabId, error: '无法访问该页面（可能是 chrome:// 等受限页面）' };
+          }
+          return { tabId, error: msg || '提取失败' };
+        }
+      });
+      Promise.all(promises).then(results => sendResponse(results));
+      return true;
+    }
+
     case 'openSettings':
       chrome.runtime.openOptionsPage();
       break;

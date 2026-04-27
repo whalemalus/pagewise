@@ -46,6 +46,7 @@
           <div class="quick-actions">
             <button class="btn-quick" id="btnSummarize">📋 总结当前页面</button>
             <button class="btn-quick" id="btnExplain">💡 解释选中内容</button>
+            <button class="btn-quick" id="btnMultiTabChat">📑 分析所有标签页</button>
             <button class="btn-quick" id="btnHistory">🕐 历史对话</button>
           </div>
         </div>
@@ -164,6 +165,9 @@
         <div class="page-preview-header">
           <h3 id="previewTitle">-</h3>
           <div class="page-preview-meta" id="previewMeta"></div>
+          <div class="page-preview-actions">
+            <button class="btn-multi-tab" id="btnMultiTab">📑 分析所有标签页</button>
+          </div>
         </div>
         <div class="page-preview-content" id="previewContent">
           <div class="empty-state">
@@ -266,6 +270,27 @@
   </div>
 
   <div id="toastContainer" class="toast-container"></div>
+
+  <!-- 多标签页选择弹窗 -->
+  <div id="tabSelectorModal" class="tab-selector-modal hidden">
+    <div class="tab-selector-overlay"></div>
+    <div class="tab-selector-dialog">
+      <div class="tab-selector-header">
+        <h3>📑 选择要分析的标签页</h3>
+        <button class="tab-selector-close" id="tabSelectorClose">&times;</button>
+      </div>
+      <div class="tab-selector-hint">最多同时分析 5 个标签页，内容将合并后交给 AI 联合分析</div>
+      <div class="tab-selector-body" id="tabSelectorBody">
+        <!-- JS 动态生成 -->
+      </div>
+      <div class="tab-selector-footer">
+        <span class="tab-selector-count" id="tabSelectorCount">已选 0 个</span>
+        <button class="btn-sm" id="tabSelectorCancel">取消</button>
+        <button class="btn-sm btn-primary-sm" id="tabSelectorConfirm">确认分析</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="sidebar.js"></script>
 </body>
 </html>

@@ -152,6 +152,16 @@ class SidebarApp {
     this.historyList = document.getElementById('historyList');
     this.historySearch = document.getElementById('historySearch');
     this.btnClearHistory = document.getElementById('btnClearHistory');
+
+    // Multi-Tab Selector
+    this.btnMultiTab = document.getElementById('btnMultiTab');
+    this.btnMultiTabChat = document.getElementById('btnMultiTabChat');
+    this.tabSelectorModal = document.getElementById('tabSelectorModal');
+    this.tabSelectorBody = document.getElementById('tabSelectorBody');
+    this.tabSelectorCount = document.getElementById('tabSelectorCount');
+    this.tabSelectorClose = document.getElementById('tabSelectorClose');
+    this.tabSelectorCancel = document.getElementById('tabSelectorCancel');
+    this.tabSelectorConfirm = document.getElementById('tabSelectorConfirm');
   }
 
   bindEvents() {
@@ -235,6 +245,26 @@ class SidebarApp {
     }
     if (this.btnClearHistory) {
       this.btnClearHistory.addEventListener('click', () => this.clearAllHistory());
+    }
+
+    // 多标签页分析
+    if (this.btnMultiTab) {
+      this.btnMultiTab.addEventListener('click', () => this.showMultiTabSelector());
+    }
+    if (this.btnMultiTabChat) {
+      this.btnMultiTabChat.addEventListener('click', () => this.showMultiTabSelector());
+    }
+    if (this.tabSelectorClose) {
+      this.tabSelectorClose.addEventListener('click', () => this.hideMultiTabSelector());
+    }
+    if (this.tabSelectorCancel) {
+      this.tabSelectorCancel.addEventListener('click', () => this.hideMultiTabSelector());
+    }
+    if (this.tabSelectorConfirm) {
+      this.tabSelectorConfirm.addEventListener('click', () => this.confirmMultiTabAnalysis());
+    }
+    if (this.tabSelectorModal) {
+      this.tabSelectorModal.querySelector('.tab-selector-overlay')?.addEventListener('click', () => this.hideMultiTabSelector());
     }
   }
 
@@ -1937,6 +1967,244 @@ ${fullText.slice(0, 8000)}
   }
 
   // ==================== 代码块复制 ====================
+
+  // ==================== 多标签页联合分析 ====================
+
+  /** 不可提取内容的 URL 前缀 */
+  static RESTRICTED_URL_PREFIXES = [
+    'chrome://', 'chrome-extension://', 'about:', 'edge://', 'brave://',
+    'devtools://', 'view-source:', 'file://'
+  ];
+
+  /**
+   * 检查 URL 是否为受限页面（无法注入 content script）
+   * @param {string} url
+   * @returns {boolean}
+   */
+  static isRestrictedUrl(url) {
+    if (!url) return true;
+    return SidebarApp.RESTRICTED_URL_PREFIXES.some(prefix => url.startsWith(prefix));
+  }
+
+  /**
+   * 显示多标签页选择弹窗
+   * 从 background 收集所有标签页信息，展示可选列表
+   */
+  async showMultiTabSelector() {
+    if (!this.tabSelectorModal) return;
+
+    try {
+      const tabs = await chrome.runtime.sendMessage({ action: 'collectAllTabs' });
+
+      if (!Array.isArray(tabs) || tabs.length === 0) {
+        this.showToast('没有可用的标签页', 'warning');
+        return;
+      }
+
+      // 过滤掉侧边栏自身，限制最多 5 个可选
+      const selectableTabs = tabs
+        .filter(t => !t.url?.includes('chrome-extension://'))
+        .slice(0, 20); // 最多展示 20 个标签页供选择
+
+      this._availableTabs = selectableTabs;
+      this._selectedTabIds = new Set();
+
+      // 渲染标签页列表
+      this.tabSelectorBody.innerHTML = selectableTabs.map(tab => {
+        const restricted = SidebarApp.isRestrictedUrl(tab.url);
+        const domain = this.getDomain(tab.url);
+        return `
+          <label class="tab-selector-item ${restricted ? 'tab-selector-item-restricted' : ''}" data-tab-id="${tab.id}">
+            <input type="checkbox" ${restricted ? 'disabled' : ''} data-tab-id="${tab.id}">
+            <div class="tab-selector-item-info">
+              <div class="tab-selector-item-title">${this.escapeHtml(tab.title)}</div>
+              <div class="tab-selector-item-url">${this.escapeHtml(domain)}</div>
+            </div>
+            ${restricted ? '<span class="tab-selector-item-disabled">不可访问</span>' : ''}
+          </label>
+        `;
+      }).join('');
+
+      if (selectableTabs.length === 0) {
+        this.tabSelectorBody.innerHTML = '<div class="tab-selector-empty">没有可用的标签页</div>';
+      }
+
+      // 绑定复选框事件
+      this.tabSelectorBody.querySelectorAll('input[type="checkbox"]:not(:disabled)').forEach(cb => {
+        cb.addEventListener('change', () => {
+          const tabId = parseInt(cb.dataset.tabId);
+          if (cb.checked) {
+            // 最多选择 5 个
+            if (this._selectedTabIds.size >= 5) {
+              cb.checked = false;
+              this.showToast('最多同时分析 5 个标签页', 'warning');
+              return;
+            }
+            this._selectedTabIds.add(tabId);
+          } else {
+            this._selectedTabIds.delete(tabId);
+          }
+          this._updateTabSelectorCount();
+        });
+      });
+
+      // 点击整行也可切换
+      this.tabSelectorBody.querySelectorAll('.tab-selector-item:not(.tab-selector-item-restricted)').forEach(item => {
+        item.addEventListener('click', (e) => {
+          if (e.target.tagName === 'INPUT') return; // 已经由 checkbox 处理
+          const cb = item.querySelector('input[type="checkbox"]');
+          if (cb) {
+            cb.checked = !cb.checked;
+            cb.dispatchEvent(new Event('change'));
+          }
+        });
+      });
+
+      this._updateTabSelectorCount();
+      this.tabSelectorModal.classList.remove('hidden');
+    } catch (e) {
+      this.showToast('获取标签页列表失败', 'error');
+    }
+  }
+
+  /**
+   * 隐藏多标签页选择弹窗
+   */
+  hideMultiTabSelector() {
+    if (this.tabSelectorModal) {
+      this.tabSelectorModal.classList.add('hidden');
+    }
+  }
+
+  /**
+   * 更新已选标签页计数
+   */
+  _updateTabSelectorCount() {
+    const count = this._selectedTabIds?.size || 0;
+    if (this.tabSelectorCount) {
+      this.tabSelectorCount.textContent = `已选 ${count} 个（最多 5 个）`;
+    }
+    if (this.tabSelectorConfirm) {
+      this.tabSelectorConfirm.disabled = count === 0;
+    }
+  }
+
+  /**
+   * 确认多标签页分析
+   * 收集选中标签页内容并发送给 AI 联合分析
+   */
+  async confirmMultiTabAnalysis() {
+    const selectedIds = [...(this._selectedTabIds || [])];
+    if (selectedIds.length === 0) {
+      this.showToast('请至少选择一个标签页', 'warning');
+      return;
+    }
+
+    this.hideMultiTabSelector();
+    this.switchTab('chat');
+
+    if (!this.aiClient) {
+      this.addSystemMessage('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    this.addSystemMessage(`正在收集 ${selectedIds.length} 个标签页的内容...`);
+    const loadingEl = this.showLoading();
+
+    try {
+      const results = await chrome.runtime.sendMessage({
+        action: 'collectTabContent',
+        tabIds: selectedIds
+      });
+
+      loadingEl.remove();
+
+      if (!Array.isArray(results)) {
+        this.addSystemMessage('收集标签页内容失败');
+        return;
+      }
+
+      // 分离成功和失败的标签页
+      const successes = results.filter(r => r.content);
+      const failures = results.filter(r => r.error);
+
+      if (failures.length > 0) {
+        const failMsg = failures.map(f => {
+          const tab = this._availableTabs?.find(t => t.id === f.tabId);
+          return `• ${tab?.title || '标签页 ' + f.tabId}：${f.error}`;
+        }).join('\n');
+        this.addSystemMessage(`以下标签页无法提取内容：\n${failMsg}`);
+      }
+
+      if (successes.length === 0) {
+        this.addSystemMessage('所有选中的标签页都无法提取内容');
+        return;
+      }
+
+      this.addSystemMessage(`已收集 ${successes.length} 个标签页内容，正在构建联合分析...`);
+
+      // 构建联合分析 prompt
+      const prompt = this.buildMultiTabPrompt(successes);
+
+      // 联合分析的系统提示
+      const enhancedSystemPrompt = this.aiClient.getSystemPrompt()
+        + '\n\n[多页面联合分析模式]\n用户选择了多个页面进行联合分析。请综合分析所有页面内容，找出它们之间的关联、差异和互补信息。按页面逐一摘要后，给出跨页面的综合分析。';
+
+      const loadingEl2 = this.showLoading();
+      let fullResponse = '';
+      let messageEl = null;
+
+      for await (const chunk of this.aiClient.chatStream(
+        [
+          ...this.conversationHistory.slice(-2),
+          { role: 'user', content: prompt }
+        ],
+        { systemPrompt: enhancedSystemPrompt }
+      )) {
+        fullResponse += chunk;
+        if (!messageEl) {
+          loadingEl2.remove();
+          messageEl = this.addAIMessage('');
+        }
+        this.updateAIMessage(messageEl, fullResponse);
+      }
+
+      // 保存对话
+      this.conversationHistory.push(
+        { role: 'user', content: `📑 联合分析 ${successes.length} 个标签页` },
+        { role: 'assistant', content: fullResponse }
+      );
+      await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+    } catch (e) {
+      loadingEl.remove();
+      this.addSystemMessage(`联合分析失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 构建多标签页联合分析的 prompt
+   * @param {Array<{title: string, url: string, content: string}>} tabs
+   * @returns {string}
+   */
+  buildMultiTabPrompt(tabs) {
+    let prompt = `我选择了 ${tabs.length} 个页面，请对它们进行联合分析：\n\n`;
+
+    tabs.forEach((tab, i) => {
+      prompt += `--- 页面 ${i + 1}：${tab.title} ---\n`;
+      prompt += `URL：${tab.url}\n`;
+      prompt += `内容：\n${tab.content}\n\n`;
+    });
+
+    prompt += `请对以上 ${tabs.length} 个页面进行联合分析：\n`;
+    prompt += `1. 逐一简要总结每个页面的核心内容\n`;
+    prompt += `2. 找出这些页面之间的关联性和主题联系\n`;
+    prompt += `3. 对比它们之间的差异和互补信息\n`;
+    prompt += `4. 给出跨页面的综合洞察或建议\n`;
+
+    return prompt;
+  }
 
   /**
    * 绑定代码块复制按钮事件委托
