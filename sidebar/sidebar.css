@@ -1317,8 +1317,148 @@ body {
   --danger: #f87171;
 }
 
+/* --- Dark Mode: Input styles --- */
+[data-theme="dark"] input[type="text"],
+[data-theme="dark"] input[type="password"],
+[data-theme="dark"] input[type="number"],
+[data-theme="dark"] textarea,
+[data-theme="dark"] select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] input:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] select:focus {
+  border-color: var(--accent);
+}
+
+/* --- Dark Mode: Button styles --- */
+[data-theme="dark"] .btn-primary {
+  background: var(--accent);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  background: var(--accent-hover);
+}
+
+[data-theme="dark"] .btn-sm {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .btn-send {
+  background: var(--accent);
+}
+
+[data-theme="dark"] .btn-quick {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .btn-quick:hover {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .btn-test {
+  background: var(--bg-tertiary);
+}
+
+/* --- Dark Mode: Layout styles --- */
+[data-theme="dark"] .header {
+  background: var(--bg-secondary);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .tab {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab.active {
+  color: var(--accent);
+}
+
+[data-theme="dark"] .page-context {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .chat-area {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .input-area {
+  background: var(--bg-secondary);
+  border-top-color: var(--border-color);
+}
+
+/* --- Dark Mode: Message styles --- */
+[data-theme="dark"] .message-user .message-bubble {
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .message-ai .message-bubble {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
 [data-theme="dark"] .message-ai .message-bubble pre {
   background: #09090b;
+}
+
+[data-theme="dark"] .message-bubble a {
+  color: var(--accent);
+}
+
+/* --- Dark Mode: Other components --- */
+[data-theme="dark"] .welcome-message {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .tag-chip {
+  background: var(--bg-tertiary);
+}
+
+[data-theme="dark"] .tag-chip:hover,
+[data-theme="dark"] .tag-chip.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .knowledge-detail {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .skill-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .settings-form {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .profile-bar select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .provider-card {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .provider-card.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+[data-theme="dark"] .toast {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
 }
 
 [data-theme="dark"] .btn-danger:hover {
@@ -1345,8 +1485,148 @@ body {
     --danger: #f87171;
   }
 
+  /* --- Dark Mode: Input styles --- */
+  :root:not([data-theme="light"]) input[type="text"],
+  :root:not([data-theme="light"]) input[type="password"],
+  :root:not([data-theme="light"]) input[type="number"],
+  :root:not([data-theme="light"]) textarea,
+  :root:not([data-theme="light"]) select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) input:focus,
+  :root:not([data-theme="light"]) textarea:focus,
+  :root:not([data-theme="light"]) select:focus {
+    border-color: var(--accent);
+  }
+
+  /* --- Dark Mode: Button styles --- */
+  :root:not([data-theme="light"]) .btn-primary {
+    background: var(--accent);
+  }
+
+  :root:not([data-theme="light"]) .btn-primary:hover {
+    background: var(--accent-hover);
+  }
+
+  :root:not([data-theme="light"]) .btn-sm {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+  }
+
+  :root:not([data-theme="light"]) .btn-send {
+    background: var(--accent);
+  }
+
+  :root:not([data-theme="light"]) .btn-quick {
+    background: var(--bg-tertiary);
+  }
+
+  :root:not([data-theme="light"]) .btn-quick:hover {
+    background: var(--bg-secondary);
+  }
+
+  :root:not([data-theme="light"]) .btn-test {
+    background: var(--bg-tertiary);
+  }
+
+  /* --- Dark Mode: Layout styles --- */
+  :root:not([data-theme="light"]) .header {
+    background: var(--bg-secondary);
+    border-bottom-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) .tab {
+    color: var(--text-secondary);
+  }
+
+  :root:not([data-theme="light"]) .tab.active {
+    color: var(--accent);
+  }
+
+  :root:not([data-theme="light"]) .page-context {
+    background: var(--bg-secondary);
+  }
+
+  :root:not([data-theme="light"]) .chat-area {
+    background: var(--bg-primary);
+  }
+
+  :root:not([data-theme="light"]) .input-area {
+    background: var(--bg-secondary);
+    border-top-color: var(--border-color);
+  }
+
+  /* --- Dark Mode: Message styles --- */
+  :root:not([data-theme="light"]) .message-user .message-bubble {
+    background: var(--accent-light);
+    color: var(--text-primary);
+  }
+
+  :root:not([data-theme="light"]) .message-ai .message-bubble {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
   :root:not([data-theme="light"]) .message-ai .message-bubble pre {
     background: #09090b;
+  }
+
+  :root:not([data-theme="light"]) .message-bubble a {
+    color: var(--accent);
+  }
+
+  /* --- Dark Mode: Other components --- */
+  :root:not([data-theme="light"]) .welcome-message {
+    background: var(--bg-primary);
+  }
+
+  :root:not([data-theme="light"]) .tag-chip {
+    background: var(--bg-tertiary);
+  }
+
+  :root:not([data-theme="light"]) .tag-chip:hover,
+  :root:not([data-theme="light"]) .tag-chip.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+
+  :root:not([data-theme="light"]) .knowledge-detail {
+    background: var(--bg-primary);
+  }
+
+  :root:not([data-theme="light"]) .skill-card {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) .settings-form {
+    background: var(--bg-primary);
+  }
+
+  :root:not([data-theme="light"]) .profile-bar select {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) .provider-card {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) .provider-card.active {
+    background: var(--accent-light);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  :root:not([data-theme="light"]) .toast {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
   }
 
   :root:not([data-theme="light"]) .btn-danger:hover {
