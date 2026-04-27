@@ -567,6 +567,159 @@
 
   // ==================== API 端点提取 ====================
 
+  // ==================== GitHub 仓库信息提取 ====================
+
+  /**
+   * 检测当前页面是否为 GitHub 仓库根目录页面
+   * @returns {{ isGitHubRepo: boolean, isRepoRoot: boolean, owner: string, repo: string }}
+   */
+  function detectGitHubRepo() {
+    const url = location.href;
+    const match = url.match(/^https?:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)\/?$/);
+    if (!match) {
+      return { isGitHubRepo: false, isRepoRoot: false, owner: '', repo: '' };
+    }
+    return { isGitHubRepo: true, isRepoRoot: true, owner: match[1], repo: match[2] };
+  }
+
+  /**
+   * 提取 GitHub 仓库信息（README、目录结构、描述、语言统计）
+   * 仅在仓库根目录页面可用
+   * @returns {{ readme: string, fileTree: Array<{name: string, type: string}>, description: string, languages: Array<{name: string, percent: string}>, owner: string, repo: string }}
+   */
+  function extractGitHubRepoInfo() {
+    const MAX_README_CHARS = 5000;
+    const MAX_FILE_TREE_ITEMS = 50;
+
+    const info = {
+      readme: '',
+      fileTree: [],
+      description: '',
+      languages: [],
+      owner: '',
+      repo: ''
+    };
+
+    // 提取 owner/repo
+    const urlMatch = location.href.match(/^https?:\/\/github\.com\/([A-Za-z0-9_.-]+)\/([A-Za-z0-9_.-]+)/);
+    if (urlMatch) {
+      info.owner = urlMatch[1];
+      info.repo = urlMatch[2];
+    }
+
+    // 提取 README 内容
+    const readmeEl = document.querySelector('.markdown-body');
+    if (readmeEl) {
+      const rawText = readmeEl.textContent || '';
+      info.readme = rawText.trim().slice(0, MAX_README_CHARS);
+    }
+
+    // 提取目录结构（文件列表）
+    // 尝试多种选择器以适配不同时期的 GitHub DOM 结构
+    const fileRows = document.querySelectorAll(
+      '[role="rowheader"] .js-navigation-item Link, ' +
+      '[role="row"] [role="rowheader"], ' +
+      '.js-navigation-item .Link--primary, ' +
+      '.js-navigation-item a[title], ' +
+      'react-app[app-name="repos-overview"] [role="rowheader"] a, ' +
+      '.Box-row a[href*="/tree/"], .Box-row a[href*="/blob/"]'
+    );
+
+    const seenNames = new Set();
+    for (const el of fileRows) {
+      const name = el.textContent?.trim() || el.getAttribute('title') || '';
+      if (!name || seenNames.has(name)) continue;
+      seenNames.add(name);
+
+      const href = el.getAttribute('href') || '';
+      const isDir = href.includes('/tree/') || el.closest('[role="row"]')?.querySelector('svg[aria-label="Directory"], .icon-directory') != null;
+
+      info.fileTree.push({
+        name,
+        type: isDir ? 'dir' : 'file'
+      });
+
+      if (info.fileTree.length >= MAX_FILE_TREE_ITEMS) break;
+    }
+
+    // 如果上面的选择器没找到，尝试更通用的方式
+    if (info.fileTree.length === 0) {
+      const rows = document.querySelectorAll('.Box-row, [class*="navigation-item"]');
+      for (const row of rows) {
+        const link = row.querySelector('a[title], a .js-navigation-item, a[href*="/tree/"], a[href*="/blob/"]');
+        if (!link) continue;
+        const name = link.getAttribute('title') || link.textContent?.trim() || '';
+        if (!name || name === '..' || seenNames.has(name)) continue;
+        seenNames.add(name);
+
+        const href = link.getAttribute('href') || '';
+        info.fileTree.push({
+          name,
+          type: href.includes('/tree/') ? 'dir' : 'file'
+        });
+
+        if (info.fileTree.length >= MAX_FILE_TREE_ITEMS) break;
+      }
+    }
+
+    // 提取仓库描述
+    const descEl = document.querySelector(
+      '[data-pjax="#repo-content-pjax-timeline"] .f4, ' +
+      'p.f4, ' +
+      '.BorderGrid-row .f4, ' +
+      '[itemprop="description"]'
+    );
+    if (descEl) {
+      info.description = (descEl.textContent || '').trim();
+    }
+
+    // 提取语言统计
+    const langItems = document.querySelectorAll(
+      '.Progress-item[data-ga-click], ' +
+      '.Progress-item, ' +
+      'a[href*="/search?l="] .color-fg-default, ' +
+      'span[itemprop="programmingLanguage"]'
+    );
+
+    if (langItems.length > 0) {
+      // 从 Progress-item 的 aria-label 或 tooltip 提取
+      const progressItems = document.querySelectorAll('.Progress-item');
+      for (const item of progressItems) {
+        const label = item.getAttribute('aria-label') || item.getAttribute('data-ga-click') || '';
+        const match = label.match(/([\w#+.]+)\s+(\d+\.?\d*)%/);
+        if (match) {
+          info.languages.push({ name: match[1], percent: match[2] + '%' });
+        }
+      }
+    }
+
+    // 语言统计兜底：从语言列表链接提取
+    if (info.languages.length === 0) {
+      const langLinks = document.querySelectorAll('a[href*="/search?l="]');
+      for (const link of langLinks) {
+        const name = link.querySelector('.color-fg-default, span')?.textContent?.trim() || link.textContent?.trim() || '';
+        const percentEl = link.querySelector('.color-fg-muted');
+        const percent = percentEl?.textContent?.trim() || '';
+        if (name) {
+          info.languages.push({ name, percent });
+        }
+      }
+    }
+
+    // 提取 star 数、fork 数
+    const starEl = document.querySelector('#repo-star-count-star, a[href$="/stargazers"] .Counter, a[href$="/stargazers"] strong');
+    if (starEl) {
+      info.stars = starEl.textContent?.trim() || '';
+    }
+
+    const forkEl = document.querySelector('#repo-network-counter, a[href$="/forks"] .Counter, a[href$="/forks"] strong');
+    if (forkEl) {
+      info.forks = forkEl.textContent?.trim() || '';
+    }
+
+    return info;
+  }
+
   /**
    * 检测当前页面是否为 API 文档页面
    * @returns {{ isApiDoc: boolean, hasSwaggerUI: boolean }}
@@ -941,6 +1094,20 @@
       case 'detectApiDoc':
         sendResponse(detectApiDoc());
         break;
+
+      case 'detectGitHubRepo':
+        sendResponse(detectGitHubRepo());
+        break;
+
+      case 'extractGitHubRepoInfo': {
+        const ghInfo = detectGitHubRepo();
+        if (!ghInfo.isRepoRoot) {
+          sendResponse({ error: '不是 GitHub 仓库根目录页面' });
+          break;
+        }
+        sendResponse(extractGitHubRepoInfo());
+        break;
+      }
 
       case 'highlight':
         highlightText(request.text);

@@ -404,6 +404,9 @@ class SidebarApp {
         // API 文档页面检测并显示快捷按钮
         this.detectAndShowApiDocActions(tab.id);
 
+        // GitHub 仓库页面检测并显示快捷按钮
+        this.detectAndShowGitHubRepoActions(tab.id);
+
         // 更新页面图标
         const pageIcon = document.querySelector('.page-icon');
         if (pageIcon) pageIcon.textContent = isYouTube ? '📺' : '📄';
@@ -1566,6 +1569,246 @@ ${endpointText}
       } catch (error) {
         loadingEl.remove();
         this.addSystemMessage(`生成摘要失败：${error.message}`);
+      }
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  // ==================== GitHub 仓库分析 ====================
+
+  /**
+   * 检测当前页面是否为 GitHub 仓库根目录，如果是则显示快捷操作按钮
+   * @param {number} tabId - 当前标签页 ID
+   */
+  async detectAndShowGitHubRepoActions(tabId) {
+    if (!tabId) return;
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, { action: 'detectGitHubRepo' });
+      if (response?.isGitHubRepo && response?.isRepoRoot) {
+        this.isGitHubRepoPage = true;
+        this.gitHubRepoInfo = { owner: response.owner, repo: response.repo };
+        this.showGitHubRepoQuickActions();
+        // 更新页面图标
+        const pageIcon = document.querySelector('.page-icon');
+        if (pageIcon) pageIcon.textContent = '🐙';
+      }
+    } catch (e) {
+      // content script 可能未加载，忽略
+    }
+  }
+
+  /**
+   * 在欢迎消息区域显示 GitHub 仓库专用快捷按钮
+   */
+  showGitHubRepoQuickActions() {
+    const welcome = this.chatArea.querySelector('.welcome-message');
+    if (!welcome) return;
+
+    // 检查是否已经添加过 GitHub 按钮
+    if (welcome.querySelector('.github-repo-actions')) return;
+
+    const quickActions = welcome.querySelector('.quick-actions');
+    if (!quickActions) return;
+
+    const repoInfo = this.gitHubRepoInfo || {};
+    const repoLabel = repoInfo.owner && repoInfo.repo ? `${repoInfo.owner}/${repoInfo.repo}` : '仓库';
+
+    const githubDiv = document.createElement('div');
+    githubDiv.className = 'github-repo-actions';
+    githubDiv.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);';
+    githubDiv.innerHTML = `
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">🐙 GitHub 仓库 — ${this.escapeHtml(repoLabel)}</div>
+      <div class="quick-actions" style="gap: 6px;">
+        <button class="btn-quick" id="btnGHAnalyzeRepo">📖 分析这个仓库</button>
+        <button class="btn-quick" id="btnGHExtractInfo">📋 提取仓库信息</button>
+      </div>
+    `;
+
+    quickActions.parentNode.insertBefore(githubDiv, quickActions.nextSibling);
+
+    // 绑定事件
+    document.getElementById('btnGHAnalyzeRepo')?.addEventListener('click', () => {
+      this.githubAnalyzeRepo();
+    });
+    document.getElementById('btnGHExtractInfo')?.addEventListener('click', () => {
+      this.githubExtractInfo();
+    });
+  }
+
+  /**
+   * 提取 GitHub 仓库信息并以结构化方式展示
+   */
+  async githubExtractInfo() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    this.addSystemMessage('正在提取 GitHub 仓库信息...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractGitHubRepoInfo'
+      });
+
+      if (!response || response.error) {
+        this.addSystemMessage(`❌ ${response?.error || '无法提取仓库信息，请确认页面已完全加载'}`);
+        return;
+      }
+
+      const { readme, fileTree, description, languages, owner, repo, stars, forks } = response;
+      const repoLabel = owner && repo ? `${owner}/${repo}` : this.gitHubRepoInfo ? `${this.gitHubRepoInfo.owner}/${this.gitHubRepoInfo.repo}` : '仓库';
+
+      let display = `**🐙 GitHub 仓库信息: ${repoLabel}**\n\n`;
+
+      if (description) {
+        display += `📝 **描述**: ${description}\n\n`;
+      }
+
+      if (stars || forks) {
+        const stats = [];
+        if (stars) stats.push(`⭐ Stars: ${stars}`);
+        if (forks) stats.push(`🍴 Forks: ${forks}`);
+        display += `${stats.join(' · ')}\n\n`;
+      }
+
+      if (languages.length > 0) {
+        display += `💻 **语言**: ${languages.map(l => `${l.name} ${l.percent}`).join(', ')}\n\n`;
+      }
+
+      if (fileTree.length > 0) {
+        display += `📁 **目录结构**（前 ${fileTree.length} 项）:\n`;
+        for (const item of fileTree) {
+          display += `  ${item.type === 'dir' ? '📂' : '📄'} ${item.name}\n`;
+        }
+        display += '\n';
+      }
+
+      if (readme) {
+        const preview = readme.length > 1000 ? readme.slice(0, 1000) + '...' : readme;
+        display += `📖 **README 预览**:\n\n${preview}\n`;
+      }
+
+      const messageEl = this.addAIMessage(display);
+
+      // 保存到对话历史
+      this.conversationHistory.push(
+        { role: 'user', content: `📋 提取仓库信息: ${repoLabel}` },
+        { role: 'assistant', content: display }
+      );
+
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 分析 GitHub 仓库（使用 AI 生成仓库概览）
+   */
+  async githubAnalyzeRepo() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    if (!this.aiClient) {
+      this.addSystemMessage('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    this.addSystemMessage('正在提取仓库信息并生成概览...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractGitHubRepoInfo'
+      });
+
+      if (!response || response.error) {
+        this.addSystemMessage(`❌ ${response?.error || '无法提取仓库信息，请确认页面已完全加载'}`);
+        return;
+      }
+
+      const { readme, fileTree, description, languages, owner, repo, stars, forks } = response;
+      const repoLabel = owner && repo ? `${owner}/${repo}` : '仓库';
+
+      // 构建文件树文本
+      let fileTreeText = '';
+      if (fileTree.length > 0) {
+        fileTreeText = fileTree.map(item =>
+          `${item.type === 'dir' ? '[DIR]' : '[FILE]'} ${item.name}`
+        ).join('\n');
+      }
+
+      // 构建语言统计文本
+      const langText = languages.length > 0
+        ? languages.map(l => `${l.name} ${l.percent}`).join(', ')
+        : '未检测到';
+
+      // 使用 AI 生成仓库概览
+      this.switchTab('chat');
+      const loadingEl = this.showLoading();
+
+      try {
+        let fullResponse = '';
+        let messageEl = null;
+
+        const prompt = `请分析以下 GitHub 仓库，生成一份详细的仓库概览。
+
+仓库名称：${repoLabel}
+${description ? `仓库描述：${description}` : ''}
+${stars ? `Stars：${stars}` : ''}
+${forks ? `Forks：${forks}` : ''}
+技术栈/语言：${langText}
+
+目录结构（前 ${fileTree.length} 项）：
+${fileTreeText || '无法提取目录结构'}
+
+README 内容（截取前 ${readme.length} 字符）：
+${readme || '无法提取 README 内容'}
+
+请按照以下格式生成仓库概览：
+1. **项目简介**：这个项目是什么？解决什么问题？
+2. **技术栈**：使用了哪些技术、框架、语言？
+3. **目录结构说明**：主要目录和文件的作用是什么？
+4. **快速开始建议**：如果要使用或参与这个项目，应该从哪里开始？
+5. **亮点与特色**：这个项目有什么值得关注的特点？`;
+
+        for await (const chunk of this.aiClient.chatStream(
+          [
+            ...this.conversationHistory.slice(-6),
+            { role: 'user', content: prompt }
+          ],
+          { systemPrompt: this.aiClient.getSystemPrompt() + '\n\n用户正在浏览 GitHub 仓库页面，你需要根据提取的仓库信息（README、目录结构、描述、语言统计）生成一份结构化的仓库概览。请用中文回答。' }
+        )) {
+          fullResponse += chunk;
+          if (!messageEl) {
+            loadingEl.remove();
+            messageEl = this.addAIMessage('');
+          }
+          this.updateAIMessage(messageEl, fullResponse);
+        }
+
+        // 保存对话
+        this.conversationHistory.push(
+          { role: 'user', content: `📖 分析仓库: ${repoLabel}` },
+          { role: 'assistant', content: fullResponse }
+        );
+        await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+        // 持久化到 IndexedDB
+        try {
+          await saveConversationIDB(
+            this.currentTabUrl || '',
+            `分析仓库: ${repoLabel}`,
+            this.conversationHistory
+          );
+        } catch (e) {}
+
+      } catch (error) {
+        loadingEl.remove();
+        this.addSystemMessage(`生成仓库概览失败：${error.message}`);
       }
     } catch (e) {
       this.addSystemMessage('提取失败：请刷新页面后重试');

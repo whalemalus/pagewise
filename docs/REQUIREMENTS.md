@@ -115,6 +115,18 @@
   - 快捷操作：「📋 提取 API 端点」结构化展示、「📊 生成 API 摘要」AI 总结
   - 约束：最多 50 个端点，不引入外部依赖
 
+### ✅ R020: GitHub 仓库页面理解
+- **描述**: 打开 GitHub 仓库页面时，自动分析 README、目录结构、关键文件，提供仓库概览
+- **优先级**: P1
+- **依赖**: R002, R007
+- **实现**:
+  - 页面感知：精确识别 GitHub 仓库页面（github-repo 类型），区分 repo-root / repo-file / repo-issues / repo-pr / repo-wiki / repo-releases
+  - 新增方法：`isGitHubRepoPage(url)` / `detectGitHubPageType(url)` 用于 URL 模式匹配
+  - Content Script：提取 README（.markdown-body，前 5000 字符）、目录结构（前 50 项）、仓库描述、语言统计、star/fork 数
+  - Sidebar：仓库根页面显示「📖 分析这个仓库」和「📋 提取仓库信息」快捷按钮
+  - AI 概览：项目简介、技术栈、目录结构说明、快速开始建议、亮点与特色
+  - 约束：只分析仓库根目录页面，README 截取前 5000 字符，目录列表截取前 50 项
+
 ---
 
 ## 需求变更记录

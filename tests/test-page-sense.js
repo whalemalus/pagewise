@@ -103,6 +103,102 @@ describe('PageSense 页面类型识别', () => {
     assert.equal(repoType.repo.repo, 'repo');
   });
 
+  it('识别 GitHub 仓库页面（github-repo 类型）', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/facebook/react',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'github-repo'), '应识别为 github-repo 类型');
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.equal(ghType.owner, 'facebook');
+    assert.equal(ghType.repo, 'react');
+    assert.equal(ghType.pageType, 'repo-root');
+    assert.equal(ghType.isRepoRoot, true);
+    assert.equal(ghType.icon, '🐙');
+  });
+
+  it('GitHub Issue 页面识别为 repo-issues', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/issues',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-issues');
+    assert.equal(ghType.isRepoRoot, false);
+  });
+
+  it('GitHub PR 页面识别为 repo-pr', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/pull/42',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-pr');
+    assert.equal(ghType.isRepoRoot, false);
+  });
+
+  it('GitHub 文件页面识别为 repo-file', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/blob/main/README.md',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-file');
+    assert.equal(ghType.isRepoRoot, false);
+  });
+
+  it('GitHub Wiki 页面识别为 repo-wiki', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/wiki',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-wiki');
+    assert.equal(ghType.isRepoRoot, false);
+  });
+
+  it('GitHub Releases 页面识别为 repo-releases', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/releases',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-releases');
+    assert.equal(ghType.isRepoRoot, false);
+  });
+
+  it('GitHub 仓库根目录末尾有斜杠', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user/repo/',
+      content: '',
+    });
+    const ghType = result.types.find(t => t.type === 'github-repo');
+    assert.ok(ghType, '应识别为 github-repo 类型');
+    assert.equal(ghType.pageType, 'repo-root');
+    assert.equal(ghType.isRepoRoot, true);
+  });
+
+  it('GitHub 用户页面不识别为 github-repo', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/user',
+      content: '',
+    });
+    assert.ok(!result.types.some(t => t.type === 'github-repo'), '用户主页不应识别为 github-repo');
+  });
+
+  it('GitHub explore 页面不识别为 github-repo', () => {
+    const result = ps.analyze({
+      url: 'https://github.com/explore',
+      content: '',
+    });
+    assert.ok(!result.types.some(t => t.type === 'github-repo'), 'explore 页面不应识别为 github-repo');
+  });
+
   it('识别 GitLab 仓库页面', () => {
     const result = ps.analyze({
       url: 'https://gitlab.com/group/project',
@@ -316,6 +412,14 @@ describe('PageSense suggestSkills()', () => {
     }, null);
     assert.equal(suggestions.length, 0);
   });
+
+  it('GitHub 仓库根页面推荐 repo-analyze 技能', () => {
+    const suggestions = ps.suggestSkills({
+      url: 'https://github.com/user/repo',
+      content: '',
+    }, null);
+    assert.ok(suggestions.some(s => s.skillId === 'repo-analyze'), '应推荐 repo-analyze 技能');
+  });
 });
 
 // ==================== 提取器 ====================
@@ -382,5 +486,45 @@ describe('PageSense 提取器', () => {
   it('extractErrors() 空内容返回空数组', () => {
     assert.deepEqual(ps.extractErrors(''), []);
     assert.deepEqual(ps.extractErrors(null), []);
+  });
+
+  it('isGitHubRepoPage() 识别仓库根页面', () => {
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/facebook/react'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/'));
+  });
+
+  it('isGitHubRepoPage() 识别仓库子页面', () => {
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/issues'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/pull/42'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/blob/main/README.md'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/wiki'));
+    assert.ok(ps.isGitHubRepoPage('https://github.com/user/repo/releases'));
+  });
+
+  it('isGitHubRepoPage() 不匹配非仓库页面', () => {
+    assert.ok(!ps.isGitHubRepoPage('https://github.com/user'));
+    assert.ok(!ps.isGitHubRepoPage('https://github.com/explore'));
+    assert.ok(!ps.isGitHubRepoPage('https://example.com/user/repo'));
+    assert.ok(!ps.isGitHubRepoPage(''));
+    assert.ok(!ps.isGitHubRepoPage(null));
+  });
+
+  it('detectGitHubPageType() 正确识别页面类型', () => {
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo'), 'repo-root');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/'), 'repo-root');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/issues'), 'repo-issues');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/issues/42'), 'repo-issues');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/pull/42'), 'repo-pr');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/blob/main/README.md'), 'repo-file');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/tree/main/src'), 'repo-file');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/wiki'), 'repo-wiki');
+    assert.equal(ps.detectGitHubPageType('https://github.com/user/repo/releases'), 'repo-releases');
+  });
+
+  it('detectGitHubPageType() 空 URL 返回 unknown', () => {
+    assert.equal(ps.detectGitHubPageType(''), 'unknown');
+    assert.equal(ps.detectGitHubPageType(null), 'unknown');
+    assert.equal(ps.detectGitHubPageType(undefined), 'unknown');
   });
 });

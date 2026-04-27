@@ -86,3 +86,21 @@
 - **30 个自定义技能测试，全部通过**
 - **总计 218 个测试，全部通过**
 - **总计 228 个测试，全部通过**
+
+### GitHub 仓库页面理解（R020）
+- **lib/page-sense.js**：
+  - 新增 `github-repo` 分析器，精确识别 GitHub 仓库页面
+  - 区分页面类型：repo-root, repo-file, repo-issues, repo-pr, repo-wiki, repo-releases
+  - 新增 `isGitHubRepoPage(url)` 和 `detectGitHubPageType(url)` 方法
+  - `suggestSkills()` 对 github-repo 类型推荐 repo-analyze 技能
+- **content/content.js**：
+  - 新增 `detectGitHubRepo()` 检测 GitHub 仓库根目录页面
+  - 新增 `extractGitHubRepoInfo()` 提取 README、目录结构、描述、语言统计、star/fork 数
+  - README 截取前 5000 字符，目录列表截取前 50 项
+  - 新增消息处理器 `detectGitHubRepo` 和 `extractGitHubRepoInfo`
+- **sidebar/sidebar.js**：
+  - 新增 `detectAndShowGitHubRepoActions()` 检测并显示 GitHub 仓库快捷按钮
+  - 新增 `showGitHubRepoQuickActions()` 显示「📖 分析这个仓库」和「📋 提取仓库信息」
+  - 新增 `githubExtractInfo()` 提取仓库信息结构化展示
+  - 新增 `githubAnalyzeRepo()` 使用 AI 生成仓库概览（项目简介、技术栈、目录结构说明、快速开始建议）
+- 20 个新测试（GitHub 页面类型识别 + helper 方法 + suggestSkills）
