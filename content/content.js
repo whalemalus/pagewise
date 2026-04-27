@@ -174,6 +174,63 @@
   }
 
   /**
+   * 划词提问浮动按钮
+   */
+  function removeFloatBtn() {
+    const existing = document.getElementById('pagewise-float-btn');
+    if (existing) existing.remove();
+  }
+
+  function createFloatBtn(selectedText, rect) {
+    removeFloatBtn();
+
+    const btn = document.createElement('button');
+    btn.id = 'pagewise-float-btn';
+    btn.textContent = '🤖 问智阅';
+
+    // 定位到选区附近
+    let top = rect.top - 36;
+    let left = rect.left + rect.width / 2 - 40;
+
+    // 防止超出视口顶部
+    if (top < 8) top = rect.bottom + 8;
+    // 防止超出视口左右
+    if (left < 8) left = 8;
+    if (left + 80 > window.innerWidth - 8) left = window.innerWidth - 88;
+
+    btn.style.top = top + 'px';
+    btn.style.left = left + 'px';
+
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      chrome.runtime.sendMessage({ action: 'contextMenuAsk', selection: selectedText });
+      removeFloatBtn();
+    });
+
+    document.body.appendChild(btn);
+  }
+
+  document.addEventListener('mouseup', () => {
+    setTimeout(() => {
+      const sel = window.getSelection();
+      const text = sel ? sel.toString().trim() : '';
+      if (text.length > 0) {
+        const range = sel.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        createFloatBtn(text, rect);
+      } else {
+        removeFloatBtn();
+      }
+    }, 200);
+  });
+
+  document.addEventListener('mousedown', (e) => {
+    if (e.target.id !== 'pagewise-float-btn') {
+      removeFloatBtn();
+    }
+  });
+
+  /**
    * 监听来自 sidebar / background 的消息
    */
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
