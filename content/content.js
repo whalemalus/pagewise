@@ -253,7 +253,8 @@
       content: paragraphs.join('\n\n'),
       codeBlocks,
       meta,
-      extractedAt: new Date().toISOString()
+      extractedAt: new Date().toISOString(),
+      isYouTube: isYouTubeVideo()
     };
   }
 
@@ -345,6 +346,225 @@
     return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
   }
 
+  // ==================== YouTube 字幕提取 ====================
+
+  /**
+   * 检测当前页面是否为 YouTube 视频页面
+   * @returns {boolean}
+   */
+  function isYouTubeVideo() {
+    return location.href.includes('youtube.com/watch');
+  }
+
+  /**
+   * 提取 YouTube 视频字幕
+   * 优先从 DOM 提取，兜底从 ytInitialPlayerResponse API 提取
+   * @returns {Promise<{ segments: Array<{text: string, start: number, duration: number}>, fullText: string } | null>}
+   */
+  async function extractYouTubeSubtitles() {
+    // 策略 1：从 DOM 提取已展开的字幕面板
+    const domResult = extractSubtitlesFromDOM();
+    if (domResult && domResult.segments.length > 0) {
+      return domResult;
+    }
+
+    // 策略 2：尝试展开字幕面板，等待加载后提取
+    const expanded = await tryExpandTranscriptPanel();
+    if (expanded) {
+      await sleep(1500);
+      const domResult2 = extractSubtitlesFromDOM();
+      if (domResult2 && domResult2.segments.length > 0) {
+        return domResult2;
+      }
+    }
+
+    // 策略 3：从 ytInitialPlayerResponse 获取字幕 URL 并提取
+    const apiResult = await extractSubtitlesFromAPI();
+    if (apiResult && apiResult.segments.length > 0) {
+      return apiResult;
+    }
+
+    return null;
+  }
+
+  /**
+   * 从 DOM 中提取字幕片段
+   * @returns {{ segments: Array, fullText: string } | null}
+   */
+  function extractSubtitlesFromDOM() {
+    const segments = [];
+    const segmentEls = document.querySelectorAll(
+      'ytd-transcript-segment-list-renderer ytd-transcript-segment-renderer'
+    );
+
+    for (const el of segmentEls) {
+      const textEl = el.querySelector('.segment-text, yt-formatted-string.segment-text');
+      const timestampEl = el.querySelector('.segment-timestamp, yt-formatted-string.segment-timestamp');
+      const text = textEl?.textContent?.trim() || '';
+      const timestamp = timestampEl?.textContent?.trim() || '';
+
+      if (!text) continue;
+
+      const startTime = parseTimestamp(timestamp);
+      segments.push({ text, start: startTime, duration: 0 });
+    }
+
+    // 计算 duration（相邻字幕的时间差）
+    for (let i = 0; i < segments.length; i++) {
+      if (i < segments.length - 1) {
+        segments[i].duration = segments[i + 1].start - segments[i].start;
+      } else {
+        segments[i].duration = 5; // 最后一段默认 5 秒
+      }
+    }
+
+    if (segments.length === 0) return null;
+
+    const fullText = segments.map(s => s.text).join(' ');
+    return { segments, fullText };
+  }
+
+  /**
+   * 尝试展开 YouTube 字幕面板
+   * @returns {Promise<boolean>} 是否成功点击展开
+   */
+  async function tryExpandTranscriptPanel() {
+    // 方式 1：点击 "显示字幕" 按钮
+    const transcriptBtn = document.querySelector(
+      'button[aria-label*="transcript" i], button[aria-label*="字幕" i], ' +
+      'ytd-button-renderer#button-shape button[aria-label*="transcript" i]'
+    );
+    if (transcriptBtn) {
+      transcriptBtn.click();
+      return true;
+    }
+
+    // 方式 2：点击 "更多" 按钮，然后找字幕选项
+    const moreBtn = document.querySelector(
+      'tp-yt-paper-button#expand, #button-shape button[aria-label="更多操作" i], ' +
+      'ytd-menu-renderer #button-shape button'
+    );
+    if (moreBtn) {
+      moreBtn.click();
+      await sleep(500);
+
+      // 在弹出菜单中查找 "显示字幕" 选项
+      const menuItems = document.querySelectorAll(
+        'ytd-menu-service-item-renderer, tp-yt-paper-listbox yt-formatted-string'
+      );
+      for (const item of menuItems) {
+        const itemText = item.textContent?.toLowerCase() || '';
+        if (itemText.includes('transcript') || itemText.includes('字幕')) {
+          item.click();
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * 从 ytInitialPlayerResponse 中获取字幕 URL 并提取
+   * @returns {Promise<{ segments: Array, fullText: string } | null>}
+   */
+  async function extractSubtitlesFromAPI() {
+    try {
+      const playerResponse = window.ytInitialPlayerResponse ||
+        window.ytplayer?.config?.args?.player_response;
+
+      if (!playerResponse) return null;
+
+      let parsed = playerResponse;
+      if (typeof parsed === 'string') {
+        try {
+          parsed = JSON.parse(parsed);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      const captionTracks = parsed?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
+      if (!captionTracks || captionTracks.length === 0) return null;
+
+      // 优先选择中文字幕，其次英语，最后第一个
+      const preferred = captionTracks.find(t => t.languageCode === 'zh-Hans' || t.languageCode === 'zh-CN')
+        || captionTracks.find(t => t.languageCode === 'zh')
+        || captionTracks.find(t => t.languageCode === 'en')
+        || captionTracks[0];
+
+      if (!preferred || !preferred.baseUrl) return null;
+
+      // 获取字幕 XML
+      const response = await fetch(preferred.baseUrl + '&fmt=srv3');
+      if (!response.ok) return null;
+
+      const xmlText = await response.text();
+      return parseSubtitleXML(xmlText);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /**
+   * 解析 YouTube 字幕 XML 格式 (srv3)
+   * @param {string} xml
+   * @returns {{ segments: Array, fullText: string }}
+   */
+  function parseSubtitleXML(xml) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(xml, 'text/xml');
+    const pElements = doc.querySelectorAll('p');
+    const segments = [];
+
+    for (const p of pElements) {
+      const text = p.textContent?.trim() || '';
+      const start = parseInt(p.getAttribute('t') || '0', 10) / 1000; // ms -> s
+      const duration = parseInt(p.getAttribute('d') || '0', 10) / 1000;
+
+      if (!text) continue;
+      segments.push({ text, start, duration });
+    }
+
+    if (segments.length === 0) {
+      // 兜底：尝试 <text> 标签格式
+      const textElements = doc.querySelectorAll('text');
+      for (const t of textElements) {
+        const text = t.textContent?.trim() || '';
+        const start = parseFloat(t.getAttribute('start') || '0');
+        const duration = parseFloat(t.getAttribute('dur') || '0');
+        if (!text) continue;
+        segments.push({ text, start, duration });
+      }
+    }
+
+    const fullText = segments.map(s => s.text).join(' ');
+    return { segments, fullText };
+  }
+
+  /**
+   * 将时间戳字符串解析为秒数
+   * 支持格式: "1:23", "01:23", "1:23:45"
+   * @param {string} timestamp
+   * @returns {number}
+   */
+  function parseTimestamp(timestamp) {
+    if (!timestamp) return 0;
+    const parts = timestamp.split(':').map(Number);
+    if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    if (parts.length === 2) return parts[0] * 60 + parts[1];
+    return parts[0] || 0;
+  }
+
+  /**
+   * 延迟指定毫秒
+   * @param {number} ms
+   * @returns {Promise<void>}
+   */
+  function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
   // ==================== 浮动按钮 ====================
 
   /**
@@ -413,6 +633,32 @@
     switch (request.action) {
       case 'extractContent':
         sendResponse(extractPageContent());
+        break;
+
+      case 'extractYouTubeSubtitles': {
+        if (!isYouTubeVideo()) {
+          sendResponse({ error: '不是 YouTube 视频页面' });
+          break;
+        }
+        extractYouTubeSubtitles().then(result => {
+          if (result) {
+            // 截取前 8000 字符
+            const MAX_CHARS = 8000;
+            if (result.fullText.length > MAX_CHARS) {
+              result.fullText = result.fullText.slice(0, MAX_CHARS) + '...';
+            }
+            sendResponse({ success: true, subtitles: result });
+          } else {
+            sendResponse({ success: false, error: '未找到视频字幕，可能视频未开启字幕功能' });
+          }
+        }).catch(err => {
+          sendResponse({ success: false, error: `字幕提取失败: ${err.message}` });
+        });
+        break;
+      }
+
+      case 'isYouTubeVideo':
+        sendResponse({ isYouTube: isYouTubeVideo() });
         break;
 
       case 'getSelection':

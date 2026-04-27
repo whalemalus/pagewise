@@ -49,7 +49,14 @@
 - Chrome API Mock（tests/helpers/chrome-mock.js）
 - IndexedDB Mock（tests/helpers/indexeddb-mock.js）
 - utils.js 单元测试（21 个测试套件）
-- page-sense.js 单元测试（27 个测试）
+- page-sense.js 单元测试（34 个测试）
 - skill-engine.js 单元测试（26 个测试）
 - knowledge-base.js 单元测试（19 个测试）
-- **总计 95 个测试，全部通过**
+- **YouTube 视频字幕提取与总结**：
+  - 页面感知：自动识别 YouTube 视频页面，提取 video ID、标题、频道名
+  - 字幕提取：DOM 提取优先，展开面板兜底，ytInitialPlayerResponse API 兜底
+  - 快捷操作：YouTube 页面显示「总结视频」「提取字幕」按钮
+  - AI 总结：口语化字幕智能总结，含概述、要点、详细总结、金句
+  - 字幕截取：前 8000 字符限制
+  - 7 个 YouTube 相关测试
+- **总计 144 个测试，全部通过**

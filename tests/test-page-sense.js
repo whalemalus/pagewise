@@ -134,6 +134,57 @@ describe('PageSense 页面类型识别', () => {
     assert.ok(result.types.some(t => t.type === 'error-page'));
   });
 
+  it('识别 YouTube 视频页面', () => {
+    const result = ps.analyze({
+      url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+      title: 'Rick Astley - Never Gonna Give You Up',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'youtube'));
+    const ytType = result.types.find(t => t.type === 'youtube');
+    assert.equal(ytType.videoId, 'dQw4w9WgXcQ');
+    assert.equal(ytType.label, 'YouTube 视频');
+    assert.equal(ytType.icon, '📺');
+  });
+
+  it('YouTube 视频页面提取 video ID', () => {
+    const result = ps.analyze({
+      url: 'https://www.youtube.com/watch?v=abc123&t=60',
+      title: 'Test Video',
+      content: '',
+    });
+    const ytType = result.types.find(t => t.type === 'youtube');
+    assert.equal(ytType.videoId, 'abc123');
+  });
+
+  it('YouTube 短链接不匹配（非 watch 页面）', () => {
+    const result = ps.analyze({
+      url: 'https://www.youtube.com/shorts/abc123',
+      title: 'Short Video',
+      content: '',
+    });
+    assert.ok(!result.types.some(t => t.type === 'youtube'));
+  });
+
+  it('YouTube 嵌入页面不匹配（非 watch 页面）', () => {
+    const result = ps.analyze({
+      url: 'https://www.youtube.com/embed/abc123',
+      title: 'Embedded Video',
+      content: '',
+    });
+    assert.ok(!result.types.some(t => t.type === 'youtube'));
+  });
+
+  it('YouTube 频道名提取', () => {
+    const result = ps.analyze({
+      url: 'https://www.youtube.com/watch?v=abc123',
+      title: 'Test Video',
+      content: 'Channel: TechChannel\nSome video description',
+    });
+    const ytType = result.types.find(t => t.type === 'youtube');
+    assert.equal(ytType.channel, 'TechChannel');
+  });
+
   it('通用页面（无匹配）', () => {
     const result = ps.analyze({
       url: 'https://example.com/random',
@@ -162,6 +213,17 @@ describe('PageSense toPrompt()', () => {
     });
     assert.ok(prompt.includes('页面感知结果'));
     assert.ok(prompt.includes('代码仓库'));
+  });
+
+  it('YouTube 视频返回感知结果包含视频信息', () => {
+    const prompt = ps.toPrompt({
+      url: 'https://www.youtube.com/watch?v=abc123',
+      title: 'Test Video',
+      content: 'Channel: TestChannel',
+    });
+    assert.ok(prompt.includes('YouTube 视频'));
+    assert.ok(prompt.includes('abc123'));
+    assert.ok(prompt.includes('TestChannel'));
   });
 });
 
@@ -195,6 +257,15 @@ describe('PageSense suggestSkills()', () => {
       content: '',
     }, null);
     assert.ok(suggestions.some(s => s.skillId === 'api-summarize'));
+  });
+
+  it('YouTube 视频推荐视频总结技能', () => {
+    const suggestions = ps.suggestSkills({
+      url: 'https://www.youtube.com/watch?v=abc123',
+      title: 'Test Video',
+      content: '',
+    }, null);
+    assert.ok(suggestions.some(s => s.skillId === 'video-summarize'));
   });
 
   it('通用页面无推荐', () => {

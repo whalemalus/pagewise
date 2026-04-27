@@ -80,7 +80,7 @@
 - **Mock 策略**:
   - Chrome API: 自定义 mock (tests/helpers/chrome-mock.js)
   - IndexedDB: 自定义 mock (tests/helpers/indexeddb-mock.js)
-- **测试覆盖**: 95 个测试，覆盖 utils/page-sense/skill-engine/knowledge-base
+- **测试覆盖**: 144 个测试，覆盖 utils/page-sense/skill-engine/knowledge-base/conversation-store/highlight-store
 
 ### D005: ES Module 测试适配
 - **决策日期**: 2026-04-26
@@ -121,6 +121,18 @@
 - **决策日期**: 2026-04-26
 - **方案**: CSS 变量 + data-theme 属性
 - **支持**: light/dark/auto（跟随系统）
+
+### D011: YouTube 字幕提取方案
+- **决策日期**: 2026-04-27
+- **问题**: YouTube 视频字幕需要从页面中提取，支持总结和问答
+- **方案选择**: 三层策略递进提取
+  1. **DOM 提取优先**: 检查 `ytd-transcript-segment-renderer` 元素，直接从已展开的字幕面板获取
+  2. **展开面板兜底**: 自动点击字幕按钮展开面板，等待 1.5s 后再次 DOM 提取
+  3. **API 兜底**: 从 `window.ytInitialPlayerResponse` 获取 captionTracks URL，获取 XML 字幕
+- **字幕格式**: `{ segments: [{ text, start, duration }], fullText: '...' }`
+- **截取限制**: 前 8000 字符（避免 token 溢出）
+- **总结 Prompt**: 考虑口语化特点，提示 AI 处理断句和同音错误
+- **交互**: YouTube 页面显示「📺 总结这个视频」和「📝 提取视频字幕」快捷按钮
 
 ## 已知技术债务
 

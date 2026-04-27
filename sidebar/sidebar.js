@@ -328,7 +328,21 @@ class SidebarApp {
         this.pageTitle.textContent = tab.title || '未知页面';
         this.currentTabId = tab.id;
         this.currentTabUrl = tab.url;
+
+        // 检测 YouTube 页面
+        const isYouTube = tab.url?.includes('youtube.com/watch');
+        this.isYouTubePage = isYouTube;
+
         if (this.settings.autoExtract) this.extractContent();
+
+        // YouTube 页面显示快捷按钮
+        if (isYouTube) {
+          this.showYouTubeQuickActions();
+        }
+
+        // 更新页面图标
+        const pageIcon = document.querySelector('.page-icon');
+        if (pageIcon) pageIcon.textContent = isYouTube ? '📺' : '📄';
       }
     } catch (e) {
       this.pageTitle.textContent = '无法获取页面信息';
@@ -888,6 +902,189 @@ class SidebarApp {
       ? `请解释以下内容的含义：${text}`
       : '请解释页面中选中的内容，或解释页面的核心技术概念';
     this.sendMessage();
+  }
+
+  // ==================== YouTube 功能 ====================
+
+  /**
+   * 在欢迎消息区域显示 YouTube 专用快捷按钮
+   */
+  showYouTubeQuickActions() {
+    const welcome = this.chatArea.querySelector('.welcome-message');
+    if (!welcome) return;
+
+    // 检查是否已经添加过 YouTube 按钮
+    if (welcome.querySelector('.youtube-actions')) return;
+
+    const quickActions = welcome.querySelector('.quick-actions');
+    if (!quickActions) return;
+
+    const youtubeDiv = document.createElement('div');
+    youtubeDiv.className = 'youtube-actions';
+    youtubeDiv.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);';
+    youtubeDiv.innerHTML = `
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">📺 YouTube 视频工具</div>
+      <div class="quick-actions" style="gap: 6px;">
+        <button class="btn-quick" id="btnYTSummarize">📺 总结这个视频</button>
+        <button class="btn-quick" id="btnYTExtractSubtitles">📝 提取视频字幕</button>
+      </div>
+    `;
+
+    quickActions.parentNode.insertBefore(youtubeDiv, quickActions.nextSibling);
+
+    // 绑定事件
+    document.getElementById('btnYTSummarize')?.addEventListener('click', () => {
+      this.youtubeSummarizeVideo();
+    });
+    document.getElementById('btnYTExtractSubtitles')?.addEventListener('click', () => {
+      this.youtubeExtractSubtitles();
+    });
+  }
+
+  /**
+   * 提取 YouTube 视频字幕并显示
+   */
+  async youtubeExtractSubtitles() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    this.addSystemMessage('正在提取视频字幕...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractYouTubeSubtitles'
+      });
+
+      if (response?.success && response.subtitles) {
+        const { segments, fullText } = response.subtitles;
+        this.youTubeSubtitles = response.subtitles;
+
+        const duration = this.formatYouTubeDuration(
+          segments.length > 0 ? segments[segments.length - 1].start + segments[segments.length - 1].duration : 0
+        );
+
+        this.addSystemMessage(`✅ 字幕提取成功：${segments.length} 个片段，约 ${fullText.length} 字`);
+
+        // 显示字幕预览
+        const preview = fullText.length > 500 ? fullText.slice(0, 500) + '...' : fullText;
+        this.addAIMessage(`**视频字幕预览**（共 ${segments.length} 个片段，时长 ${duration}）：\n\n${preview}`);
+      } else {
+        this.addSystemMessage(`❌ ${response?.error || '未找到视频字幕，可能视频未开启字幕功能'}`);
+      }
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 总结 YouTube 视频内容
+   */
+  async youtubeSummarizeVideo() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    if (!this.aiClient) {
+      this.addSystemMessage('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    this.addSystemMessage('正在提取字幕并准备总结...');
+
+    try {
+      // 先提取字幕
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractYouTubeSubtitles'
+      });
+
+      if (!response?.success || !response.subtitles) {
+        this.addSystemMessage(`❌ ${response?.error || '未找到视频字幕'}`);
+        return;
+      }
+
+      const { fullText } = response.subtitles;
+      const videoTitle = this.pageTitle.textContent || 'YouTube 视频';
+      this.youTubeSubtitles = response.subtitles;
+
+      // 使用 AI 总结
+      this.switchTab('chat');
+      const loadingEl = this.showLoading();
+
+      try {
+        let fullResponse = '';
+        let messageEl = null;
+
+        const prompt = `请总结以下 YouTube 视频的内容。
+
+视频标题：${videoTitle}
+页面链接：${this.currentTabUrl}
+
+视频字幕文本：
+${fullText.slice(0, 8000)}
+
+请按照以下格式进行总结：
+1. **视频概述**：用 2-3 句话概括视频主要内容
+2. **关键要点**：列出 3-5 个核心观点或知识点
+3. **详细总结**：按时间线或主题进行详细总结
+4. **金句/亮点**：提取视频中的重要观点或引用
+
+注意：字幕是口语化文本，可能有断句不连续或同音错误，请根据上下文合理理解。`;
+
+        for await (const chunk of this.aiClient.chatStream(
+          [
+            ...this.conversationHistory.slice(-6),
+            { role: 'user', content: prompt }
+          ],
+          { systemPrompt: this.aiClient.getSystemPrompt() + '\n\n用户正在观看 YouTube 视频，你需要根据提取的字幕内容进行总结。字幕是语音转文字的口语化内容，请根据上下文合理理解。' }
+        )) {
+          fullResponse += chunk;
+          if (!messageEl) {
+            loadingEl.remove();
+            messageEl = this.addAIMessage('');
+          }
+          this.updateAIMessage(messageEl, fullResponse);
+        }
+
+        // 保存对话
+        this.conversationHistory.push(
+          { role: 'user', content: `📺 总结视频: ${videoTitle}` },
+          { role: 'assistant', content: fullResponse }
+        );
+        await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+        // 持久化到 IndexedDB
+        try {
+          await saveConversationIDB(
+            this.currentTabUrl || '',
+            videoTitle,
+            this.conversationHistory
+          );
+        } catch (e) {}
+
+      } catch (error) {
+        loadingEl.remove();
+        this.addSystemMessage(`总结失败：${error.message}`);
+      }
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 格式化秒数为可读时长
+   * @param {number} seconds
+   * @returns {string}
+   */
+  formatYouTubeDuration(seconds) {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = Math.floor(seconds % 60);
+    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    return `${m}:${String(s).padStart(2, '0')}`;
   }
 
   scrollToBottom() {
