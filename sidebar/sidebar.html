@@ -17,6 +17,7 @@
         <button class="tab active" data-tab="chat">问答</button>
         <button class="tab" data-tab="skills">技能</button>
         <button class="tab" data-tab="knowledge">知识库</button>
+        <button class="tab" data-tab="page">页面</button>
         <button class="tab" data-tab="settings">设置</button>
       </nav>
     </header>
@@ -137,8 +138,6 @@
       </div>
     </div>
 
-    <!-- 设置面板 -->
-
     <!-- 技能面板 -->
     <div class="panel" id="panelSkills">
       <div class="skills-header">
@@ -156,6 +155,23 @@
       <div class="skills-hint">
         <p>技能会根据页面内容自动推荐，也可以手动触发。</p>
         <p>AI 在回答时可通过 <code>[SKILL:id]</code> 指令自动调用技能。</p>
+      </div>
+    </div>
+
+    <!-- 页面内容预览面板 -->
+    <div class="panel" id="panelPage">
+      <div class="page-preview">
+        <div class="page-preview-header">
+          <h3 id="previewTitle">-</h3>
+          <div class="page-preview-meta" id="previewMeta"></div>
+        </div>
+        <div class="page-preview-content" id="previewContent">
+          <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <p>打开侧边栏后自动提取页面内容</p>
+          </div>
+        </div>
+        <div class="page-preview-code" id="previewCode"></div>
       </div>
     </div>
 

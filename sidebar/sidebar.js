@@ -130,6 +130,12 @@ class SidebarApp {
     this.modelSelect = document.getElementById('modelSelect');
     this.btnFetchModels = document.getElementById('btnFetchModels');
 
+    // Page Preview
+    this.previewTitle = document.getElementById('previewTitle');
+    this.previewMeta = document.getElementById('previewMeta');
+    this.previewContent = document.getElementById('previewContent');
+    this.previewCode = document.getElementById('previewCode');
+
     // Highlights
     this.highlightsPanel = document.getElementById('highlightsPanel');
     this.highlightsList = document.getElementById('highlightsList');
@@ -310,6 +316,7 @@ class SidebarApp {
     if (tabName === 'skills') this.loadSkillsList();
     else if (tabName === 'knowledge') { this.loadKnowledgeList(); this.loadHighlights(); }
     else if (tabName === 'settings') { this.loadSettingsForm(); this.loadEvolutionStats(); }
+    else if (tabName === 'page') this.loadPagePreview();
   }
 
   // ==================== 页面上下文 ====================
@@ -359,6 +366,77 @@ class SidebarApp {
     } catch (e) {
       this.addSystemMessage('提取失败：请刷新页面后重试');
       return false;
+    }
+  }
+
+  /**
+   * 加载页面内容预览面板
+   * 当切换到"页面"标签时调用，展示 AI 实际看到的内容
+   */
+  async loadPagePreview() {
+    // 如果还没有提取内容，先尝试提取
+    if (!this.currentPageContent) {
+      this.previewTitle.textContent = this.pageTitle?.textContent || '-';
+      this.previewMeta.textContent = '正在提取页面内容...';
+      this.previewContent.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p>正在提取...</p></div>';
+      this.previewCode.innerHTML = '';
+      await this.extractContent();
+    }
+
+    if (!this.currentPageContent) {
+      this.previewTitle.textContent = this.pageTitle?.textContent || '-';
+      this.previewMeta.textContent = '';
+      this.previewContent.innerHTML = '<div class="empty-state"><div class="empty-icon">❌</div><p>无法提取页面内容，请刷新页面后重试</p></div>';
+      this.previewCode.innerHTML = '';
+      return;
+    }
+
+    const { url, title, content, codeBlocks } = this.currentPageContent;
+
+    // 标题
+    this.previewTitle.textContent = title || '-';
+
+    // 元信息：URL + 字数
+    const charCount = content ? content.length : 0;
+    const metaParts = [];
+    if (url) metaParts.push(this.escapeHtml(url));
+    metaParts.push(`${charCount} 字`);
+    if (codeBlocks && codeBlocks.length > 0) {
+      metaParts.push(`${codeBlocks.length} 个代码块`);
+    }
+    this.previewMeta.innerHTML = metaParts.join(' · ');
+
+    // 正文内容（前 2000 字符）
+    const MAX_CHARS = 2000;
+    if (content && content.length > 0) {
+      const displayText = content.slice(0, MAX_CHARS);
+      const truncated = content.length > MAX_CHARS;
+      let html = `<pre class="page-preview-text">${this.escapeHtml(displayText)}</pre>`;
+      if (truncated) {
+        html += '<div class="page-preview-truncated">⚠️ 内容已截取，仅显示前 2000 字符（共 ' + charCount + ' 字）</div>';
+      }
+      this.previewContent.innerHTML = html;
+    } else {
+      this.previewContent.innerHTML = '<div class="empty-state"><div class="empty-icon">📄</div><p>未提取到文本内容</p></div>';
+    }
+
+    // 代码块列表
+    if (codeBlocks && codeBlocks.length > 0) {
+      let codeHtml = '<div class="page-preview-code-header">代码块</div>';
+      codeBlocks.forEach((block, i) => {
+        const lang = block.lang || 'text';
+        const preview = block.code.slice(0, 500);
+        const codeTruncated = block.code.length > 500;
+        codeHtml += `
+          <div class="page-preview-code-block">
+            <div class="page-preview-code-lang">${this.escapeHtml(lang)}</div>
+            <pre><code>${this.escapeHtml(preview)}${codeTruncated ? '\n... (已截取)' : ''}</code></pre>
+          </div>
+        `;
+      });
+      this.previewCode.innerHTML = codeHtml;
+    } else {
+      this.previewCode.innerHTML = '';
     }
   }
 
