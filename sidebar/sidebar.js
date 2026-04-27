@@ -401,6 +401,9 @@ class SidebarApp {
           this.showYouTubeQuickActions();
         }
 
+        // API 文档页面检测并显示快捷按钮
+        this.detectAndShowApiDocActions(tab.id);
+
         // 更新页面图标
         const pageIcon = document.querySelector('.page-icon');
         if (pageIcon) pageIcon.textContent = isYouTube ? '📺' : '📄';
@@ -1335,6 +1338,238 @@ ${fullText.slice(0, 8000)}
     requestAnimationFrame(() => {
       this.chatArea.scrollTop = this.chatArea.scrollHeight;
     });
+  }
+
+  // ==================== API 文档功能 ====================
+
+  /**
+   * 检测当前页面是否为 API 文档，如果是则显示快捷操作按钮
+   * @param {number} tabId - 当前标签页 ID
+   */
+  async detectAndShowApiDocActions(tabId) {
+    if (!tabId) return;
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, { action: 'detectApiDoc' });
+      if (response?.isApiDoc) {
+        this.isApiDocPage = true;
+        this.showApiDocQuickActions();
+      }
+    } catch (e) {
+      // content script 可能未加载，忽略
+    }
+  }
+
+  /**
+   * 在欢迎消息区域显示 API 文档专用快捷按钮
+   */
+  showApiDocQuickActions() {
+    const welcome = this.chatArea.querySelector('.welcome-message');
+    if (!welcome) return;
+
+    // 检查是否已经添加过 API 文档按钮
+    if (welcome.querySelector('.api-doc-actions')) return;
+
+    const quickActions = welcome.querySelector('.quick-actions');
+    if (!quickActions) return;
+
+    const apiDocDiv = document.createElement('div');
+    apiDocDiv.className = 'api-doc-actions';
+    apiDocDiv.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);';
+    apiDocDiv.innerHTML = `
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">📡 API 文档工具</div>
+      <div class="quick-actions" style="gap: 6px;">
+        <button class="btn-quick" id="btnApiExtractEndpoints">📋 提取 API 端点</button>
+        <button class="btn-quick" id="btnApiSummarize">📊 生成 API 摘要</button>
+      </div>
+    `;
+
+    quickActions.parentNode.insertBefore(apiDocDiv, quickActions.nextSibling);
+
+    // 绑定事件
+    document.getElementById('btnApiExtractEndpoints')?.addEventListener('click', () => {
+      this.apiExtractEndpoints();
+    });
+    document.getElementById('btnApiSummarize')?.addEventListener('click', () => {
+      this.apiSummarize();
+    });
+  }
+
+  /**
+   * 提取 API 端点并以结构化方式展示
+   */
+  async apiExtractEndpoints() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    this.addSystemMessage('正在提取 API 端点...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractAPIEndpoints'
+      });
+
+      if (!response?.endpoints || response.endpoints.length === 0) {
+        this.addSystemMessage('未找到 API 端点，请确认页面已完全加载');
+        return;
+      }
+
+      const { endpoints } = response;
+      this.addSystemMessage(`✅ 已提取 ${endpoints.length} 个 API 端点`);
+
+      // 按方法分组统计
+      const stats = {};
+      for (const ep of endpoints) {
+        stats[ep.method] = (stats[ep.method] || 0) + 1;
+      }
+      const statsText = Object.entries(stats)
+        .map(([method, count]) => `${method}: ${count}`)
+        .join(', ');
+
+      // 生成结构化展示
+      let display = `**API 端点列表**（共 ${endpoints.length} 个）\n\n`;
+      display += `📊 方法分布：${statsText}\n\n`;
+
+      // 按方法分组展示
+      const grouped = {};
+      for (const ep of endpoints) {
+        if (!grouped[ep.method]) grouped[ep.method] = [];
+        grouped[ep.method].push(ep);
+      }
+
+      const methodOrder = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+      for (const method of methodOrder) {
+        const group = grouped[method];
+        if (!group || group.length === 0) continue;
+
+        display += `### ${method}（${group.length}）\n\n`;
+        for (const ep of group) {
+          display += `- \`${ep.method} ${ep.path}\``;
+          if (ep.description) {
+            display += ` — ${ep.description}`;
+          }
+          if (ep.params && ep.params.length > 0) {
+            display += ` | 参数: ${ep.params.join(', ')}`;
+          }
+          display += '\n';
+        }
+        display += '\n';
+      }
+
+      const messageEl = this.addAIMessage(display);
+
+      // 保存到对话历史
+      this.conversationHistory.push(
+        { role: 'user', content: '📋 提取 API 端点' },
+        { role: 'assistant', content: display }
+      );
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 生成 API 摘要（使用 AI）
+   */
+  async apiSummarize() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    if (!this.aiClient) {
+      this.addSystemMessage('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    this.addSystemMessage('正在提取 API 端点并生成摘要...');
+
+    try {
+      // 先提取端点
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractAPIEndpoints'
+      });
+
+      if (!response?.endpoints || response.endpoints.length === 0) {
+        this.addSystemMessage('未找到 API 端点，请确认页面已完全加载');
+        return;
+      }
+
+      const { endpoints } = response;
+      const apiTitle = this.pageTitle.textContent || 'API 文档';
+
+      // 构建端点摘要文本
+      let endpointText = '';
+      for (const ep of endpoints) {
+        endpointText += `${ep.method} ${ep.path}`;
+        if (ep.description) endpointText += ` — ${ep.description}`;
+        if (ep.params && ep.params.length > 0) endpointText += ` | 参数: ${ep.params.join(', ')}`;
+        endpointText += '\n';
+      }
+
+      // 使用 AI 生成摘要
+      this.switchTab('chat');
+      const loadingEl = this.showLoading();
+
+      try {
+        let fullResponse = '';
+        let messageEl = null;
+
+        const prompt = `请分析以下 API 文档的端点列表，生成一份结构化的 API 摘要。
+
+API 名称：${apiTitle}
+页面链接：${this.currentTabUrl}
+
+端点列表（共 ${endpoints.length} 个）：
+${endpointText}
+
+请按照以下格式生成摘要：
+1. **API 概述**：简要说明这个 API 的功能和用途
+2. **功能分类**：将端点按功能模块分类
+3. **核心端点**：列出最重要的端点及其用途
+4. **认证方式**：如有相关信息请说明
+5. **使用建议**：给出使用这个 API 的建议`;
+
+        for await (const chunk of this.aiClient.chatStream(
+          [
+            ...this.conversationHistory.slice(-6),
+            { role: 'user', content: prompt }
+          ],
+          { systemPrompt: this.aiClient.getSystemPrompt() + '\n\n用户正在浏览 API 文档页面，你需要根据提取的端点列表生成结构化的 API 摘要。' }
+        )) {
+          fullResponse += chunk;
+          if (!messageEl) {
+            loadingEl.remove();
+            messageEl = this.addAIMessage('');
+          }
+          this.updateAIMessage(messageEl, fullResponse);
+        }
+
+        // 保存对话
+        this.conversationHistory.push(
+          { role: 'user', content: `📊 生成 API 摘要: ${apiTitle}` },
+          { role: 'assistant', content: fullResponse }
+        );
+        await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+        // 持久化到 IndexedDB
+        try {
+          await saveConversationIDB(
+            this.currentTabUrl || '',
+            apiTitle,
+            this.conversationHistory
+          );
+        } catch (e) {}
+
+      } catch (error) {
+        loadingEl.remove();
+        this.addSystemMessage(`生成摘要失败：${error.message}`);
+      }
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
   }
 
   // ==================== 知识库 ====================

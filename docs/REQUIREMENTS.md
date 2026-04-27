@@ -104,6 +104,17 @@
   - 数量上限：最多 20 个自定义技能
   - 分类筛选：新增「自定义」分类筛选标签
 
+### ✅ R019: API 文档专用模式
+- **描述**: 识别 API 文档页面（Swagger、OpenAPI、REST API），自动提取端点列表、参数、示例，并提供专用操作
+- **优先级**: P1
+- **依赖**: R002, R007
+- **实现**:
+  - 页面感知：URL 匹配 `/api/`, `/docs/`, `/reference/`, `/swagger/`, `/openapi/`；Swagger UI 元素检测；HTTP 方法频率检测
+  - 端点提取：Swagger UI (.opblock) DOM 提取 → Redoc DOM 提取 → 通用文本模式匹配
+  - 返回格式：`{ endpoints: [{ method, path, description, params }] }`
+  - 快捷操作：「📋 提取 API 端点」结构化展示、「📊 生成 API 摘要」AI 总结
+  - 约束：最多 50 个端点，不引入外部依赖
+
 ---
 
 ## 需求变更记录

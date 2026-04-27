@@ -43,10 +43,51 @@ describe('PageSense 页面类型识别', () => {
     assert.ok(result.types.some(t => t.type === 'api-doc'));
   });
 
+  it('识别 API 文档页面（URL 含 /reference/）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/reference/users',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'api-doc'));
+  });
+
+  it('识别 API 文档页面（URL 含 /swagger/）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/swagger/ui',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'api-doc'));
+  });
+
+  it('识别 API 文档页面（URL 含 /openapi/）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/openapi/spec',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'api-doc'));
+  });
+
   it('识别 API 文档页面（内容含 endpoint）', () => {
     const result = ps.analyze({
       url: 'https://example.com/page',
       content: 'This endpoint returns a list of users. Request body should include...',
+    });
+    assert.ok(result.types.some(t => t.type === 'api-doc'));
+  });
+
+  it('识别 API 文档页面（Swagger UI 标记）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/page',
+      content: '',
+      hasSwaggerUI: true,
+    });
+    assert.ok(result.types.some(t => t.type === 'api-doc'));
+  });
+
+  it('识别 API 文档页面（多种 HTTP 方法）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/page',
+      content: 'GET /users POST /users PUT /users DELETE /users',
     });
     assert.ok(result.types.some(t => t.type === 'api-doc'));
   });
@@ -290,6 +331,22 @@ describe('PageSense 提取器', () => {
     assert.ok(endpoints.length >= 2, `应提取到至少 2 个端点，实际 ${endpoints.length}`);
     assert.ok(endpoints.some(e => e.includes('GET /api/users')));
     assert.ok(endpoints.some(e => e.includes('POST /api/users/create')));
+  });
+
+  it('extractEndpoints() 提取 PATCH 端点', () => {
+    const content = `
+      PATCH /api/items/123
+      GET /api/items
+    `;
+    const endpoints = ps.extractEndpoints(content);
+    assert.ok(endpoints.some(e => e.includes('PATCH')));
+  });
+
+  it('extractEndpoints() 提取带路径参数的端点', () => {
+    const content = 'GET /api/users/{userId}/posts/{postId}';
+    const endpoints = ps.extractEndpoints(content);
+    assert.ok(endpoints.length >= 1);
+    assert.ok(endpoints.some(e => e.includes('{userId}')));
   });
 
   it('extractEndpoints() 空内容返回空数组', () => {

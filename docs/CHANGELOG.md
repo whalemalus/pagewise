@@ -39,6 +39,12 @@
 ### 新增
 - 项目飞轮迭代模板（CLAUDE.md、docs/）
 - 测试框架（Node.js 内置 test runner）
+- **API 文档专用模式**：
+  - 页面感知增强：支持 `/reference/`, `/swagger/`, `/openapi/` URL 模式、Swagger UI 元素检测、HTTP 方法频率检测
+  - Content Script：提取 API 端点（Swagger UI / Redoc / 通用 DOM 分析），限制 50 个端点
+  - Sidebar：API 文档页面显示「📋 提取 API 端点」和「📊 生成 API 摘要」快捷按钮
+  - 端点按方法分组展示，含方法分布统计
+  - 10 个新测试（API 文档识别 + 端点提取）
 - **AxonHub 风格 API 配置**：提供商卡片选择器（OpenAI/Claude/DeepSeek/Ollama/自定义）
 - **模型发现**：一键从 API 获取可用模型列表
 - **多配置 Profile**：保存/切换/删除多套 API 配置
@@ -79,3 +85,4 @@
 - **分类筛选**：新增「自定义」分类标签
 - **30 个自定义技能测试，全部通过**
 - **总计 218 个测试，全部通过**
+- **总计 228 个测试，全部通过**

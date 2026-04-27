@@ -148,6 +148,16 @@
 - **联合分析 Prompt**: 逐一摘要 → 关联性分析 → 差异对比 → 综合洞察
 - **入口**: 页面预览面板 header 区域 + 问答面板欢迎消息区
 
+### D013: API 文档端点提取
+- **决策日期**: 2026-04-27
+- **问题**: API 文档页面需要提取结构化端点信息，帮助开发者快速理解 API
+- **方案选择**: 三层策略递进提取（与 YouTube 字幕类似）
+  1. **Swagger UI DOM 优先**: 提取 `.opblock` 元素的 method、path、description、params
+  2. **Redoc DOM 兜底**: 提取 `[data-section-id^="operation"]` 等 Redoc 特有元素
+  3. **通用文本匹配兜底**: 正则匹配 `METHOD /path` 模式
+- **去重**: 按 `METHOD path` 去重，最多 50 个端点
+- **页面检测**: URL 模式 + Swagger UI 元素 + HTTP 方法频率 + 通用关键词
+
 ## 已知技术债务
 
 | ID | 描述 | 优先级 | 状态 |

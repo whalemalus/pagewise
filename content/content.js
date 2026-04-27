@@ -565,6 +565,173 @@
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  // ==================== API 端点提取 ====================
+
+  /**
+   * 检测当前页面是否为 API 文档页面
+   * @returns {{ isApiDoc: boolean, hasSwaggerUI: boolean }}
+   */
+  function detectApiDoc() {
+    const url = location.href.toLowerCase();
+    const urlPatterns = ['/api/', '/docs/', '/reference/', '/swagger/', '/openapi/'];
+    const hasUrlPattern = urlPatterns.some(p => url.includes(p));
+
+    const hasSwaggerUI = !!document.querySelector('.swagger-ui, #swagger-ui');
+
+    const text = document.body?.textContent || '';
+    const httpMethods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
+    const methodCount = httpMethods.filter(m => {
+      const regex = new RegExp('\\b' + m + '\\b', 'g');
+      return (text.match(regex) || []).length > 0;
+    }).length;
+
+    const hasContent = text.toLowerCase().includes('endpoint')
+      || text.toLowerCase().includes('request')
+      || text.toLowerCase().includes('response');
+
+    const isApiDoc = hasUrlPattern || hasSwaggerUI || methodCount >= 3 || hasContent;
+    return { isApiDoc, hasSwaggerUI };
+  }
+
+  /**
+   * 从 API 文档页面提取端点列表
+   * 支持 Swagger UI、Redoc 和通用 API 文档
+   * @returns {{ endpoints: Array<{method: string, path: string, description: string, params: string[]}> }}
+   */
+  function extractAPIEndpoints() {
+    const MAX_ENDPOINTS = 50;
+    const endpoints = [];
+
+    // 策略 1：从 Swagger UI 提取
+    const swaggerEndpoints = extractFromSwaggerUI();
+    if (swaggerEndpoints.length > 0) {
+      endpoints.push(...swaggerEndpoints);
+    }
+
+    // 策略 2：从 Redoc 提取
+    if (endpoints.length === 0) {
+      const redocEndpoints = extractFromRedoc();
+      if (redocEndpoints.length > 0) {
+        endpoints.push(...redocEndpoints);
+      }
+    }
+
+    // 策略 3：通用 DOM 分析（兜底）
+    if (endpoints.length === 0) {
+      const genericEndpoints = extractFromGenericApiDoc();
+      endpoints.push(...genericEndpoints);
+    }
+
+    // 去重并截取前 50 个
+    const seen = new Set();
+    const unique = [];
+    for (const ep of endpoints) {
+      const key = `${ep.method} ${ep.path}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(ep);
+      }
+      if (unique.length >= MAX_ENDPOINTS) break;
+    }
+
+    return { endpoints: unique };
+  }
+
+  /**
+   * 从 Swagger UI DOM 提取端点
+   */
+  function extractFromSwaggerUI() {
+    const endpoints = [];
+    // Swagger UI 每个端点是一个 .opblock
+    const opblocks = document.querySelectorAll('.swagger-ui .opblock');
+    for (const block of opblocks) {
+      const methodEl = block.querySelector('.opblock-summary-method');
+      const pathEl = block.querySelector('.opblock-summary-path, .opblock-summary-path a');
+      const descEl = block.querySelector('.opblock-summary-description');
+
+      const method = methodEl?.textContent?.trim() || '';
+      const path = pathEl?.getAttribute('data-path') || pathEl?.textContent?.trim() || '';
+      const description = descEl?.textContent?.trim() || '';
+
+      if (!method || !path) continue;
+
+      // 提取参数
+      const params = [];
+      const paramRows = block.querySelectorAll('.parameters .parameter__name, .opblock-body table tbody tr');
+      for (const row of paramRows) {
+        const nameEl = row.querySelector('td:first-child, .parameter__name');
+        const name = nameEl?.textContent?.trim();
+        if (name && name !== 'Name' && name !== 'Parameter') {
+          params.push(name);
+        }
+      }
+
+      endpoints.push({ method, path, description, params });
+    }
+    return endpoints;
+  }
+
+  /**
+   * 从 Redoc DOM 提取端点
+   */
+  function extractFromRedoc() {
+    const endpoints = [];
+    const operations = document.querySelectorAll('[data-section-id^="operation"], .operation');
+    for (const op of operations) {
+      const methodEl = op.querySelector('.http-verb, [class*="method"], h2, h3');
+      const methodText = methodEl?.textContent?.trim() || '';
+
+      // 尝试匹配 "GET /path" 格式
+      const match = methodText.match(/(GET|POST|PUT|DELETE|PATCH)\s+(\/[\w\-/{}.:]+)/i);
+      if (!match) continue;
+
+      const method = match[1].toUpperCase();
+      const path = match[2];
+
+      // 描述
+      const descEl = op.querySelector('p, .description, [class*="description"]');
+      const description = descEl?.textContent?.trim() || '';
+
+      // 参数
+      const params = [];
+      const paramEls = op.querySelectorAll('.parameter-name, td:first-child');
+      for (const el of paramEls) {
+        const name = el?.textContent?.trim();
+        if (name && name.length < 100) {
+          params.push(name);
+        }
+      }
+
+      endpoints.push({ method, path, description, params });
+    }
+    return endpoints;
+  }
+
+  /**
+   * 从通用 API 文档 DOM 提取端点（兜底策略）
+   * 基于文本模式匹配 HTTP 方法 + 路径
+   */
+  function extractFromGenericApiDoc() {
+    const endpoints = [];
+    const textContent = document.body?.textContent || '';
+
+    // 匹配 "METHOD /path" 模式
+    const methodPattern = /\b(GET|POST|PUT|DELETE|PATCH)\s+(\/[\w\-/{}.:?&=]+)/g;
+    let match;
+    while ((match = methodPattern.exec(textContent)) !== null) {
+      const method = match[1].toUpperCase();
+      const path = match[2];
+
+      // 过滤掉明显不是端点的路径
+      if (path.length > 200 || path.includes(' ')) continue;
+
+      endpoints.push({ method, path, description: '', params: [] });
+      if (endpoints.length >= 50) break;
+    }
+
+    return endpoints;
+  }
+
   // ==================== 浮动按钮 ====================
 
   /**
@@ -766,6 +933,14 @@
         });
         break;
       }
+
+      case 'extractAPIEndpoints':
+        sendResponse(extractAPIEndpoints());
+        break;
+
+      case 'detectApiDoc':
+        sendResponse(detectApiDoc());
+        break;
 
       case 'highlight':
         highlightText(request.text);
