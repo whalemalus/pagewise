@@ -16,7 +16,7 @@
 | 文档同步 | ✅ 85% | CHANGELOG/DESIGN/TODO 均已更新 |
 | 安全性 | ✅ 95% | API Key 本地存储，无泄露风险 |
 
-**总体结论: ✅ 已通过（P0 问题已修复，P1 待后续迭代处理）**
+**总体结论: ✅ 全部通过（所有 P0 + P1 问题已修复）**
 
 ---
 
@@ -151,4 +151,4 @@ sidebar/sidebar.css:1017 →  .provider-card-name {
 
 - [ ] **TASK-1**: 修复 CSS/JS class 名不匹配（P0）
 - [ ] **TASK-2**: 实现划词提问功能 或 从 TODO 中撤回 R010（P0）
-- [ ] **TASK-3**: 补充暗色主题 CSS 覆盖（P1）— 进行中
+- [x] **TASK-3**: 补充暗色主题 CSS 覆盖（P1）— 已完成，commit dbd8c5d，39 个选择器完整覆盖
