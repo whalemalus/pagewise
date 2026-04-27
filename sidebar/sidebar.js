@@ -12,6 +12,7 @@ import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
+import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 
 // ==================== 提供商预设 ====================
 
@@ -32,6 +33,7 @@ class SidebarApp {
     this.selectedEntryId = null;
     this.activeTag = null;
     this.agentRunning = false;
+    this.historyVisible = false;
 
     // Provider / Profile 状态
     this.selectedProvider = 'openai';
@@ -61,6 +63,13 @@ class SidebarApp {
     this.applyTheme();
     this.renderProviderCards();
     await this.loadProfileList();
+
+    // 清理超过 30 天的旧对话
+    try {
+      await deleteOldConversations(30);
+    } catch (e) {
+      // 静默处理
+    }
   }
 
   // ==================== 初始化 ====================
@@ -127,6 +136,13 @@ class SidebarApp {
     this.highlightsCount = document.getElementById('highlightsCount');
     this.emptyHighlights = document.getElementById('emptyHighlights');
     this.btnClearHighlights = document.getElementById('btnClearHighlights');
+
+    // History
+    this.btnHistory = document.getElementById('btnHistory');
+    this.historyPanel = document.getElementById('historyPanel');
+    this.historyList = document.getElementById('historyList');
+    this.historySearch = document.getElementById('historySearch');
+    this.btnClearHistory = document.getElementById('btnClearHistory');
   }
 
   bindEvents() {
@@ -194,6 +210,17 @@ class SidebarApp {
     // 高亮标注：清空全部
     if (this.btnClearHighlights) {
       this.btnClearHighlights.addEventListener('click', () => this.clearAllHighlights());
+    }
+
+    // 历史对话
+    if (this.btnHistory) {
+      this.btnHistory.addEventListener('click', () => this.toggleHistoryPanel());
+    }
+    if (this.historySearch) {
+      this.historySearch.addEventListener('input', debounce(() => this.loadHistoryList(), 300));
+    }
+    if (this.btnClearHistory) {
+      this.btnClearHistory.addEventListener('click', () => this.clearAllHistory());
     }
   }
 
@@ -566,6 +593,17 @@ class SidebarApp {
 
       // 持久化对话到 session storage
       await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+      // 持久化到 IndexedDB（按 URL 关联）
+      try {
+        await saveConversationIDB(
+          this.currentTabUrl || '',
+          this.pageTitle.textContent || '',
+          this.conversationHistory
+        );
+      } catch (e) {
+        // IndexedDB 保存失败不影响主流程
+      }
 
       // 自动学习
       await this.memory.learnFromInteraction(text, fullResponse, contentWithSelection);
@@ -1379,14 +1417,35 @@ class SidebarApp {
   // ==================== 对话持久化 ====================
 
   /**
-   * 恢复对话历史
+   * 恢复对话历史（优先 IndexedDB，回退 session storage）
    */
   async restoreConversation() {
+    try {
+      // 优先从 IndexedDB 按 URL 恢复
+      const idbConv = await getConversationByUrl(this.currentTabUrl || '');
+      if (idbConv && idbConv.messages && idbConv.messages.length > 0) {
+        this.conversationHistory = idbConv.messages;
+        const welcome = this.chatArea.querySelector('.welcome-message');
+        if (welcome) welcome.remove();
+        for (const msg of idbConv.messages) {
+          if (msg.role === 'user') {
+            this.addUserMessage(msg.content);
+          } else if (msg.role === 'assistant') {
+            this.addAIMessage(msg.content);
+          }
+        }
+        this.addSystemMessage('已恢复之前的对话');
+        return;
+      }
+    } catch (e) {
+      // IndexedDB 失败，回退到 session storage
+    }
+
+    // 回退到 session storage
     try {
       const data = await loadConversation(this.currentTabUrl);
       if (data && data.conversationHistory && data.conversationHistory.length > 0) {
         this.conversationHistory = data.conversationHistory;
-        // 重新渲染对话
         const welcome = this.chatArea.querySelector('.welcome-message');
         if (welcome) welcome.remove();
         for (const msg of data.conversationHistory) {
@@ -1399,7 +1458,156 @@ class SidebarApp {
         this.addSystemMessage('已恢复之前的对话');
       }
     } catch (e) {
-      // 静默失败，不影响正常使用
+      // 静默失败
+    }
+  }
+
+  // ==================== 历史对话面板 ====================
+
+  /**
+   * 切换历史面板显隐
+   */
+  toggleHistoryPanel() {
+    this.historyVisible = !this.historyVisible;
+    if (this.historyPanel) {
+      this.historyPanel.classList.toggle('hidden', !this.historyVisible);
+    }
+    if (this.historyVisible) {
+      this.loadHistoryList();
+    }
+  }
+
+  /**
+   * 加载并渲染历史对话列表
+   */
+  async loadHistoryList() {
+    if (!this.historyList) return;
+
+    try {
+      const keyword = this.historySearch?.value?.trim() || '';
+      const conversations = keyword
+        ? await searchConversations(keyword)
+        : await getAllConversations();
+
+      if (conversations.length === 0) {
+        this.historyList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">💬</div>
+            <p>${keyword ? '没有找到匹配的对话' : '还没有历史对话'}</p>
+            <p class="text-muted">对话会自动保存到本地</p>
+          </div>
+        `;
+        return;
+      }
+
+      this.historyList.innerHTML = conversations.map(conv => {
+        const msgCount = conv.messages ? conv.messages.length : 0;
+        const preview = conv.messages && conv.messages.length > 0
+          ? conv.messages[conv.messages.length - 1].content.slice(0, 80)
+          : '';
+        const domain = this.getDomain(conv.url);
+
+        return `
+          <div class="history-item" data-id="${conv.id}">
+            <div class="history-item-header">
+              <span class="history-item-title">${this.escapeHtml(conv.title || domain)}</span>
+              <span class="history-item-count">${msgCount} 条</span>
+            </div>
+            <div class="history-item-preview">${this.escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</div>
+            <div class="history-item-meta">
+              <span class="history-item-domain">${this.escapeHtml(domain)}</span>
+              <span>${formatTime(conv.updatedAt)}</span>
+            </div>
+            <div class="history-item-actions">
+              <button class="history-delete-btn" data-id="${conv.id}">删除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // 绑定点击事件
+      this.historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // 如果点击的是删除按钮，不恢复对话
+          if (e.target.closest('.history-delete-btn')) return;
+          const id = parseInt(item.dataset.id);
+          this.restoreHistoryConversation(id);
+        });
+      });
+
+      // 绑定删除按钮
+      this.historyList.querySelectorAll('.history-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = parseInt(btn.dataset.id);
+          try {
+            await deleteConversation(id);
+            this.loadHistoryList();
+            this.addSystemMessage('已删除历史对话');
+          } catch (e) {
+            this.addSystemMessage(`删除失败：${e.message}`);
+          }
+        });
+      });
+    } catch (e) {
+      this.historyList.innerHTML = `<div class="empty-state"><p>加载失败</p></div>`;
+    }
+  }
+
+  /**
+   * 恢复指定历史对话
+   */
+  async restoreHistoryConversation(id) {
+    try {
+      const all = await getAllConversations();
+      const conv = all.find(c => c.id === id);
+      if (!conv || !conv.messages || conv.messages.length === 0) return;
+
+      // 切换到问答面板
+      this.switchTab('chat');
+
+      // 清空当前对话
+      this.chatArea.innerHTML = '';
+      this.conversationHistory = conv.messages;
+
+      // 渲染对话
+      for (const msg of conv.messages) {
+        if (msg.role === 'user') {
+          this.addUserMessage(msg.content);
+        } else if (msg.role === 'assistant') {
+          this.addAIMessage(msg.content);
+        }
+      }
+
+      this.addSystemMessage(`已恢复对话（来源：${conv.title || this.getDomain(conv.url)}）`);
+
+      // 隐藏历史面板
+      this.historyVisible = false;
+      if (this.historyPanel) {
+        this.historyPanel.classList.add('hidden');
+      }
+
+      // 同步到 session storage
+      await saveConversation(this.conversationHistory, this.currentTabUrl);
+    } catch (e) {
+      this.addSystemMessage(`恢复对话失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 清空所有历史对话
+   */
+  async clearAllHistory() {
+    if (!confirm('确定清空所有历史对话？此操作不可撤销。')) return;
+    try {
+      const all = await getAllConversations();
+      for (const conv of all) {
+        await deleteConversation(conv.id);
+      }
+      this.loadHistoryList();
+      this.addSystemMessage('已清空所有历史对话');
+    } catch (e) {
+      this.addSystemMessage(`清空失败：${e.message}`);
     }
   }
 

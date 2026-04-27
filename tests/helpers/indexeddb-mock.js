@@ -137,6 +137,15 @@ class MockIDBObjectStore {
     return req;
   }
 
+  getAll() {
+    const req = new MockIDBRequest();
+    Promise.resolve().then(() => {
+      req.result = [...this._records.values()];
+      if (req.onsuccess) req.onsuccess({ target: req });
+    });
+    return req;
+  }
+
   openCursor(range, direction) {
     const req = new MockIDBRequest();
     const values = [...this._records.values()];
@@ -160,6 +169,31 @@ class MockIDBIndex {
   constructor(store, def) {
     this._store = store;
     this._def = def;
+  }
+
+  get(key) {
+    const req = new MockIDBRequest();
+    Promise.resolve().then(() => {
+      for (const record of this._store._records.values()) {
+        const fieldVal = record[this._def.keyPath];
+        if (this._def.multiEntry && Array.isArray(fieldVal)) {
+          if (fieldVal.includes(key)) {
+            req.result = record;
+            if (req.onsuccess) req.onsuccess({ target: req });
+            return;
+          }
+        } else {
+          if (fieldVal === key) {
+            req.result = record;
+            if (req.onsuccess) req.onsuccess({ target: req });
+            return;
+          }
+        }
+      }
+      req.result = undefined;
+      if (req.onsuccess) req.onsuccess({ target: req });
+    });
+    return req;
   }
 
   getAll(key) {
@@ -237,6 +271,14 @@ export const mockIndexedDB = {
       const existing = mockDBs[name];
       const existingVersion = existing ? existing.version : 0;
       const newVersion = version || 1;
+
+      // 如果已存在且版本相同，复用已有 DB（含 stores 和数据）
+      if (existing && newVersion === existingVersion) {
+        req.result = existing;
+        if (req.onsuccess) req.onsuccess({ target: req });
+        return;
+      }
+
       const db = new MockIDBDatabase(name, newVersion);
 
       // 如果需要升级，触发 onupgradeneeded

@@ -44,8 +44,20 @@
           <div class="quick-actions">
             <button class="btn-quick" id="btnSummarize">📋 总结当前页面</button>
             <button class="btn-quick" id="btnExplain">💡 解释选中内容</button>
+            <button class="btn-quick" id="btnHistory">🕐 历史对话</button>
           </div>
         </div>
+      </div>
+
+      <!-- 历史对话面板 -->
+      <div class="history-panel hidden" id="historyPanel">
+        <div class="history-toolbar">
+          <div class="history-search-box">
+            <input type="text" id="historySearch" placeholder="搜索历史对话...">
+          </div>
+          <button class="btn-sm btn-danger" id="btnClearHistory">清空全部</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
       </div>
 
       <!-- 输入区域 -->
