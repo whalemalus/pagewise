@@ -62,6 +62,50 @@ chrome.action.onClicked.addListener(async (tab) => {
 
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
 
+// ==================== 快捷键 ====================
+
+/**
+ * 跟踪侧边栏开关状态（按 tabId）
+ * @type {Set<number>}
+ */
+const openSidePanels = new Set();
+
+chrome.commands.onCommand.addListener(async (command) => {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!tab) return;
+
+  switch (command) {
+    case 'summarize-page': {
+      // 打开侧边栏并发送总结指令
+      await chrome.sidePanel.open({ tabId: tab.id });
+      openSidePanels.add(tab.id);
+      const data = {
+        action: 'shortcutSummarize',
+        tabId: tab.id,
+        tabUrl: tab.url,
+        tabTitle: tab.title
+      };
+      sendMessageWithRetry(data, 5, 400);
+      break;
+    }
+
+    case 'toggle-sidebar': {
+      if (openSidePanels.has(tab.id)) {
+        try {
+          await chrome.sidePanel.close({ tabId: tab.id });
+        } catch (e) {
+          // close 可能不可用，静默处理
+        }
+        openSidePanels.delete(tab.id);
+      } else {
+        await chrome.sidePanel.open({ tabId: tab.id });
+        openSidePanels.add(tab.id);
+      }
+      break;
+    }
+  }
+});
+
 // ==================== 消息路由 ====================
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {

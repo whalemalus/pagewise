@@ -255,6 +255,9 @@ class SidebarApp {
         this.handlePendingAction(request);
       } else if (request.action === 'switchToKnowledge') {
         this.switchTab('knowledge');
+      } else if (request.action === 'shortcutSummarize') {
+        // 快捷键 Ctrl+Shift+S 触发自动总结
+        this.quickSummarize();
       }
       sendResponse({ received: true });
     });
