@@ -10,7 +10,17 @@ import { AgentLoop } from '../lib/agent-loop.js';
 import { EvolutionEngine } from '../lib/evolution.js';
 import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
-import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation } from '../lib/utils.js';
+import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
+
+// ==================== 提供商预设 ====================
+
+const PROVIDERS = {
+  openai: { name: 'OpenAI', icon: '🟢', protocol: 'openai', baseUrl: 'https://api.openai.com', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'] },
+  claude: { name: 'Claude', icon: '🟣', protocol: 'claude', baseUrl: 'https://api.anthropic.com', models: ['claude-sonnet-4-6', 'claude-opus-4-6', 'claude-haiku-4-5'] },
+  deepseek: { name: 'DeepSeek', icon: '🔵', protocol: 'openai', baseUrl: 'https://api.deepseek.com', models: ['deepseek-chat', 'deepseek-coder', 'deepseek-reasoner'] },
+  ollama: { name: 'Ollama', icon: '🟠', protocol: 'openai', baseUrl: 'http://localhost:11434', models: ['llama3', 'codellama', 'mistral', 'qwen2'] },
+  custom: { name: '自定义', icon: '⚙️', protocol: 'openai', baseUrl: '', models: [] }
+};
 
 class SidebarApp {
   constructor() {
@@ -21,6 +31,11 @@ class SidebarApp {
     this.selectedEntryId = null;
     this.activeTag = null;
     this.agentRunning = false;
+
+    // Provider / Profile 状态
+    this.selectedProvider = 'openai';
+    this.profiles = [];
+    this.activeProfileId = 'default';
 
     // 智能系统
     this.skills = new SkillEngine();
@@ -42,6 +57,9 @@ class SidebarApp {
     this.listenMessages();
     this.restoreConversation();
     this.bindCopyButtonEvents();
+    this.applyTheme();
+    this.renderProviderCards();
+    await this.loadProfileList();
   }
 
   // ==================== 初始化 ====================
@@ -71,7 +89,6 @@ class SidebarApp {
     this.btnExportJson = document.getElementById('btnExportJson');
     this.btnImport = document.getElementById('btnImport');
     this.fileImport = document.getElementById('fileImport');
-    this.apiProtocolSelect = document.getElementById('apiProtocol');
     this.apiBaseUrlInput = document.getElementById('apiBaseUrl');
     this.apiKeyInput = document.getElementById('apiKey');
     this.modelInput = document.getElementById('model');
@@ -94,6 +111,14 @@ class SidebarApp {
 
     // Toast 容器
     this.toastContainer = document.getElementById('toastContainer');
+
+    // API 配置（新）
+    this.providerCards = document.getElementById('providerCards');
+    this.profileSelect = document.getElementById('profileSelect');
+    this.btnSaveProfile = document.getElementById('btnSaveProfile');
+    this.btnDeleteProfile = document.getElementById('btnDeleteProfile');
+    this.modelSelect = document.getElementById('modelSelect');
+    this.btnFetchModels = document.getElementById('btnFetchModels');
   }
 
   bindEvents() {
@@ -140,6 +165,17 @@ class SidebarApp {
         chip.classList.add('active');
         this.loadSkillsList(chip.dataset.category);
       });
+    });
+
+    // API 配置（新）
+    this.btnFetchModels.addEventListener('click', () => this.fetchModels());
+    this.btnSaveProfile.addEventListener('click', () => this.saveProfile());
+    this.btnDeleteProfile.addEventListener('click', () => this.deleteProfile());
+    this.profileSelect.addEventListener('change', () => this.switchProfile(this.profileSelect.value));
+    this.modelSelect.addEventListener('change', () => {
+      if (this.modelSelect.value) {
+        this.modelInput.value = this.modelSelect.value;
+      }
     });
   }
 
@@ -909,10 +945,12 @@ class SidebarApp {
   // ==================== 设置 ====================
 
   loadSettingsForm() {
-    this.apiProtocolSelect.value = this.settings.apiProtocol || 'openai';
-    this.apiBaseUrlInput.value = this.settings.apiBaseUrl || 'https://api.openai.com';
+    // 根据保存的 provider 选中对应卡片
+    const provider = this.settings.apiProvider || 'openai';
+    this.selectProvider(provider);
+    this.apiBaseUrlInput.value = this.settings.apiBaseUrl || '';
     this.apiKeyInput.value = this.settings.apiKey || '';
-    this.modelInput.value = this.settings.model || 'gpt-4o';
+    this.modelInput.value = this.settings.model || '';
     this.maxTokensInput.value = this.settings.maxTokens || 4096;
     this.autoExtractCheckbox.checked = this.settings.autoExtract || false;
     this.themeSelect.value = this.settings.theme || 'light';
@@ -920,7 +958,8 @@ class SidebarApp {
 
   async saveSettingsForm() {
     const newSettings = {
-      apiProtocol: this.apiProtocolSelect.value,
+      apiProvider: this.selectedProvider,
+      apiProtocol: PROVIDERS[this.selectedProvider]?.protocol || 'openai',
       apiBaseUrl: this.apiBaseUrlInput.value.trim().replace(/\/+$/, ''),
       apiKey: this.apiKeyInput.value.trim(),
       model: this.modelInput.value.trim(),
@@ -939,12 +978,12 @@ class SidebarApp {
         protocol: newSettings.apiProtocol
       });
     }
-    this.settingsStatus.classList.remove('hidden');
-    setTimeout(() => this.settingsStatus.classList.add('hidden'), 2000);
+    this.applyTheme();
+    this.showToast('设置已保存', 'success');
   }
 
   async testConnection() {
-    const protocol = this.apiProtocolSelect.value;
+    const protocol = PROVIDERS[this.selectedProvider]?.protocol || 'openai';
     const baseUrl = this.apiBaseUrlInput.value.trim().replace(/\/+$/, '');
     const apiKey = this.apiKeyInput.value.trim();
     const model = this.modelInput.value.trim();
@@ -963,9 +1002,9 @@ class SidebarApp {
     this.btnTestConnection.textContent = '测试连接';
 
     if (result.success) {
-      this.showTestResult(true, `${result.protocol} 协议 | 模型: ${result.model} | 响应: "${result.content}"`);
+      this.showTestResult(true, `${result.protocol} | 模型: ${result.model} | ✓`);
     } else {
-      this.showTestResult(false, `${result.protocol} 协议 | ${result.error}`);
+      this.showTestResult(false, `${result.protocol} | ${result.error}`);
     }
   }
 
@@ -979,6 +1018,181 @@ class SidebarApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ==================== 提供商 / Profile / 模型发现 ====================
+
+  /**
+   * 渲染提供商卡片
+   */
+  renderProviderCards() {
+    if (!this.providerCards) return;
+    this.providerCards.innerHTML = Object.entries(PROVIDERS).map(([key, p]) => `
+      <div class="provider-card ${key === this.selectedProvider ? 'active' : ''}" data-provider="${key}">
+        <span class="provider-icon">${p.icon}</span>
+        <span class="provider-name">${p.name}</span>
+      </div>
+    `).join('');
+
+    this.providerCards.querySelectorAll('.provider-card').forEach(card => {
+      card.addEventListener('click', () => this.selectProvider(card.dataset.provider));
+    });
+  }
+
+  /**
+   * 选择提供商
+   */
+  selectProvider(key) {
+    if (!PROVIDERS[key]) return;
+    this.selectedProvider = key;
+    const p = PROVIDERS[key];
+
+    // 更新卡片高亮
+    this.providerCards?.querySelectorAll('.provider-card').forEach(card => {
+      card.classList.toggle('active', card.dataset.provider === key);
+    });
+
+    // 自动填充 URL 和模型
+    if (!this.apiBaseUrlInput.value || Object.values(PROVIDERS).some(v => v.baseUrl === this.apiBaseUrlInput.value)) {
+      this.apiBaseUrlInput.value = p.baseUrl;
+    }
+    if (!this.modelInput.value || Object.values(PROVIDERS).some(v => v.models.includes(this.modelInput.value))) {
+      this.modelInput.value = p.models[0] || '';
+    }
+
+    // 更新模型下拉
+    this.updateModelSelect(p.models);
+  }
+
+  /**
+   * 更新模型下拉列表
+   */
+  updateModelSelect(models) {
+    if (!this.modelSelect) return;
+    if (models && models.length > 0) {
+      this.modelSelect.classList.remove('hidden');
+      this.modelSelect.innerHTML = '<option value="">选择模型...</option>' +
+        models.map(m => `<option value="${m}" ${m === this.modelInput.value ? 'selected' : ''}>${m}</option>`).join('');
+    } else {
+      this.modelSelect.classList.add('hidden');
+    }
+  }
+
+  /**
+   * 从 API 获取模型列表
+   */
+  async fetchModels() {
+    const baseUrl = this.apiBaseUrlInput.value.trim().replace(/\/+$/, '');
+    const apiKey = this.apiKeyInput.value.trim();
+    const protocol = PROVIDERS[this.selectedProvider]?.protocol || 'openai';
+
+    if (!apiKey) { this.showToast('请先填写 API Key', 'warning'); return; }
+    if (!baseUrl) { this.showToast('请先填写 API 地址', 'warning'); return; }
+
+    this.btnFetchModels.disabled = true;
+    this.btnFetchModels.textContent = '获取中...';
+
+    try {
+      const client = new AIClient({ apiKey, baseUrl, protocol });
+      const models = await client.listModels();
+      if (models.length > 0) {
+        this.updateModelSelect(models);
+        this.showToast(`发现 ${models.length} 个模型`, 'success');
+      } else {
+        this.showToast('未发现可用模型', 'warning');
+      }
+    } catch (e) {
+      this.showToast(`获取失败: ${e.message}`, 'error');
+    } finally {
+      this.btnFetchModels.disabled = false;
+      this.btnFetchModels.textContent = '获取模型';
+    }
+  }
+
+  /**
+   * 加载 Profile 列表
+   */
+  async loadProfileList() {
+    this.profiles = await loadProfiles();
+    this.profileSelect.innerHTML = '<option value="default">默认配置</option>' +
+      this.profiles.map(p => `<option value="${p.id}">${this.escapeHtml(p.name)}</option>`).join('');
+
+    // 如果有上次使用的 profile，恢复它
+    if (this.settings.activeProfileId && this.settings.activeProfileId !== 'default') {
+      this.profileSelect.value = this.settings.activeProfileId;
+      this.switchProfile(this.settings.activeProfileId);
+    }
+  }
+
+  /**
+   * 切换 Profile
+   */
+  switchProfile(id) {
+    this.activeProfileId = id;
+    if (id === 'default') return;
+    const profile = this.profiles.find(p => p.id === id);
+    if (!profile) return;
+
+    this.selectProvider(profile.provider || 'custom');
+    this.apiBaseUrlInput.value = profile.baseUrl || '';
+    this.apiKeyInput.value = profile.apiKey || '';
+    this.modelInput.value = profile.model || '';
+    this.maxTokensInput.value = profile.maxTokens || 4096;
+  }
+
+  /**
+   * 保存当前配置为 Profile
+   */
+  async saveProfile() {
+    const name = prompt('配置名称：', PROVIDERS[this.selectedProvider]?.name || '自定义');
+    if (!name) return;
+
+    const profile = {
+      id: 'profile_' + Date.now(),
+      name,
+      provider: this.selectedProvider,
+      baseUrl: this.apiBaseUrlInput.value.trim(),
+      apiKey: this.apiKeyInput.value.trim(),
+      model: this.modelInput.value.trim(),
+      maxTokens: parseInt(this.maxTokensInput.value) || 4096
+    };
+
+    this.profiles.push(profile);
+    await saveProfiles(this.profiles);
+    await this.loadProfileList();
+    this.profileSelect.value = profile.id;
+    this.showToast(`配置 "${name}" 已保存`, 'success');
+  }
+
+  /**
+   * 删除当前选中的 Profile
+   */
+  async deleteProfile() {
+    const id = this.profileSelect.value;
+    if (id === 'default') { this.showToast('不能删除默认配置', 'warning'); return; }
+    const profile = this.profiles.find(p => p.id === id);
+    if (!profile) return;
+    if (!confirm(`确定删除配置 "${profile.name}"？`)) return;
+
+    this.profiles = this.profiles.filter(p => p.id !== id);
+    await saveProfiles(this.profiles);
+    await this.loadProfileList();
+    this.showToast('配置已删除', 'info');
+  }
+
+  /**
+   * 应用主题
+   */
+  applyTheme() {
+    const theme = this.settings?.theme || 'light';
+    if (theme === 'dark') {
+      document.documentElement.dataset.theme = 'dark';
+    } else if (theme === 'auto') {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.dataset.theme = prefersDark ? 'dark' : 'light';
+    } else {
+      delete document.documentElement.dataset.theme;
+    }
   }
 
   // ==================== 对话持久化 ====================

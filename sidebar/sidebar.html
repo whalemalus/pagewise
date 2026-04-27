@@ -131,36 +131,56 @@
     <div class="panel" id="panelSettings">
       <div class="settings-form">
 
-        <div class="form-group">
-          <label for="apiProtocol">API 协议</label>
-          <select id="apiProtocol">
-            <option value="openai">OpenAI 兼容 (ChatGPT / DeepSeek / 本地代理等)</option>
-            <option value="claude">Claude (Anthropic 官方)</option>
-          </select>
-          <small>大多数第三方服务和本地代理都使用 OpenAI 兼容协议</small>
-        </div>
+        <!-- API 配置区域 -->
+        <div class="api-config">
+          <h3 class="section-title">API 配置</h3>
 
-        <div class="form-group">
-          <label for="apiBaseUrl">API 地址</label>
-          <input type="text" id="apiBaseUrl" placeholder="https://api.openai.com">
-          <small>Claude: https://api.anthropic.com&nbsp;&nbsp;|&nbsp;&nbsp;OpenAI: https://api.openai.com</small>
-        </div>
+          <!-- 提供商选择 -->
+          <div class="provider-selector">
+            <label>AI 服务商</label>
+            <div class="provider-cards" id="providerCards">
+              <!-- JS 动态生成 -->
+            </div>
+          </div>
 
-        <div class="form-group">
-          <label for="apiKey">API Key</label>
-          <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...">
-          <small>数据仅存储在本地，不会上传到任何服务器</small>
-        </div>
+          <!-- 配置 Profile 切换 -->
+          <div class="profile-bar">
+            <select id="profileSelect">
+              <option value="default">默认配置</option>
+            </select>
+            <button class="btn-sm" id="btnSaveProfile">保存</button>
+            <button class="btn-sm btn-danger" id="btnDeleteProfile">删除</button>
+          </div>
 
-        <div class="form-group">
-          <label for="model">模型名称</label>
-          <input type="text" id="model" placeholder="claude-sonnet-4-6">
-          <small>如 claude-sonnet-4-6、gpt-4o、deepseek-chat 等</small>
-        </div>
+          <!-- API 地址 -->
+          <div class="form-group">
+            <label for="apiBaseUrl">API 地址</label>
+            <input type="text" id="apiBaseUrl">
+          </div>
 
-        <div class="test-row">
-          <button class="btn-test" id="btnTestConnection">测试连接</button>
-          <span id="testResult" class="test-result hidden"></span>
+          <!-- API Key -->
+          <div class="form-group">
+            <label for="apiKey">API Key</label>
+            <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...">
+            <small>数据仅存储在本地，不会上传到任何服务器</small>
+          </div>
+
+          <!-- 模型选择 -->
+          <div class="form-group">
+            <label for="model">模型</label>
+            <div class="model-row">
+              <select id="modelSelect" class="hidden">
+                <option value="">选择模型...</option>
+              </select>
+              <input type="text" id="model" placeholder="或手动输入模型名称">
+              <button class="btn-sm" id="btnFetchModels">获取模型</button>
+            </div>
+          </div>
+
+          <div class="test-row">
+            <button class="btn-test" id="btnTestConnection">测试连接</button>
+            <span id="testResult" class="test-result hidden"></span>
+          </div>
         </div>
 
         <div class="form-group">

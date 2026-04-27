@@ -39,6 +39,13 @@
 ### 新增
 - 项目飞轮迭代模板（CLAUDE.md、docs/）
 - 测试框架（Node.js 内置 test runner）
+- **AxonHub 风格 API 配置**：提供商卡片选择器（OpenAI/Claude/DeepSeek/Ollama/自定义）
+- **模型发现**：一键从 API 获取可用模型列表
+- **多配置 Profile**：保存/切换/删除多套 API 配置
+- **暗色主题**：CSS 变量切换，支持跟随系统
+- **划词提问**：选中文本后浮动按钮直接提问
+- **AIClient.listModels()** 方法
+- **Profile 存储**：saveProfiles/loadProfiles 工具函数
 - Chrome API Mock（tests/helpers/chrome-mock.js）
 - IndexedDB Mock（tests/helpers/indexeddb-mock.js）
 - utils.js 单元测试（21 个测试套件）

@@ -109,6 +109,19 @@
 - **动画**: CSS transform translateX 滑入，opacity 淡出
 - **生命周期**: 3 秒自动消失，支持点击关闭
 
+### D009: API 配置重设计（AxonHub 风格）
+- **决策日期**: 2026-04-26
+- **问题**: 原始表单式配置对不熟悉 API 的用户不友好
+- **方案**: 借鉴 AxonHub 思路，提供预设+自动填充+模型发现
+- **提供商预设**: OpenAI/Claude/DeepSeek/Ollama/自定义
+- **Profile 系统**: 保存多套配置，快速切换（如日常用 DeepSeek，复杂任务用 Claude）
+- **模型发现**: OpenAI 协议调用 GET /v1/models，Claude 使用预设列表
+
+### D010: 暗色主题实现
+- **决策日期**: 2026-04-26
+- **方案**: CSS 变量 + data-theme 属性
+- **支持**: light/dark/auto（跟随系统）
+
 ## 已知技术债务
 
 | ID | 描述 | 优先级 | 状态 |

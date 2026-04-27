@@ -10,7 +10,7 @@
 - [x] 建立测试框架（Node.js 内置 test runner）
 - [x] 为 utils.js 编写单元测试（21 suites）
 - [x] 为 knowledge-base.js 编写单元测试（19 tests）
-- [ ] 为 ai-client.js 编写单元测试（mock API）
+- [x] 为 ai-client.js 编写单元测试（7 tests）
 - [x] 为 skill-engine.js 编写单元测试（26 tests）
 - [x] 为 page-sense.js 编写单元测试（27 tests）
 
@@ -24,7 +24,7 @@
 ## 📋 下次迭代（v1.2）
 
 ### 新功能
-- [ ] R010: 划词提问（选中文本浮动按钮）
+- [x] R010: 划词提问（选中文本浮动按钮）
 - [ ] R012: 页面高亮关联
 
 ### 改进
