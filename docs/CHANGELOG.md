@@ -68,3 +68,14 @@
   - 入口：页面预览面板 header + 问答面板快捷操作
   - 28 个多页面联合分析测试
 - **总计 188 个测试，全部通过**
+
+### 自定义技能系统
+- **lib/custom-skills.js**：IndexedDB 存储模块，独立数据库 `pagewise_custom_skills`
+- **CRUD 完整**：saveSkill / getAllSkills / getSkillById / deleteSkill / toggleSkill
+- **模板语法**：`{{变量名}}` 占位符，renderTemplate / extractTemplateVars
+- **技能编辑器 UI**：sidebar.html 内嵌表单，支持新建/编辑/删除
+- **自定义标记**：自定义技能在列表中标记为「自定义」徽章
+- **数量上限**：最多 20 个自定义技能
+- **分类筛选**：新增「自定义」分类标签
+- **30 个自定义技能测试，全部通过**
+- **总计 218 个测试，全部通过**

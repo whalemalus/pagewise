@@ -258,6 +258,10 @@ class MockIDBDatabase {
   transaction(storeNames, mode) {
     return new MockIDBTransaction(this, storeNames, mode);
   }
+
+  close() {
+    // No-op for mock
+  }
 }
 
 /** IndexedDB mock 顶层对象 */

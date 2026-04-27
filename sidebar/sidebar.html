@@ -150,8 +150,61 @@
           <button class="tag-chip" data-category="doc">文档</button>
           <button class="tag-chip" data-category="learning">学习</button>
           <button class="tag-chip" data-category="export">导出</button>
+          <button class="tag-chip" data-category="custom">自定义</button>
         </div>
       </div>
+
+      <!-- 技能编辑器（默认隐藏） -->
+      <div class="skill-editor hidden" id="skillEditor">
+        <div class="skill-editor-header">
+          <h3 id="skillEditorTitle">创建自定义技能</h3>
+          <button class="btn-icon" id="btnCloseSkillEditor">&times;</button>
+        </div>
+        <div class="skill-editor-body">
+          <input type="hidden" id="skillEditorId">
+          <div class="form-group">
+            <label for="skillEditorName">技能名称</label>
+            <input type="text" id="skillEditorName" placeholder="例如：代码翻译">
+          </div>
+          <div class="form-group">
+            <label for="skillEditorDesc">描述</label>
+            <input type="text" id="skillEditorDesc" placeholder="简要描述技能的功能">
+          </div>
+          <div class="form-group">
+            <label for="skillEditorCategory">分类</label>
+            <select id="skillEditorCategory">
+              <option value="code">代码 (code)</option>
+              <option value="debug">调试 (debug)</option>
+              <option value="doc">文档 (doc)</option>
+              <option value="learning">学习 (learning)</option>
+              <option value="custom" selected>自定义 (custom)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="skillEditorPrompt">Prompt 模板</label>
+            <textarea id="skillEditorPrompt" rows="6" placeholder="使用 {{变量名}} 作为变量占位符，例如：&#10;请将以下代码翻译为 {{targetLanguage}}：&#10;&#10;{{code}}"></textarea>
+            <small>使用 <code>{{变量名}}</code> 语法定义可替换变量</small>
+          </div>
+          <div class="form-group">
+            <label for="skillEditorTrigger">触发方式</label>
+            <select id="skillEditorTrigger">
+              <option value="manual">手动触发</option>
+              <option value="auto">自动触发</option>
+            </select>
+          </div>
+          <div class="skill-editor-actions">
+            <button class="btn-sm" id="btnCancelSkillEditor">取消</button>
+            <button class="btn-sm btn-primary-sm" id="btnSaveSkillEditor">保存</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 创建技能按钮 -->
+      <div class="skills-create-bar">
+        <button class="btn-create-skill" id="btnCreateSkill">➕ 创建技能</button>
+        <span class="skills-custom-count" id="skillsCustomCount"></span>
+      </div>
+
       <div class="skills-list" id="skillsList"></div>
       <div class="skills-hint">
         <p>技能会根据页面内容自动推荐，也可以手动触发。</p>

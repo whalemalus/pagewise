@@ -13,6 +13,7 @@ import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
+import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
 
 // ==================== 提供商预设 ====================
 
@@ -53,6 +54,7 @@ class SidebarApp {
     await this.loadSettings();
     await this.memory.init();
     this.skills.registerAll(allBuiltinSkills);
+    await this.loadCustomSkills();
     this.bindElements();
     this.bindEvents();
     this.loadPageContext();
@@ -113,6 +115,21 @@ class SidebarApp {
     // Skills
     this.skillsSummary = document.getElementById('skillsSummary');
     this.skillsList = document.getElementById('skillsList');
+
+    // Skill Editor
+    this.skillEditor = document.getElementById('skillEditor');
+    this.skillEditorTitle = document.getElementById('skillEditorTitle');
+    this.skillEditorId = document.getElementById('skillEditorId');
+    this.skillEditorName = document.getElementById('skillEditorName');
+    this.skillEditorDesc = document.getElementById('skillEditorDesc');
+    this.skillEditorCategory = document.getElementById('skillEditorCategory');
+    this.skillEditorPrompt = document.getElementById('skillEditorPrompt');
+    this.skillEditorTrigger = document.getElementById('skillEditorTrigger');
+    this.btnCreateSkill = document.getElementById('btnCreateSkill');
+    this.btnCloseSkillEditor = document.getElementById('btnCloseSkillEditor');
+    this.btnCancelSkillEditor = document.getElementById('btnCancelSkillEditor');
+    this.btnSaveSkillEditor = document.getElementById('btnSaveSkillEditor');
+    this.skillsCustomCount = document.getElementById('skillsCustomCount');
 
     // Evolution
     this.evolutionStats = document.getElementById('evolutionStats');
@@ -209,6 +226,20 @@ class SidebarApp {
         this.loadSkillsList(chip.dataset.category);
       });
     });
+
+    // 技能编辑器
+    if (this.btnCreateSkill) {
+      this.btnCreateSkill.addEventListener('click', () => this.openSkillEditor());
+    }
+    if (this.btnCloseSkillEditor) {
+      this.btnCloseSkillEditor.addEventListener('click', () => this.closeSkillEditor());
+    }
+    if (this.btnCancelSkillEditor) {
+      this.btnCancelSkillEditor.addEventListener('click', () => this.closeSkillEditor());
+    }
+    if (this.btnSaveSkillEditor) {
+      this.btnSaveSkillEditor.addEventListener('click', () => this.handleSaveSkill());
+    }
 
     // API 配置（新）
     this.btnFetchModels.addEventListener('click', () => this.fetchModels());
@@ -551,7 +582,11 @@ class SidebarApp {
       : allSkills.filter(s => s.category === category);
 
     const enabledCount = allSkills.filter(s => s.enabled).length;
+    const customCount = allSkills.filter(s => s.category === 'custom' || (s.id && s.id.startsWith('skill_'))).length;
     this.skillsSummary.textContent = `共 ${allSkills.length} 个技能，${enabledCount} 个已启用`;
+    if (this.skillsCustomCount) {
+      this.skillsCustomCount.textContent = customCount > 0 ? `自定义: ${customCount}/20` : '';
+    }
 
     if (filtered.length === 0) {
       this.skillsList.innerHTML = `<div class="empty-state"><p>该分类下没有技能</p></div>`;
@@ -559,29 +594,35 @@ class SidebarApp {
     }
 
     const categoryIcons = {
-      code: '💻', debug: '🐛', doc: '📡', learning: '📚', export: '📤', general: '⚙️'
+      code: '💻', debug: '🐛', doc: '📡', learning: '📚', export: '📤', general: '⚙️', custom: '🔧'
     };
 
-    this.skillsList.innerHTML = filtered.map(skill => `
+    this.skillsList.innerHTML = filtered.map(skill => {
+      const isCustom = skill.id && skill.id.startsWith('skill_');
+      return `
       <div class="skill-card ${skill.enabled ? '' : 'disabled'}" data-id="${skill.id}">
         <div class="skill-card-header">
           <div class="skill-card-name">
             ${categoryIcons[skill.category] || '⚙️'} ${this.escapeHtml(skill.name)}
+            ${isCustom ? '<span class="skill-badge-custom">自定义</span>' : ''}
           </div>
           <span class="skill-card-category">${this.escapeHtml(skill.category)}</span>
         </div>
         <div class="skill-card-desc">${this.escapeHtml(skill.description)}</div>
         <div class="skill-card-footer">
           <div class="skill-card-trigger">
-            ${skill.trigger ? '🟢 自动触发' : '🔵 手动触发'}
+            ${skill.trigger && skill.trigger.type === 'auto' ? '🟢 自动触发' : '🔵 手动触发'}
           </div>
           <div class="skill-card-actions">
+            ${isCustom ? `<button class="skill-card-edit-btn" data-id="${skill.id}">编辑</button>` : ''}
+            ${isCustom ? `<button class="skill-card-delete-btn" data-id="${skill.id}">删除</button>` : ''}
             <button class="skill-run-btn" data-id="${skill.id}" ${skill.enabled ? '' : 'disabled'}>运行</button>
             <button class="skill-toggle ${skill.enabled ? 'on' : ''}" data-id="${skill.id}"></button>
           </div>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     // 绑定事件
     this.skillsList.querySelectorAll('.skill-toggle').forEach(btn => {
@@ -593,6 +634,15 @@ class SidebarApp {
         this.switchTab('chat');
         this.executeSkill(btn.dataset.id);
       });
+    });
+
+    // 自定义技能编辑/删除
+    this.skillsList.querySelectorAll('.skill-card-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.openSkillEditor(btn.dataset.id));
+    });
+
+    this.skillsList.querySelectorAll('.skill-card-delete-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.handleDeleteCustomSkill(btn.dataset.id));
     });
   }
 
@@ -609,10 +659,174 @@ class SidebarApp {
     const runBtn = card.querySelector('.skill-run-btn');
     if (runBtn) runBtn.disabled = !skill.enabled;
 
+    // 如果是自定义技能，同步到 IndexedDB
+    if (skillId.startsWith('skill_')) {
+      toggleCustomSkill(skillId).catch(() => {});
+    }
+
     // 更新统计
     const allSkills = this.skills.getAll();
     const enabledCount = allSkills.filter(s => s.enabled).length;
     this.skillsSummary.textContent = `共 ${allSkills.length} 个技能，${enabledCount} 个已启用`;
+  }
+
+  // ==================== 自定义技能管理 ====================
+
+  /**
+   * 从 IndexedDB 加载自定义技能并注册到 skillEngine
+   */
+  async loadCustomSkills() {
+    try {
+      const customSkills = await getAllCustomSkills();
+      for (const skill of customSkills) {
+        if (this.skills.get(skill.id)) continue; // 已注册则跳过
+        this.skills.register({
+          id: skill.id,
+          name: skill.name,
+          description: skill.description,
+          category: skill.category || 'custom',
+          trigger: null,
+          parameters: [],
+          enabled: skill.enabled,
+          execute: async (params, context) => {
+            const rendered = renderTemplate(skill.prompt, params);
+            if (context && context.ai) {
+              return await context.ai.chat([{ role: 'user', content: rendered }]);
+            }
+            return rendered;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('加载自定义技能失败:', e);
+    }
+  }
+
+  /**
+   * 打开技能编辑器（新建或编辑）
+   */
+  async openSkillEditor(skillId = null) {
+    if (!this.skillEditor) return;
+
+    if (skillId) {
+      // 编辑模式
+      const skill = await getCustomSkillById(skillId);
+      if (!skill) return;
+      this.skillEditorTitle.textContent = '编辑技能';
+      this.skillEditorId.value = skill.id;
+      this.skillEditorName.value = skill.name;
+      this.skillEditorDesc.value = skill.description || '';
+      this.skillEditorCategory.value = skill.category || 'custom';
+      this.skillEditorPrompt.value = skill.prompt || '';
+      this.skillEditorTrigger.value = skill.trigger?.type || 'manual';
+    } else {
+      // 新建模式
+      this.skillEditorTitle.textContent = '创建自定义技能';
+      this.skillEditorId.value = '';
+      this.skillEditorName.value = '';
+      this.skillEditorDesc.value = '';
+      this.skillEditorCategory.value = 'custom';
+      this.skillEditorPrompt.value = '';
+      this.skillEditorTrigger.value = 'manual';
+    }
+
+    this.skillEditor.classList.remove('hidden');
+  }
+
+  /**
+   * 关闭技能编辑器
+   */
+  closeSkillEditor() {
+    if (this.skillEditor) {
+      this.skillEditor.classList.add('hidden');
+    }
+  }
+
+  /**
+   * 保存技能（从编辑器表单）
+   */
+  async handleSaveSkill() {
+    const name = this.skillEditorName.value.trim();
+    const description = this.skillEditorDesc.value.trim();
+    const category = this.skillEditorCategory.value;
+    const prompt = this.skillEditorPrompt.value.trim();
+    const triggerType = this.skillEditorTrigger.value;
+    const existingId = this.skillEditorId.value;
+
+    if (!name) {
+      this.addSystemMessage('请输入技能名称');
+      return;
+    }
+    if (!prompt) {
+      this.addSystemMessage('请输入 Prompt 模板');
+      return;
+    }
+
+    try {
+      const skillData = {
+        name,
+        description,
+        category,
+        prompt,
+        trigger: { type: triggerType }
+      };
+
+      if (existingId) {
+        skillData.id = existingId;
+        // 保留原有的 createdAt
+        const existing = await getCustomSkillById(existingId);
+        if (existing) skillData.createdAt = existing.createdAt;
+      }
+
+      const saved = await saveCustomSkill(skillData);
+
+      // 从 skillEngine 中移除旧的（如果存在），再注册新的
+      if (this.skills.get(saved.id)) {
+        this.skills.skills.delete(saved.id);
+      }
+
+      this.skills.register({
+        id: saved.id,
+        name: saved.name,
+        description: saved.description,
+        category: saved.category || 'custom',
+        trigger: null,
+        parameters: [],
+        enabled: saved.enabled,
+        execute: async (params, context) => {
+          const rendered = renderTemplate(saved.prompt, params);
+          if (context && context.ai) {
+            return await context.ai.chat([{ role: 'user', content: rendered }]);
+          }
+          return rendered;
+        }
+      });
+
+      this.closeSkillEditor();
+      this.loadSkillsList();
+      this.addSystemMessage(existingId ? `技能「${name}」已更新` : `技能「${name}」已创建`);
+    } catch (e) {
+      this.addSystemMessage(`保存失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 删除自定义技能
+   */
+  async handleDeleteCustomSkill(skillId) {
+    const skill = this.skills.get(skillId);
+    if (!skill) return;
+
+    if (!confirm(`确定删除技能「${skill.name}」？`)) return;
+
+    try {
+      await deleteCustomSkill(skillId);
+      this.skills.skills.delete(skillId);
+      this.loadSkillsList();
+      this.addSystemMessage(`技能「${skill.name}」已删除`);
+    } catch (e) {
+      this.addSystemMessage(`删除失败：${e.message}`);
+    }
   }
 
   // ==================== 对话功能 ====================
