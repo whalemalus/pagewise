@@ -10,6 +10,7 @@ import { AgentLoop } from '../lib/agent-loop.js';
 import { EvolutionEngine } from '../lib/evolution.js';
 import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
+import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 
 // ==================== 提供商预设 ====================
@@ -119,6 +120,13 @@ class SidebarApp {
     this.btnDeleteProfile = document.getElementById('btnDeleteProfile');
     this.modelSelect = document.getElementById('modelSelect');
     this.btnFetchModels = document.getElementById('btnFetchModels');
+
+    // Highlights
+    this.highlightsPanel = document.getElementById('highlightsPanel');
+    this.highlightsList = document.getElementById('highlightsList');
+    this.highlightsCount = document.getElementById('highlightsCount');
+    this.emptyHighlights = document.getElementById('emptyHighlights');
+    this.btnClearHighlights = document.getElementById('btnClearHighlights');
   }
 
   bindEvents() {
@@ -177,6 +185,16 @@ class SidebarApp {
         this.modelInput.value = this.modelSelect.value;
       }
     });
+
+    // 知识库子标签切换
+    document.querySelectorAll('.knowledge-subtab').forEach(tab => {
+      tab.addEventListener('click', () => this.switchKnowledgeSubtab(tab.dataset.subtab));
+    });
+
+    // 高亮标注：清空全部
+    if (this.btnClearHighlights) {
+      this.btnClearHighlights.addEventListener('click', () => this.clearAllHighlights());
+    }
   }
 
   async loadSettings() {
@@ -252,7 +270,7 @@ class SidebarApp {
     this.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
     this.panels.forEach(p => p.classList.toggle('active', p.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
     if (tabName === 'skills') this.loadSkillsList();
-    else if (tabName === 'knowledge') this.loadKnowledgeList();
+    else if (tabName === 'knowledge') { this.loadKnowledgeList(); this.loadHighlights(); }
     else if (tabName === 'settings') { this.loadSettingsForm(); this.loadEvolutionStats(); }
   }
 
@@ -625,7 +643,7 @@ class SidebarApp {
       <div class="message-actions">
         <button class="msg-action-btn" data-action="copy">复制</button>
         <button class="msg-action-btn" data-action="save">💾 保存</button>
-        <button class="msg-action-btn" data-action="highlight">🔍 高亮</button>
+        <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
       </div>
     `;
     messageDiv.querySelectorAll('.msg-action-btn').forEach(btn => {
@@ -687,12 +705,48 @@ class SidebarApp {
         await this.saveToKnowledgeBase(text);
         if (interactionId) this.evolution.recordSignal('saved_to_kb', interactionId);
         break;
-      case 'highlight':
-        const codeMatch = text.match(/`([^`]+)`/);
-        if (codeMatch) {
-          chrome.tabs.sendMessage(this.currentTabId, { action: 'highlight', text: codeMatch[1] });
+      case 'highlight': {
+        // 从当前页面获取选中文本
+        let selectionInfo = null;
+        try {
+          selectionInfo = await chrome.tabs.sendMessage(this.currentTabId, { action: 'getSelectionInfo' });
+        } catch (e) {}
+
+        // 如果没有选中文本，尝试从 AI 回答中提取代码
+        let textToHighlight = selectionInfo?.text || '';
+        let xpath = selectionInfo?.xpath || '';
+        let offset = selectionInfo?.offset || 0;
+
+        if (!textToHighlight) {
+          const codeMatch = text.match(/`([^`]+)`/);
+          if (codeMatch) {
+            textToHighlight = codeMatch[1];
+            xpath = '';
+            offset = 0;
+          }
         }
+
+        if (!textToHighlight) {
+          this.addSystemMessage('请先在页面中选中文本');
+          break;
+        }
+
+        try {
+          const result = await chrome.tabs.sendMessage(this.currentTabId, {
+            action: 'saveHighlight',
+            highlight: { text: textToHighlight, xpath, offset }
+          });
+          if (result?.success) {
+            this.addSystemMessage(result.duplicate ? '该文本已高亮 ✓' : '已高亮标注 📌');
+          } else {
+            this.addSystemMessage(`高亮失败：${result?.error || '未知错误'}`);
+          }
+        } catch (e) {
+          this.addSystemMessage('高亮失败：请刷新页面后重试');
+        }
+        if (interactionId) this.evolution.recordSignal('highlighted', interactionId);
         break;
+      }
     }
   }
 
@@ -846,6 +900,133 @@ class SidebarApp {
     this.addSystemMessage('已删除');
     this.showKnowledgeList();
     this.loadKnowledgeTags();
+  }
+
+  // ==================== 高亮标注管理 ====================
+
+  /**
+   * 切换知识库子标签（知识条目 / 高亮标注）
+   */
+  switchKnowledgeSubtab(subtab) {
+    document.querySelectorAll('.knowledge-subtab').forEach(t => {
+      t.classList.toggle('active', t.dataset.subtab === subtab);
+    });
+
+    const isEntries = subtab === 'entries';
+    const isHighlights = subtab === 'highlights';
+
+    // 知识条目相关元素
+    const knowledgeToolbar = this.searchInput?.closest('.knowledge-toolbar');
+    const searchBox = this.searchInput?.closest('.search-box');
+    const knowledgeActions = document.querySelector('.knowledge-actions');
+    const tagFilter = this.tagFilter;
+    const knowledgeList = this.knowledgeList;
+    const knowledgeDetail = this.knowledgeDetail;
+
+    if (searchBox) searchBox.style.display = isEntries ? '' : 'none';
+    if (knowledgeActions) knowledgeActions.style.display = isEntries ? '' : 'none';
+    if (tagFilter) tagFilter.style.display = isEntries ? '' : 'none';
+    if (knowledgeList) knowledgeList.classList.toggle('hidden', !isEntries);
+    if (knowledgeDetail) knowledgeDetail.classList.add('hidden');
+    if (this.highlightsPanel) {
+      this.highlightsPanel.classList.toggle('hidden', !isHighlights);
+    }
+
+    if (isHighlights) {
+      this.loadHighlights();
+    }
+  }
+
+  /**
+   * 加载并渲染高亮列表
+   */
+  async loadHighlights() {
+    try {
+      const highlights = await getAllHighlightsFlat(200);
+      if (!this.highlightsList) return;
+
+      if (highlights.length === 0) {
+        this.highlightsList.innerHTML = '';
+        if (this.emptyHighlights) {
+          this.highlightsList.appendChild(this.emptyHighlights);
+          this.emptyHighlights.classList.remove('hidden');
+        }
+        if (this.highlightsCount) this.highlightsCount.textContent = '0 条高亮';
+        return;
+      }
+
+      if (this.emptyHighlights) this.emptyHighlights.classList.add('hidden');
+      if (this.highlightsCount) {
+        this.highlightsCount.textContent = `${highlights.length} 条高亮`;
+      }
+
+      this.highlightsList.innerHTML = highlights.map(h => `
+        <div class="highlight-item" data-id="${h.id}" data-url="${this.escapeHtml(h.url)}">
+          <div class="highlight-item-text">${this.escapeHtml(h.text)}</div>
+          <div class="highlight-item-meta">
+            <span>${formatTime(h.createdAt)}</span>
+            <span class="highlight-item-url" title="${this.escapeHtml(h.url)}">${this.escapeHtml(this.getDomain(h.url))}</span>
+          </div>
+          <div class="highlight-item-actions">
+            <button class="highlight-delete-btn" data-id="${h.id}" data-url="${this.escapeHtml(h.url)}">删除</button>
+          </div>
+        </div>
+      `).join('');
+
+      // 绑定删除事件
+      this.highlightsList.querySelectorAll('.highlight-delete-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.id;
+          const url = btn.dataset.url;
+          await this.removeHighlight(url, id);
+        });
+      });
+    } catch (e) {
+      // 静默处理
+    }
+  }
+
+  /**
+   * 删除单个高亮
+   */
+  async removeHighlight(url, id) {
+    try {
+      await deleteHighlight(url, id);
+      this.loadHighlights();
+      this.addSystemMessage('已删除高亮');
+    } catch (e) {
+      this.addSystemMessage(`删除失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 清空所有高亮
+   */
+  async clearAllHighlights() {
+    if (!confirm('确定清空所有高亮标注？')) return;
+    try {
+      const all = await getAllHighlightsFlat(10000);
+      const urls = new Set(all.map(h => h.url));
+      for (const url of urls) {
+        await deleteHighlightsByUrl(url);
+      }
+      this.loadHighlights();
+      this.addSystemMessage('已清空所有高亮标注');
+    } catch (e) {
+      this.addSystemMessage(`清空失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 从 URL 中提取域名
+   */
+  getDomain(url) {
+    try {
+      return new URL(url).hostname;
+    } catch (e) {
+      return url;
+    }
   }
 
   async importFiles(fileList) {

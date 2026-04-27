@@ -70,8 +70,12 @@
 
     <!-- 知识库面板 -->
     <div class="panel" id="panelKnowledge">
-      <div class="knowledge-toolbar">
-        <div class="search-box">
+    <div class="knowledge-toolbar">
+      <div class="knowledge-tabs">
+        <button class="knowledge-subtab active" data-subtab="entries">📚 知识条目</button>
+        <button class="knowledge-subtab" data-subtab="highlights">📌 高亮标注</button>
+      </div>
+      <div class="search-box">
           <input type="text" id="searchInput" placeholder="搜索知识库...">
         </div>
         <div class="knowledge-actions">
@@ -92,16 +96,31 @@
         </div>
       </div>
 
-      <!-- 知识条目详情 -->
-      <div class="knowledge-detail hidden" id="knowledgeDetail">
-        <div class="detail-header">
-          <button class="btn-back" id="btnBack">← 返回列表</button>
-          <div class="detail-actions">
-            <button class="btn-sm" id="btnEdit">编辑</button>
-            <button class="btn-sm btn-danger" id="btnDelete">删除</button>
+    <!-- 知识条目详情 -->
+    <div class="knowledge-detail hidden" id="knowledgeDetail">
+      <div class="detail-header">
+        <button class="btn-back" id="btnBack">← 返回列表</button>
+        <div class="detail-actions">
+          <button class="btn-sm" id="btnEdit">编辑</button>
+          <button class="btn-sm btn-danger" id="btnDelete">删除</button>
+        </div>
+      </div>
+      <div class="detail-content" id="detailContent"></div>
+    </div>
+
+      <!-- 高亮标注列表 -->
+      <div class="highlights-panel hidden" id="highlightsPanel">
+        <div class="highlights-toolbar">
+          <span class="highlights-count" id="highlightsCount">0 条高亮</span>
+          <button class="btn-sm btn-danger" id="btnClearHighlights">清空全部</button>
+        </div>
+        <div class="highlights-list" id="highlightsList">
+          <div class="empty-state" id="emptyHighlights">
+            <div class="empty-icon">📌</div>
+            <p>还没有高亮标注</p>
+            <p class="text-muted">选中文本后使用高亮功能保存</p>
           </div>
         </div>
-        <div class="detail-content" id="detailContent"></div>
       </div>
     </div>
 

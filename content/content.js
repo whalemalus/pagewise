@@ -1,5 +1,5 @@
 /**
- * Content Script - 注入到网页中，负责提取页面内容
+ * Content Script - 注入到网页中，负责提取页面内容和高亮标注
  */
 
 (function () {
@@ -8,6 +8,209 @@
   // 防止重复注入
   if (window.__AI_ASSISTANT_INJECTED__) return;
   window.__AI_ASSISTANT_INJECTED__ = true;
+
+  // ==================== 高亮存储 key ====================
+  const HIGHLIGHTS_KEY = 'pagewiseHighlights';
+
+  // ==================== XPath 工具 ====================
+
+  /**
+   * 获取文本节点的 XPath 路径
+   * @param {Node} node - 文本节点
+   * @returns {string} XPath 字符串
+   */
+  function getXPath(node) {
+    if (!node || !node.parentNode) return '';
+
+    const parts = [];
+    let current = node;
+
+    while (current && current !== document.documentElement) {
+      const parent = current.parentNode;
+      if (!parent) break;
+
+      let index = 0;
+      let sibling = parent.firstChild;
+      const tagName = current.nodeName.toLowerCase();
+
+      while (sibling) {
+        if (sibling.nodeName.toLowerCase() === tagName) {
+          index++;
+        }
+        if (sibling === current) break;
+        sibling = sibling.nextSibling;
+      }
+
+      parts.unshift(`${tagName}[${index}]`);
+      current = parent;
+    }
+
+    return '/' + parts.join('/');
+  }
+
+  /**
+   * 通过 XPath 获取节点
+   * @param {string} xpath
+   * @returns {Node|null}
+   */
+  function getNodeByXPath(xpath) {
+    try {
+      const result = document.evaluate(
+        xpath, document, null,
+        XPathResult.FIRST_ORDERED_NODE_TYPE, null
+      );
+      return result.singleNodeValue;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  // ==================== 高亮功能 ====================
+
+  /**
+   * 获取用户选中文本及其位置信息
+   * @returns {{ text: string, xpath: string, offset: number } | null}
+   */
+  function getSelectionInfo() {
+    const sel = window.getSelection();
+    if (!sel || sel.isCollapsed || !sel.toString().trim()) return null;
+
+    const text = sel.toString().trim();
+    const range = sel.getRangeAt(0);
+    const startContainer = range.startContainer;
+    const offset = range.startOffset;
+
+    return {
+      text,
+      xpath: getXPath(startContainer),
+      offset
+    };
+  }
+
+  /**
+   * 在页面中高亮指定文本（精确 XPath 匹配优先，文本搜索兜底）
+   * @param {{ text: string, xpath: string, offset: number }} highlight
+   * @returns {boolean} 是否成功高亮
+   */
+  function applyHighlight(highlight) {
+    const { text, xpath, offset } = highlight;
+    if (!text) return false;
+
+    // 策略1：XPath 精确定位
+    if (xpath) {
+      const success = applyHighlightByXPath(text, xpath, offset);
+      if (success) return true;
+    }
+
+    // 策略2：文本搜索兜底
+    return applyHighlightByText(text);
+  }
+
+  /**
+   * 通过 XPath 精确定位并高亮
+   */
+  function applyHighlightByXPath(text, xpath, offset) {
+    const node = getNodeByXPath(xpath);
+    if (!node || node.nodeType !== Node.TEXT_NODE) return false;
+
+    const idx = node.textContent.indexOf(text);
+    if (idx === -1) return false;
+
+    return wrapTextWithHighlight(node, idx, text.length);
+  }
+
+  /**
+   * 通过文本搜索在页面中查找并高亮
+   */
+  function applyHighlightByText(text) {
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      // 跳过脚本/样式/已高亮区域
+      const parent = node.parentElement;
+      if (!parent) continue;
+      const tag = parent.tagName;
+      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'NOSCRIPT') continue;
+      if (parent.classList.contains('pagewise-highlight')) continue;
+
+      const idx = node.textContent.indexOf(text);
+      if (idx !== -1) {
+        return wrapTextWithHighlight(node, idx, text.length);
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 用 <mark> 标签包裹文本范围
+   */
+  function wrapTextWithHighlight(textNode, startOffset, length) {
+    try {
+      const range = document.createRange();
+      range.setStart(textNode, startOffset);
+      range.setEnd(textNode, startOffset + length);
+
+      const mark = document.createElement('mark');
+      mark.className = 'pagewise-highlight';
+      range.surroundContents(mark);
+      return true;
+    } catch (e) {
+      // surroundContents 可能在跨节点选区时失败
+      return false;
+    }
+  }
+
+  /**
+   * 渲染当前页面的所有高亮
+   * 从 chrome.storage.local 读取数据
+   */
+  function restoreHighlights() {
+    const url = location.href;
+    chrome.storage.local.get(HIGHLIGHTS_KEY, (result) => {
+      const all = result[HIGHLIGHTS_KEY] || {};
+      const highlights = all[url] || [];
+
+      // 按 offset 降序排列，避免前面的高亮影响后面的位置
+      highlights.sort((a, b) => (b.offset || 0) - (a.offset || 0));
+
+      for (const h of highlights) {
+        applyHighlight(h);
+      }
+    });
+  }
+
+  /**
+   * 高亮页面中的相关文本（用于标记 AI 引用的内容）
+   */
+  function highlightText(text) {
+    // 移除旧高亮
+    document.querySelectorAll('.ai-assistant-highlight').forEach(el => {
+      el.replaceWith(el.textContent);
+    });
+
+    if (!text) return;
+
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    let node;
+    while ((node = walker.nextNode())) {
+      const idx = node.textContent.indexOf(text);
+      if (idx === -1) continue;
+
+      const range = document.createRange();
+      range.setStart(node, idx);
+      range.setEnd(node, idx + text.length);
+
+      const span = document.createElement('span');
+      span.className = 'ai-assistant-highlight';
+      span.style.cssText = 'background: #fef08a; padding: 1px 4px; border-radius: 3px; transition: background 0.3s;';
+      range.surroundContents(span);
+
+      span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      break;
+    }
+  }
+
+  // ==================== 页面内容提取 ====================
 
   /**
    * 提取页面核心内容
@@ -142,36 +345,7 @@
     return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
   }
 
-  /**
-   * 高亮页面中的相关文本（用于标记 AI 引用的内容）
-   */
-  function highlightText(text) {
-    // 移除旧高亮
-    document.querySelectorAll('.ai-assistant-highlight').forEach(el => {
-      el.replaceWith(el.textContent);
-    });
-
-    if (!text) return;
-
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    let node;
-    while ((node = walker.nextNode())) {
-      const idx = node.textContent.indexOf(text);
-      if (idx === -1) continue;
-
-      const range = document.createRange();
-      range.setStart(node, idx);
-      range.setEnd(node, idx + text.length);
-
-      const span = document.createElement('span');
-      span.className = 'ai-assistant-highlight';
-      span.style.cssText = 'background: #fef08a; padding: 1px 4px; border-radius: 3px; transition: background 0.3s;';
-      range.surroundContents(span);
-
-      span.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      break;
-    }
-  }
+  // ==================== 浮动按钮 ====================
 
   /**
    * 划词提问浮动按钮
@@ -230,6 +404,8 @@
     }
   });
 
+  // ==================== 消息监听 ====================
+
   /**
    * 监听来自 sidebar / background 的消息
    */
@@ -242,6 +418,108 @@
       case 'getSelection':
         sendResponse({ selection: getSelection() });
         break;
+
+      case 'getSelectionInfo':
+        sendResponse(getSelectionInfo());
+        break;
+
+      case 'saveHighlight': {
+        // 收到保存高亮请求
+        const info = request.highlight || getSelectionInfo();
+        if (!info || !info.text) {
+          sendResponse({ success: false, error: '无选中文本' });
+          break;
+        }
+
+        const highlight = {
+          url: location.href,
+          text: info.text,
+          xpath: info.xpath || '',
+          offset: info.offset || 0
+        };
+
+        // 读取现有高亮并追加
+        chrome.storage.local.get(HIGHLIGHTS_KEY, (result) => {
+          const all = result[HIGHLIGHTS_KEY] || {};
+          const urlHighlights = all[location.href] || [];
+
+          // 去重
+          const exists = urlHighlights.find(
+            h => h.text === highlight.text && h.xpath === highlight.xpath && h.offset === highlight.offset
+          );
+
+          if (exists) {
+            sendResponse({ success: true, highlight: exists, duplicate: true });
+            return;
+          }
+
+          // 上限检查
+          if (urlHighlights.length >= 50) {
+            sendResponse({ success: false, error: '每个页面最多保存 50 个高亮' });
+            return;
+          }
+
+          const entry = {
+            id: Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+            ...highlight,
+            createdAt: new Date().toISOString()
+          };
+
+          urlHighlights.push(entry);
+          all[location.href] = urlHighlights;
+
+          chrome.storage.local.set({ [HIGHLIGHTS_KEY]: all }, () => {
+            // 在页面中应用高亮
+            applyHighlight(entry);
+            sendResponse({ success: true, highlight: entry });
+          });
+        });
+        break;
+      }
+
+      case 'deleteHighlight': {
+        const { id } = request;
+        if (!id) {
+          sendResponse({ success: false, error: '缺少高亮 ID' });
+          break;
+        }
+
+        chrome.storage.local.get(HIGHLIGHTS_KEY, (result) => {
+          const all = result[HIGHLIGHTS_KEY] || {};
+          const urlHighlights = all[location.href] || [];
+          const filtered = urlHighlights.filter(h => h.id !== id);
+
+          if (filtered.length === urlHighlights.length) {
+            sendResponse({ success: false, error: '未找到高亮' });
+            return;
+          }
+
+          if (filtered.length === 0) {
+            delete all[location.href];
+          } else {
+            all[location.href] = filtered;
+          }
+
+          chrome.storage.local.set({ [HIGHLIGHTS_KEY]: all }, () => {
+            // 移除页面中的高亮标记
+            const marks = document.querySelectorAll('.pagewise-highlight');
+            // 简单策略：重新渲染所有剩余高亮
+            marks.forEach(m => {
+              const parent = m.parentNode;
+              if (parent) {
+                parent.replaceChild(document.createTextNode(m.textContent), m);
+                parent.normalize();
+              }
+            });
+            // 重新应用剩余高亮
+            for (const h of filtered) {
+              applyHighlight(h);
+            }
+            sendResponse({ success: true });
+          });
+        });
+        break;
+      }
 
       case 'highlight':
         highlightText(request.text);
@@ -257,5 +535,8 @@
     }
     return true; // 保持消息通道开放
   });
+
+  // ==================== 初始化：页面加载时恢复高亮 ====================
+  restoreHighlights();
 
 })();

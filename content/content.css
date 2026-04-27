@@ -11,6 +11,19 @@
   background: #fde047 !important;
 }
 
+/* 页面高亮标注 */
+.pagewise-highlight {
+  background: #fef08a;
+  padding: 1px 2px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagewise-highlight:hover {
+  background: #fde047;
+}
+
 /* 划词提问浮动按钮 */
 #pagewise-float-btn {
   position: fixed;
