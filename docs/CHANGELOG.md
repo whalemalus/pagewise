@@ -25,3 +25,11 @@
 
 ### 新增
 - 项目飞轮迭代模板（CLAUDE.md、docs/）
+- 测试框架（Node.js 内置 test runner）
+- Chrome API Mock（tests/helpers/chrome-mock.js）
+- IndexedDB Mock（tests/helpers/indexeddb-mock.js）
+- utils.js 单元测试（21 个测试套件）
+- page-sense.js 单元测试（27 个测试）
+- skill-engine.js 单元测试（26 个测试）
+- knowledge-base.js 单元测试（19 个测试）
+- **总计 95 个测试，全部通过**

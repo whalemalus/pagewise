@@ -1,0 +1,7 @@
+{
+  "name": "pagewise",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "智阅 PageWise - Chrome 浏览器扩展"
+}

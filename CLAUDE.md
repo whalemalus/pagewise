@@ -55,8 +55,11 @@ pagewise/
 
 ## 测试命令
 ```bash
-# 待建立测试框架后补充
-# node --test tests/
+# 运行全部测试
+node --test tests/test-utils.js tests/test-page-sense.js tests/test-skill-engine.js tests/test-knowledge-base.js
+
+# 运行单个测试文件
+node --test tests/test-utils.js
 ```
 
 ## 重要约束

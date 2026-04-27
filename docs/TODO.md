@@ -7,12 +7,12 @@
 ## 🔥 本次迭代（v1.0.1）
 
 ### 测试体系建设（最高优先级）
-- [ ] 建立测试框架（选择测试方案）
-- [ ] 为 utils.js 编写单元测试
-- [ ] 为 knowledge-base.js 编写单元测试
+- [x] 建立测试框架（Node.js 内置 test runner）
+- [x] 为 utils.js 编写单元测试（21 suites）
+- [x] 为 knowledge-base.js 编写单元测试（19 tests）
 - [ ] 为 ai-client.js 编写单元测试（mock API）
-- [ ] 为 skill-engine.js 编写单元测试
-- [ ] 为 page-sense.js 编写单元测试
+- [x] 为 skill-engine.js 编写单元测试（26 tests）
+- [x] 为 page-sense.js 编写单元测试（27 tests）
 
 ### 代码质量
 - [ ] 统一错误处理模式

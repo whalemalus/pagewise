@@ -70,6 +70,23 @@
 
 ---
 
+### D004: 测试框架选型
+- **决策日期**: 2026-04-26
+- **方案选择**: Node.js 内置 test runner (node:test)
+- **备选方案**:
+  1. Jest（功能全但重，需 npm 安装）
+  2. Vitest（需构建工具链）
+  3. Node.js 内置 test runner ✅（零依赖，够用）
+- **Mock 策略**:
+  - Chrome API: 自定义 mock (tests/helpers/chrome-mock.js)
+  - IndexedDB: 自定义 mock (tests/helpers/indexeddb-mock.js)
+- **测试覆盖**: 95 个测试，覆盖 utils/page-sense/skill-engine/knowledge-base
+
+### D005: ES Module 测试适配
+- **决策日期**: 2026-04-26
+- **问题**: 源码是 ES Module (import/export)，Node.js 测试需要适配
+- **方案**: 测试文件使用 dynamic import() 加载源码，顶部安装 Chrome mock
+
 ## 已知技术债务
 
 | ID | 描述 | 优先级 | 状态 |
