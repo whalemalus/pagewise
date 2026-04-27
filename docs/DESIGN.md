@@ -87,6 +87,28 @@
 - **问题**: 源码是 ES Module (import/export)，Node.js 测试需要适配
 - **方案**: 测试文件使用 dynamic import() 加载源码，顶部安装 Chrome mock
 
+### D006: 对话持久化方案
+- **决策日期**: 2026-04-27
+- **问题**: 关闭侧边栏后对话历史丢失
+- **方案选择**: chrome.storage.session
+- **备选方案**:
+  1. IndexedDB — 持久但过重，对话是临时数据
+  2. chrome.storage.local — 持久存储，不需要跨会话保留
+  3. chrome.storage.session ✅ — 会话级存储，浏览器关闭自动清理，API 简单
+- **过期策略**: 24 小时自动过期，避免恢复过时对话
+- **保存格式**: `{ conversationHistory, currentPageUrl, timestamp }`
+
+### D007: 代码块复制按钮
+- **决策日期**: 2026-04-27
+- **方案**: renderMarkdown 正则替换时包裹 `<div class="code-block-wrapper">` + `<button data-code-copy>`
+- **事件委托**: chatArea 上统一监听 click，避免每个按钮单独绑定
+
+### D008: Toast 通知系统
+- **决策日期**: 2026-04-27
+- **方案**: 固定定位容器 + 动态创建 toast 元素
+- **动画**: CSS transform translateX 滑入，opacity 淡出
+- **生命周期**: 3 秒自动消失，支持点击关闭
+
 ## 已知技术债务
 
 | ID | 描述 | 优先级 | 状态 |

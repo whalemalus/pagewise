@@ -17,6 +17,9 @@ const {
   renderMarkdown,
   debounce,
   generateId,
+  saveConversation,
+  loadConversation,
+  clearConversation,
 } = await import('../lib/utils.js');
 
 afterEach(() => {
@@ -129,6 +132,22 @@ describe('renderMarkdown()', () => {
   it('分隔线', () => {
     const html = renderMarkdown('---');
     assert.ok(html.includes('<hr>'));
+  });
+
+  it('代码块包含复制按钮', () => {
+    const md = '```js\nconsole.log("hi")\n```';
+    const html = renderMarkdown(md);
+    assert.ok(html.includes('class="code-block-wrapper"'), '应包含 code-block-wrapper');
+    assert.ok(html.includes('data-code-copy'), '应包含 data-code-copy 属性');
+    assert.ok(html.includes('复制'), '应包含复制按钮文本');
+    assert.ok(html.includes('<pre><code'), '应保留 pre/code 结构');
+  });
+
+  it('无语言标记的代码块也包含复制按钮', () => {
+    const md = '```\nsome code\n```';
+    const html = renderMarkdown(md);
+    assert.ok(html.includes('code-block-wrapper'));
+    assert.ok(html.includes('data-code-copy'));
   });
 });
 

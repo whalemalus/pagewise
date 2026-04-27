@@ -9,6 +9,8 @@ export function createStorageMock() {
   const localStore = {};
   const syncStore = {};
 
+  const sessionStore = {};
+
   function createStore(store) {
     return {
       get: (keys, callback) => {
@@ -53,8 +55,10 @@ export function createStorageMock() {
   return {
     local: createStore(localStore),
     sync: createStore(syncStore),
+    session: createStore(sessionStore),
     _localStore: localStore,
     _syncStore: syncStore,
+    _sessionStore: sessionStore,
   };
 }
 
@@ -137,6 +141,9 @@ export function resetChromeMock() {
     }
     for (const k of Object.keys(globalThis.chrome.storage._localStore)) {
       delete globalThis.chrome.storage._localStore[k];
+    }
+    for (const k of Object.keys(globalThis.chrome.storage._sessionStore)) {
+      delete globalThis.chrome.storage._sessionStore[k];
     }
     globalThis.chrome.tabs._reset();
     globalThis.chrome.runtime._reset();

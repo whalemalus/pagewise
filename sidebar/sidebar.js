@@ -10,7 +10,7 @@ import { AgentLoop } from '../lib/agent-loop.js';
 import { EvolutionEngine } from '../lib/evolution.js';
 import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
-import { getSettings, saveSettings, renderMarkdown, formatTime, debounce } from '../lib/utils.js';
+import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation } from '../lib/utils.js';
 
 class SidebarApp {
   constructor() {
@@ -40,6 +40,8 @@ class SidebarApp {
     this.loadPageContext();
     this.loadKnowledgeTags();
     this.listenMessages();
+    this.restoreConversation();
+    this.bindCopyButtonEvents();
   }
 
   // ==================== 初始化 ====================
@@ -89,6 +91,9 @@ class SidebarApp {
     this.evolutionStats = document.getElementById('evolutionStats');
     this.evolutionLog = document.getElementById('evolutionLog');
     this.btnResetEvolution = document.getElementById('btnResetEvolution');
+
+    // Toast 容器
+    this.toastContainer = document.getElementById('toastContainer');
   }
 
   bindEvents() {
@@ -401,6 +406,15 @@ class SidebarApp {
   async sendMessage() {
     const text = this.userInput.value.trim();
     if (!text) return;
+    // /clear 命令：清除对话
+    if (text === '/clear') {
+      this.conversationHistory = [];
+      await clearConversation();
+      this.chatArea.innerHTML = '';
+      this.addSystemMessage('对话已清除');
+      this.userInput.value = '';
+      return;
+    }
 
     if (!this.aiClient) {
       this.addSystemMessage('请先在设置中配置 API Key');
@@ -495,6 +509,9 @@ class SidebarApp {
         { role: 'user', content: text },
         { role: 'assistant', content: fullResponse }
       );
+
+      // 持久化对话到 session storage
+      await saveConversation(this.conversationHistory, this.currentTabUrl);
 
       // 自动学习
       await this.memory.learnFromInteraction(text, fullResponse, contentWithSelection);
@@ -962,6 +979,101 @@ class SidebarApp {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  // ==================== 对话持久化 ====================
+
+  /**
+   * 恢复对话历史
+   */
+  async restoreConversation() {
+    try {
+      const data = await loadConversation(this.currentTabUrl);
+      if (data && data.conversationHistory && data.conversationHistory.length > 0) {
+        this.conversationHistory = data.conversationHistory;
+        // 重新渲染对话
+        const welcome = this.chatArea.querySelector('.welcome-message');
+        if (welcome) welcome.remove();
+        for (const msg of data.conversationHistory) {
+          if (msg.role === 'user') {
+            this.addUserMessage(msg.content);
+          } else if (msg.role === 'assistant') {
+            this.addAIMessage(msg.content);
+          }
+        }
+        this.addSystemMessage('已恢复之前的对话');
+      }
+    } catch (e) {
+      // 静默失败，不影响正常使用
+    }
+  }
+
+  // ==================== 代码块复制 ====================
+
+  /**
+   * 绑定代码块复制按钮事件委托
+   */
+  bindCopyButtonEvents() {
+    this.chatArea.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-code-copy]');
+      if (!btn) return;
+
+      const wrapper = btn.closest('.code-block-wrapper');
+      if (!wrapper) return;
+
+      const codeEl = wrapper.querySelector('code');
+      if (!codeEl) return;
+
+      const text = codeEl.textContent;
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = '已复制 ✓';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = '复制';
+          btn.classList.remove('copied');
+        }, 2000);
+      } catch (err) {
+        this.showToast('复制失败', 'error');
+      }
+    });
+  }
+
+  // ==================== Toast 通知 ====================
+
+  /**
+   * 显示 Toast 通知
+   * @param {string} message - 通知内容
+   * @param {'info'|'success'|'error'|'warning'} type - 通知类型
+   */
+  showToast(message, type = 'info') {
+    if (!this.toastContainer) return;
+
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+      <span class="toast-message">${this.escapeHtml(message)}</span>
+      <button class="toast-close">&times;</button>
+    `;
+
+    // 点击关闭
+    toast.querySelector('.toast-close').addEventListener('click', () => {
+      toast.classList.add('toast-fade-out');
+      setTimeout(() => toast.remove(), 300);
+    });
+
+    this.toastContainer.appendChild(toast);
+
+    // 触发动画
+    requestAnimationFrame(() => toast.classList.add('toast-show'));
+
+    // 3 秒后自动消失
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.classList.add('toast-fade-out');
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, 3000);
   }
 }
 

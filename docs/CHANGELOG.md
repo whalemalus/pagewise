@@ -21,6 +21,19 @@
 
 ---
 
+## [1.1.0] - 2026-04-27
+
+### 新增
+- 对话持久化（chrome.storage.session，24 小时自动过期）
+- `/clear` 命令清除对话历史
+- 代码块复制按钮（hover 显示，点击复制并反馈）
+- Toast 通知系统（info/success/error/warning，动画滑入淡出）
+- 对话持久化测试（9 个测试）
+- renderMarkdown 代码块复制按钮测试（2 个测试）
+- **总计 106 个测试，全部通过**
+
+---
+
 ## [Unreleased]
 
 ### 新增
