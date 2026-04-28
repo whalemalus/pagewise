@@ -18,6 +18,7 @@ import { saveConversation as saveConversationIDB, getConversationByUrl, getAllCo
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
 import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
+import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats } from '../lib/stats.js';
 
 // ==================== 提供商预设 ====================
 
@@ -279,6 +280,12 @@ class SidebarApp {
 
     // Token 用量显示
     this.tokenDisplay = document.getElementById('tokenDisplay');
+
+    // 使用统计
+    this.statsGrid = document.getElementById('statsGrid');
+    this.statsSkillsList = document.getElementById('statsSkillsList');
+    this.statsTrendChart = document.getElementById('statsTrendChart');
+    this.btnResetStats = document.getElementById('btnResetStats');
   }
 
   bindEvents() {
@@ -494,6 +501,16 @@ class SidebarApp {
     if (this.btnReturnMain) {
       this.btnReturnMain.addEventListener('click', () => this.returnToMainConversation());
     }
+
+    // 使用统计重置
+    if (this.btnResetStats) {
+      this.btnResetStats.addEventListener('click', async () => {
+        if (!confirm('确定重置所有统计数据？')) return;
+        await resetStats();
+        this.loadStatsPanel();
+        this.addSystemMessage('统计数据已重置');
+      });
+    }
   }
 
   async loadSettings() {
@@ -573,7 +590,7 @@ class SidebarApp {
     this.panels.forEach(p => p.classList.toggle('active', p.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
     if (tabName === 'skills') this.loadSkillsList();
     else if (tabName === 'knowledge') { this.loadKnowledgeList(); this.loadHighlights(); }
-    else if (tabName === 'settings') { this.loadSettingsForm(); this.loadEvolutionStats(); }
+    else if (tabName === 'settings') { this.loadSettingsForm(); this.loadEvolutionStats(); this.loadStatsPanel(); }
     else if (tabName === 'page') this.loadPagePreview();
   }
 
@@ -839,6 +856,9 @@ class SidebarApp {
         { role: 'user', content: `[技能] ${skill.name}` },
         { role: 'assistant', content }
       );
+
+      // 记录技能使用统计
+      recordSkillUsage(skillId);
 
     } catch (error) {
       loadingEl.remove();
@@ -1240,6 +1260,13 @@ class SidebarApp {
       // 持久化对话到 session storage
       await saveConversation(this.conversationHistory, this.currentTabUrl);
 
+      // 记录使用统计
+      const today = new Date().toISOString().split('T')[0];
+      const tokenEst = fullResponse.length; // 粗略估算
+      incrementCounter('totalQuestions');
+      incrementCounter('totalTokensUsed', tokenEst);
+      recordDailyUsage(today, { questions: 1, tokens: tokenEst });
+
       this.updateTokenDisplay();
 
       // 持久化到 IndexedDB（按 URL 关联）
@@ -1456,6 +1483,9 @@ class SidebarApp {
           });
           if (result?.success) {
             this.addSystemMessage(result.duplicate ? '该文本已高亮 ✓' : '已高亮标注 📌');
+            if (!result.duplicate) {
+              incrementCounter('totalHighlights');
+            }
           } else {
             this.addSystemMessage(`高亮失败：${result?.error || '未知错误'}`);
           }
@@ -2954,6 +2984,7 @@ ${sendContent}
         answer: answerText
       });
       this.addSystemMessage(`已保存到知识库 ✓ 标签：${tags.join(', ')}`);
+      incrementCounter('totalKnowledgeEntries');
       this.loadKnowledgeTags();
     } catch (error) {
       this.addSystemMessage(`保存失败：${error.message}`);
@@ -3783,6 +3814,75 @@ ${sendContent}
       }).join('');
     } else {
       this.evolutionLog.innerHTML = '<div style="color:var(--text-muted);padding:4px 0;">暂无进化记录，助手会随着使用自动学习优化</div>';
+    }
+  }
+
+  /**
+   * 加载使用统计面板
+   */
+  async loadStatsPanel() {
+    try {
+      const stats = await getStats();
+      const topSkills = await getTopSkills(5);
+      const trend = await getUsageTrend(7);
+
+      // 统计卡片网格
+      if (this.statsGrid) {
+        const cards = [
+          { label: '提问次数', value: stats.totalQuestions },
+          { label: '知识条目', value: stats.totalKnowledgeEntries },
+          { label: '高亮标注', value: stats.totalHighlights },
+          { label: '复习次数', value: stats.totalReviewSessions },
+          { label: 'Token 消耗', value: stats.totalTokensUsed > 1000 ? `${(stats.totalTokensUsed / 1000).toFixed(1)}k` : stats.totalTokensUsed },
+          { label: '使用技能', value: Object.keys(stats.skillUsage).length }
+        ];
+        this.statsGrid.innerHTML = cards.map(c => `
+          <div class="stat-card">
+            <div class="stat-card-value">${c.value}</div>
+            <div class="stat-card-label">${c.label}</div>
+          </div>
+        `).join('');
+      }
+
+      // Top 技能列表
+      if (this.statsSkillsList) {
+        if (topSkills.length === 0) {
+          this.statsSkillsList.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">暂无技能使用记录</div>';
+        } else {
+          this.statsSkillsList.innerHTML = topSkills.map((s, i) => `
+            <div class="stats-skill-item">
+              <span class="stats-skill-rank">${i + 1}</span>
+              <span class="stats-skill-name">${s.skillId}</span>
+              <span class="stats-skill-count">${s.count} 次</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 7 天趋势图（文本条形图）
+      if (this.statsTrendChart) {
+        const maxQ = Math.max(...trend.map(d => d.questions), 1);
+        trend.reverse(); // 最新的在上
+        if (trend.every(d => d.questions === 0 && d.tokens === 0)) {
+          this.statsTrendChart.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">暂无使用数据</div>';
+        } else {
+          this.statsTrendChart.innerHTML = trend.map(d => {
+            const pct = Math.round((d.questions / maxQ) * 100);
+            const label = d.date.slice(5); // MM-DD
+            return `
+              <div class="stats-trend-row">
+                <span class="stats-trend-date">${label}</span>
+                <div class="stats-trend-bar-wrap">
+                  <div class="stats-trend-bar" style="width:${pct}%"></div>
+                </div>
+                <span class="stats-trend-value">${d.questions}</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+    } catch (e) {
+      // 静默处理
     }
   }
 
@@ -4967,6 +5067,9 @@ ${sendContent}
     if (this.reviewBanner) {
       this.reviewBanner.classList.add('hidden');
     }
+
+    // 记录复习统计
+    incrementCounter('totalReviewSessions');
   }
 
   /**
