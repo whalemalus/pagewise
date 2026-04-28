@@ -130,6 +130,7 @@
         <button class="knowledge-subtab active" data-subtab="entries">📚 知识条目</button>
         <button class="knowledge-subtab" data-subtab="highlights">📌 高亮标注</button>
         <button class="knowledge-subtab" data-subtab="graph">🕸️ 图谱</button>
+        <button class="knowledge-subtab" data-subtab="learning-path">🗺️ 学习路径</button>
       </div>
       <div class="search-box">
           <input type="text" id="searchInput" placeholder="搜索知识库...">
@@ -195,6 +196,20 @@
         </div>
         <canvas id="knowledgeGraphCanvas" class="graph-canvas"></canvas>
         <div class="graph-tooltip hidden" id="graphTooltip"></div>
+      </div>
+
+      <!-- 学习路径面板 -->
+      <div class="learning-path-panel hidden" id="learningPathPanel">
+        <div class="lp-toolbar">
+          <button class="btn-sm btn-primary-sm" id="btnGenerateLearningPath">🤖 生成学习路径</button>
+          <span class="lp-status" id="learningPathStatus"></span>
+        </div>
+        <div class="lp-content" id="learningPathContent">
+          <div class="empty-state" id="emptyLearningPath">
+            <div class="empty-icon">🗺️</div>
+            <p>点击上方按钮，AI 将基于你的知识库生成个性化学习路径</p>
+          </div>
+        </div>
       </div>
     </div>
 

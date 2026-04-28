@@ -16,6 +16,7 @@ import { buildGraphData, forceDirectedLayout } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
+import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
 
 // ==================== 提供商预设 ====================
 
@@ -200,6 +201,12 @@ class SidebarApp {
     this.graphTooltip = document.getElementById('graphTooltip');
     this.btnRefreshGraph = document.getElementById('btnRefreshGraph');
 
+    // Learning Path
+    this.learningPathPanel = document.getElementById('learningPathPanel');
+    this.learningPathContent = document.getElementById('learningPathContent');
+    this.learningPathStatus = document.getElementById('learningPathStatus');
+    this.btnGenerateLearningPath = document.getElementById('btnGenerateLearningPath');
+
     // Export Conversation
     this.btnExportConversation = document.getElementById('btnExportConversation');
 
@@ -318,6 +325,11 @@ class SidebarApp {
     // 知识图谱：刷新
     if (this.btnRefreshGraph) {
       this.btnRefreshGraph.addEventListener('click', () => this.renderKnowledgeGraph());
+    }
+
+    // 学习路径：生成
+    if (this.btnGenerateLearningPath) {
+      this.btnGenerateLearningPath.addEventListener('click', () => this.generateLearningPath());
     }
 
     // 导出对话
@@ -2188,6 +2200,165 @@ ${readme || '无法提取 README 内容'}
     this.loadKnowledgeTags();
   }
 
+  // ==================== 学习路径生成 ====================
+
+  /**
+   * 生成学习路径
+   * 从知识库提取标签和主题统计，发送给 AI 生成个性化学习路线图
+   */
+  async generateLearningPath() {
+    if (!this.aiClient) {
+      this.showLearningPathStatus('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    // 显示加载状态
+    this.showLearningPathLoading();
+
+    try {
+      // 1. 从知识库提取所有条目
+      const entries = await this.memory.kb.getAllEntries(1000);
+      if (entries.length === 0) {
+        this.showLearningPathStatus('知识库为空，请先保存一些知识条目');
+        this.showLearningPathEmpty();
+        return;
+      }
+
+      // 2. 统计每个主题的知识条目数量
+      const topicStats = buildTopicStats(entries);
+      if (topicStats.topics.length === 0) {
+        this.showLearningPathStatus('没有可用的主题');
+        this.showLearningPathEmpty();
+        return;
+      }
+
+      // 3. 构建 prompt 发送给 AI
+      const prompt = buildLearningPathPrompt(topicStats.topics);
+
+      this.showLearningPathStatus('AI 正在分析你的知识库...');
+
+      // 设置 30 秒超时
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('请求超时（30秒）')), 30000);
+      });
+
+      const responsePromise = this.aiClient.chat([{
+        role: 'user',
+        content: prompt
+      }], {
+        maxTokens: 2000,
+        systemPrompt: '你是一个学习规划助手。基于用户的知识库内容，生成结构化的个性化学习路径。只返回 JSON 格式的结果，不要返回其他内容。'
+      });
+
+      const response = await Promise.race([responsePromise, timeoutPromise]);
+
+      // 4. 解析 AI 返回的学习路径
+      const learningPath = parseLearningPathResponse(response.content);
+
+      if (!learningPath || !validateLearningPath(learningPath)) {
+        this.showLearningPathStatus('AI 返回的内容格式不正确，请重试');
+        this.showLearningPathEmpty();
+        return;
+      }
+
+      // 5. 将条目信息补充到各阶段
+      this.enrichLearningPathEntries(learningPath, entries);
+
+      // 6. 渲染学习路径
+      this.renderLearningPath(learningPath);
+      this.showLearningPathStatus(`基于 ${entries.length} 条知识、${topicStats.topics.length} 个主题生成`);
+
+    } catch (error) {
+      if (error.message.includes('超时')) {
+        this.showLearningPathStatus('AI 响应超时，请稍后重试');
+      } else {
+        this.showLearningPathStatus(`生成失败：${error.message}`);
+      }
+      this.showLearningPathEmpty();
+    }
+  }
+
+  /**
+   * 为学习路径中的每个阶段匹配知识库条目
+   */
+  enrichLearningPathEntries(learningPath, entries) {
+    for (const stage of learningPath.stages) {
+      const stageTopics = (stage.topics || []).map(t => t.toLowerCase());
+      const matchedEntries = [];
+
+      for (const entry of entries) {
+        const entryTags = (entry.tags || []).map(t => t.toLowerCase());
+        const entryTitle = (entry.title || '').toLowerCase();
+        const matches = stageTopics.some(topic =>
+          entryTags.some(tag => tag.includes(topic) || topic.includes(tag)) ||
+          entryTitle.includes(topic)
+        );
+        if (matches) {
+          matchedEntries.push({ id: entry.id, title: entry.title });
+        }
+      }
+
+      // 每个阶段最多显示 5 条推荐阅读
+      stage.entries = matchedEntries.slice(0, 5);
+    }
+  }
+
+  /**
+   * 渲染学习路径到面板
+   */
+  renderLearningPath(learningPath) {
+    if (!this.learningPathContent) return;
+    const html = renderLearningPathHTML(learningPath, (s) => this.escapeHtml(s));
+    this.learningPathContent.innerHTML = html;
+
+    // 绑定推荐条目点击事件
+    this.learningPathContent.querySelectorAll('.lp-entry-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const id = parseInt(item.dataset.id);
+        if (id) {
+          this.switchKnowledgeSubtab('entries');
+          this.showKnowledgeDetail(id);
+        }
+      });
+    });
+  }
+
+  /**
+   * 显示学习路径加载动画
+   */
+  showLearningPathLoading() {
+    if (!this.learningPathContent) return;
+    this.learningPathContent.innerHTML = `
+      <div class="lp-loading">
+        <div class="lp-loading-spinner"></div>
+        <span>正在生成学习路径...</span>
+      </div>
+    `;
+  }
+
+  /**
+   * 显示空状态
+   */
+  showLearningPathEmpty() {
+    if (!this.learningPathContent) return;
+    this.learningPathContent.innerHTML = `
+      <div class="empty-state" id="emptyLearningPath">
+        <div class="empty-icon">🗺️</div>
+        <p>点击上方按钮，AI 将基于你的知识库生成个性化学习路径</p>
+      </div>
+    `;
+  }
+
+  /**
+   * 显示学习路径状态文字
+   */
+  showLearningPathStatus(text) {
+    if (this.learningPathStatus) {
+      this.learningPathStatus.textContent = text;
+    }
+  }
+
   // ==================== 高亮标注管理 ====================
 
   /**
@@ -2201,6 +2372,7 @@ ${readme || '无法提取 README 内容'}
     const isEntries = subtab === 'entries';
     const isHighlights = subtab === 'highlights';
     const isGraph = subtab === 'graph';
+    const isLearningPath = subtab === 'learning-path';
 
     // 知识条目相关元素
     const knowledgeToolbar = this.searchInput?.closest('.knowledge-toolbar');
@@ -2220,6 +2392,9 @@ ${readme || '无法提取 README 内容'}
     }
     if (this.knowledgeGraphPanel) {
       this.knowledgeGraphPanel.classList.toggle('hidden', !isGraph);
+    }
+    if (this.learningPathPanel) {
+      this.learningPathPanel.classList.toggle('hidden', !isLearningPath);
     }
 
     if (isHighlights) {

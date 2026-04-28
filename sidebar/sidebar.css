@@ -3065,3 +3065,209 @@ mark.search-highlight {
 [data-theme="dark"] .btn-rate-remembered:hover {
   background: #052e16;
 }
+
+/* ==================== Learning Path ==================== */
+
+.learning-path-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.learning-path-panel.hidden {
+  display: none !important;
+}
+
+.lp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.lp-status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.lp-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* 学习路径容器 */
+.learning-path {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 阶段行 */
+.lp-stage {
+  display: flex;
+  gap: 14px;
+  position: relative;
+}
+
+/* 左侧连接线区域 */
+.lp-stage-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 32px;
+}
+
+.lp-stage-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.lp-connector-line {
+  width: 2px;
+  flex: 1;
+  background: var(--border-color);
+  min-height: 20px;
+}
+
+/* 阶段卡片 */
+.lp-stage-card {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 16px;
+  transition: border-color 0.15s;
+}
+
+.lp-stage-card:hover {
+  border-color: var(--accent);
+}
+
+.lp-stage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.lp-stage-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.lp-stage-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lp-stage-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+/* 主题标签 */
+.lp-stage-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.lp-topic-tag {
+  padding: 2px 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* 推荐阅读 */
+.lp-stage-entries {
+  border-top: 1px solid var(--border-color);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.lp-entries-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.lp-entry-item {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.lp-entry-item:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* 加载动画 */
+.lp-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.lp-loading-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: lp-spin 0.8s linear infinite;
+}
+
+@keyframes lp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Dark theme */
+[data-theme="dark"] .lp-stage-card {
+  background: var(--bg-tertiary);
+  border-color: #374151;
+}
+
+[data-theme="dark"] .lp-topic-tag {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+[data-theme="dark"] .lp-entry-item {
+  background: var(--bg-secondary);
+  border-color: #374151;
+}
