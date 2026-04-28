@@ -1,0 +1,615 @@
+{
+  "extName": {
+    "message": "智阅 PageWise",
+    "description": "Extension name"
+  },
+  "extDescription": {
+    "message": "浏览网页时让 AI 帮你理解技术内容，自动整理到知识库。",
+    "description": "Extension description"
+  },
+
+  "tabChat": {
+    "message": "问答",
+    "description": "Chat tab label"
+  },
+  "tabSkills": {
+    "message": "技能",
+    "description": "Skills tab label"
+  },
+  "tabKnowledge": {
+    "message": "知识库",
+    "description": "Knowledge base tab label"
+  },
+  "tabPage": {
+    "message": "页面",
+    "description": "Page tab label"
+  },
+  "tabSettings": {
+    "message": "设置",
+    "description": "Settings tab label"
+  },
+
+  "loading": {
+    "message": "加载中...",
+    "description": "Loading indicator"
+  },
+  "pageLoading": {
+    "message": "加载中...",
+    "description": "Page title loading state"
+  },
+  "unknownPage": {
+    "message": "未知页面",
+    "description": "Fallback page title"
+  },
+  "cannotGetPageInfo": {
+    "message": "无法获取页面信息",
+    "description": "Error when page info unavailable"
+  },
+
+  "extractPageContent": {
+    "message": "提取页面内容",
+    "description": "Extract page content button title"
+  },
+  "refresh": {
+    "message": "刷新",
+    "description": "Refresh button title"
+  },
+  "exportConversationMarkdown": {
+    "message": "导出对话为 Markdown",
+    "description": "Export conversation button title"
+  },
+
+  "startReview": {
+    "message": "开始复习",
+    "description": "Start review button"
+  },
+  "branchFrom": {
+    "message": "分支自: ...",
+    "description": "Branch info text"
+  },
+  "returnToMain": {
+    "message": "返回主对话",
+    "description": "Return to main conversation button"
+  },
+
+  "welcomeTitle": {
+    "message": "你好！我是你的技术知识助手",
+    "description": "Welcome message title"
+  },
+  "welcomeDesc": {
+    "message": "浏览网页时遇到不懂的技术内容，直接问我就好。",
+    "description": "Welcome message description"
+  },
+  "summarizePage": {
+    "message": "总结当前页面",
+    "description": "Summarize page quick action"
+  },
+  "explainSelection": {
+    "message": "解释选中内容",
+    "description": "Explain selection quick action"
+  },
+  "analyzeAllTabs": {
+    "message": "分析所有标签页",
+    "description": "Analyze all tabs quick action"
+  },
+  "historyConversations": {
+    "message": "历史对话",
+    "description": "History conversations button"
+  },
+
+  "knowledgeReview": {
+    "message": "知识复习",
+    "description": "Knowledge review title"
+  },
+  "showAnswer": {
+    "message": "显示答案",
+    "description": "Show answer button"
+  },
+  "didYouRemember": {
+    "message": "你记住了吗？",
+    "description": "Review rating question"
+  },
+  "forgot": {
+    "message": "忘记",
+    "description": "Forgot button in review"
+  },
+  "fuzzy": {
+    "message": "模糊",
+    "description": "Fuzzy button in review"
+  },
+  "remembered": {
+    "message": "记住",
+    "description": "Remembered button in review"
+  },
+  "reviewComplete": {
+    "message": "复习完成！",
+    "description": "Review complete title"
+  },
+  "done": {
+    "message": "完成",
+    "description": "Done button"
+  },
+
+  "searchHistoryPlaceholder": {
+    "message": "搜索历史对话...",
+    "description": "History search placeholder"
+  },
+  "clearAll": {
+    "message": "清空全部",
+    "description": "Clear all button"
+  },
+
+  "template": {
+    "message": "模板",
+    "description": "Template button"
+  },
+  "promptTemplate": {
+    "message": "Prompt 模板",
+    "description": "Prompt template title"
+  },
+  "newTemplate": {
+    "message": "新建",
+    "description": "New template button"
+  },
+  "templateName": {
+    "message": "模板名称",
+    "description": "Template name label"
+  },
+  "templateNamePlaceholder": {
+    "message": "例如：代码审查",
+    "description": "Template name placeholder"
+  },
+  "templateContent": {
+    "message": "模板内容",
+    "description": "Template content label"
+  },
+  "templateContentPlaceholder": {
+    "message": "使用 {{变量名}} 作为占位符",
+    "description": "Template content placeholder"
+  },
+  "category": {
+    "message": "分类",
+    "description": "Category label"
+  },
+  "categoryCode": {
+    "message": "代码",
+    "description": "Code category"
+  },
+  "categoryDebug": {
+    "message": "调试",
+    "description": "Debug category"
+  },
+  "categoryLearning": {
+    "message": "学习",
+    "description": "Learning category"
+  },
+  "categoryCustom": {
+    "message": "自定义",
+    "description": "Custom category"
+  },
+  "cancel": {
+    "message": "取消",
+    "description": "Cancel button"
+  },
+  "save": {
+    "message": "保存",
+    "description": "Save button"
+  },
+
+  "inputPlaceholder": {
+    "message": "输入你的问题... (Enter 发送, Shift+Enter 换行)",
+    "description": "User input placeholder"
+  },
+  "send": {
+    "message": "发送",
+    "description": "Send button title"
+  },
+  "selectionAttached": {
+    "message": "已附带选中文本",
+    "description": "Selection attached hint"
+  },
+
+  "knowledgeEntries": {
+    "message": "知识条目",
+    "description": "Knowledge entries subtab"
+  },
+  "highlights": {
+    "message": "高亮标注",
+    "description": "Highlights subtab"
+  },
+  "graph": {
+    "message": "图谱",
+    "description": "Graph subtab"
+  },
+  "learningPath": {
+    "message": "学习路径",
+    "description": "Learning path subtab"
+  },
+  "searchKnowledgePlaceholder": {
+    "message": "搜索知识库...",
+    "description": "Knowledge search placeholder"
+  },
+  "keywordSearch": {
+    "message": "关键词搜索",
+    "description": "Keyword search title"
+  },
+  "semanticSearch": {
+    "message": "语义搜索",
+    "description": "Semantic search title"
+  },
+  "selectMode": {
+    "message": "选择模式",
+    "description": "Select mode button"
+  },
+  "importBtn": {
+    "message": "导入",
+    "description": "Import button"
+  },
+  "exportMd": {
+    "message": "导出 MD",
+    "description": "Export Markdown button"
+  },
+  "exportJson": {
+    "message": "导出 JSON",
+    "description": "Export JSON button"
+  },
+
+  "selectAll": {
+    "message": "全选",
+    "description": "Select all label"
+  },
+  "selectedCount": {
+    "message": "已选 $COUNT$ 条",
+    "description": "Selected count display",
+    "placeholders": {
+      "COUNT": { "content": "$1" }
+    }
+  },
+  "batchTag": {
+    "message": "批量打标签",
+    "description": "Batch tag button"
+  },
+  "batchDelete": {
+    "message": "批量删除",
+    "description": "Batch delete button"
+  },
+  "batchExport": {
+    "message": "批量导出",
+    "description": "Batch export button"
+  },
+
+  "emptyKnowledge": {
+    "message": "还没有保存的知识条目",
+    "description": "Empty knowledge list message"
+  },
+  "emptyKnowledgeHint": {
+    "message": "在问答中点击「保存」即可添加到知识库",
+    "description": "Empty knowledge hint"
+  },
+
+  "tagBtn": {
+    "message": "打标签",
+    "description": "Tag button (floating)"
+  },
+  "deleteBtn": {
+    "message": "删除",
+    "description": "Delete button (floating)"
+  },
+  "exportBtn": {
+    "message": "导出",
+    "description": "Export button (floating)"
+  },
+  "exitSelect": {
+    "message": "退出选择",
+    "description": "Exit select mode button"
+  },
+
+  "backToList": {
+    "message": "← 返回列表",
+    "description": "Back to list button"
+  },
+  "edit": {
+    "message": "编辑",
+    "description": "Edit button"
+  },
+  "delete": {
+    "message": "删除",
+    "description": "Delete button"
+  },
+  "relatedKnowledge": {
+    "message": "相关知识",
+    "description": "Related knowledge title"
+  },
+
+  "highlightCount": {
+    "message": "$COUNT$ 条高亮",
+    "description": "Highlight count display",
+    "placeholders": {
+      "COUNT": { "content": "$1" }
+    }
+  },
+  "emptyHighlights": {
+    "message": "还没有高亮标注",
+    "description": "Empty highlights message"
+  },
+  "emptyHighlightsHint": {
+    "message": "选中文本后使用高亮功能保存",
+    "description": "Empty highlights hint"
+  },
+
+  "refreshGraph": {
+    "message": "刷新图谱",
+    "description": "Refresh graph button"
+  },
+  "generateLearningPath": {
+    "message": "生成学习路径",
+    "description": "Generate learning path button"
+  },
+  "emptyLearningPath": {
+    "message": "点击上方按钮，AI 将基于你的知识库生成个性化学习路径",
+    "description": "Empty learning path message"
+  },
+
+  "createCustomSkill": {
+    "message": "创建自定义技能",
+    "description": "Create custom skill title"
+  },
+  "skillName": {
+    "message": "技能名称",
+    "description": "Skill name label"
+  },
+  "skillNamePlaceholder": {
+    "message": "例如：代码翻译",
+    "description": "Skill name placeholder"
+  },
+  "description": {
+    "message": "描述",
+    "description": "Description label"
+  },
+  "skillDescPlaceholder": {
+    "message": "简要描述技能的功能",
+    "description": "Skill description placeholder"
+  },
+  "promptTemplateLabel": {
+    "message": "Prompt 模板",
+    "description": "Prompt template label"
+  },
+  "triggerMethod": {
+    "message": "触发方式",
+    "description": "Trigger method label"
+  },
+  "manualTrigger": {
+    "message": "手动触发",
+    "description": "Manual trigger option"
+  },
+  "autoTrigger": {
+    "message": "自动触发",
+    "description": "Auto trigger option"
+  },
+  "createSkill": {
+    "message": "创建技能",
+    "description": "Create skill button"
+  },
+  "skillsHint1": {
+    "message": "技能会根据页面内容自动推荐，也可以手动触发。",
+    "description": "Skills hint line 1"
+  },
+  "skillsHint2": {
+    "message": "AI 在回答时可通过 [SKILL:id] 指令自动调用技能。",
+    "description": "Skills hint line 2"
+  },
+
+  "openSidebarAutoExtract": {
+    "message": "打开侧边栏后自动提取页面内容",
+    "description": "Page preview empty state"
+  },
+
+  "apiConfig": {
+    "message": "API 配置",
+    "description": "API config section title"
+  },
+  "aiProvider": {
+    "message": "AI 服务商",
+    "description": "AI provider label"
+  },
+  "defaultProfile": {
+    "message": "默认配置",
+    "description": "Default profile option"
+  },
+  "apiBaseUrl": {
+    "message": "API 地址",
+    "description": "API base URL label"
+  },
+  "apiKeyLabel": {
+    "message": "API Key",
+    "description": "API Key label"
+  },
+  "apiKeyHint": {
+    "message": "数据仅存储在本地，不会上传到任何服务器",
+    "description": "API key storage hint"
+  },
+  "modelLabel": {
+    "message": "模型",
+    "description": "Model label"
+  },
+  "selectModel": {
+    "message": "选择模型...",
+    "description": "Select model placeholder"
+  },
+  "manualModelPlaceholder": {
+    "message": "或手动输入模型名称",
+    "description": "Manual model input placeholder"
+  },
+  "fetchModels": {
+    "message": "获取模型",
+    "description": "Fetch models button"
+  },
+  "testConnection": {
+    "message": "测试连接",
+    "description": "Test connection button"
+  },
+  "maxTokensLabel": {
+    "message": "最大输出长度",
+    "description": "Max tokens label"
+  },
+  "autoExtractLabel": {
+    "message": "打开侧边栏时自动提取页面内容",
+    "description": "Auto extract checkbox label"
+  },
+  "themeLabel": {
+    "message": "主题",
+    "description": "Theme label"
+  },
+  "themeLight": {
+    "message": "浅色",
+    "description": "Light theme option"
+  },
+  "themeDark": {
+    "message": "深色",
+    "description": "Dark theme option"
+  },
+  "themeAuto": {
+    "message": "跟随系统",
+    "description": "Auto theme option"
+  },
+  "saveSettings": {
+    "message": "保存设置",
+    "description": "Save settings button"
+  },
+  "saved": {
+    "message": "已保存 ✓",
+    "description": "Settings saved status"
+  },
+  "evolutionStatus": {
+    "message": "助手进化状态",
+    "description": "Evolution status section title"
+  },
+  "resetEvolution": {
+    "message": "重置进化数据",
+    "description": "Reset evolution button"
+  },
+  "usageStats": {
+    "message": "使用统计",
+    "description": "Usage stats section title"
+  },
+  "topSkills": {
+    "message": "常用技能 Top 5",
+    "description": "Top skills subtitle"
+  },
+  "noData": {
+    "message": "暂无数据",
+    "description": "No data placeholder"
+  },
+  "recentTrend": {
+    "message": "最近 7 天趋势",
+    "description": "Recent 7 days trend subtitle"
+  },
+  "resetStats": {
+    "message": "重置统计数据",
+    "description": "Reset stats button"
+  },
+  "onboarding": {
+    "message": "新手引导",
+    "description": "Onboarding section title"
+  },
+  "onboardingRetrigger": {
+    "message": "如果你想重新查看首次使用引导，点击下方按钮。",
+    "description": "Onboarding retrigger hint"
+  },
+  "retriggerOnboarding": {
+    "message": "重新触发引导",
+    "description": "Retrigger onboarding button"
+  },
+  "skip": {
+    "message": "跳过",
+    "description": "Skip onboarding button"
+  },
+  "nextStep": {
+    "message": "下一步",
+    "description": "Next step onboarding button"
+  },
+  "welcome": {
+    "message": "欢迎",
+    "description": "Onboarding welcome title"
+  },
+
+  "selectTabsToAnalyze": {
+    "message": "选择要分析的标签页",
+    "description": "Tab selector title"
+  },
+  "tabSelectorHint": {
+    "message": "最多同时分析 5 个标签页，内容将合并后交给 AI 联合分析",
+    "description": "Tab selector hint"
+  },
+  "selectedTabCount": {
+    "message": "已选 $COUNT$ 个",
+    "description": "Selected tab count",
+    "placeholders": {
+      "COUNT": { "content": "$1" }
+    }
+  },
+  "confirmAnalyze": {
+    "message": "确认分析",
+    "description": "Confirm analyze button"
+  },
+
+  "categoryDoc": {
+    "message": "文档",
+    "description": "Doc category"
+  },
+  "categoryExport": {
+    "message": "导出",
+    "description": "Export category"
+  },
+  "allCategory": {
+    "message": "全部",
+    "description": "All category filter"
+  },
+
+  "skillEditorUseVarSyntax": {
+    "message": "使用 <code>{{变量名}}</code> 语法定义可替换变量",
+    "description": "Skill editor variable syntax hint"
+  },
+  "skillEditorVarPlaceholder": {
+    "message": "使用 {{变量名}} 作为变量占位符，例如：\n请将以下代码翻译为 {{targetLanguage}}：\n\n{{code}}",
+    "description": "Skill editor prompt placeholder"
+  },
+
+  "codeLabel": {
+    "message": "代码 (code)",
+    "description": "Code category with English"
+  },
+  "debugLabel": {
+    "message": "调试 (debug)",
+    "description": "Debug category with English"
+  },
+  "docLabel": {
+    "message": "文档 (doc)",
+    "description": "Doc category with English"
+  },
+  "learningLabel": {
+    "message": "学习 (learning)",
+    "description": "Learning category with English"
+  },
+  "customLabel": {
+    "message": "自定义 (custom)",
+    "description": "Custom category with English"
+  },
+
+  "confirmResetEvolution": {
+    "message": "确定重置所有进化数据？助手将回到初始状态。",
+    "description": "Confirm reset evolution dialog"
+  },
+  "evolutionReset": {
+    "message": "进化数据已重置",
+    "description": "Evolution reset message"
+  },
+  "confirmResetStats": {
+    "message": "确定重置所有统计数据？",
+    "description": "Confirm reset stats dialog"
+  },
+  "statsReset": {
+    "message": "统计数据已重置",
+    "description": "Stats reset message"
+  }
+}
