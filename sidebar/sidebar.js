@@ -70,6 +70,9 @@ class SidebarApp {
     this.activeBranchId = null;
     this.mainConversationSnapshot = null; // 主对话快照（进入分支前）
 
+    // 停止回答
+    this.abortController = null;
+
     // 性能优化：分页加载状态
     this._pageSize = 20;
     this._currentPage = 0;
@@ -163,6 +166,7 @@ class SidebarApp {
     this.chatArea = document.getElementById('chatArea');
     this.userInput = document.getElementById('userInput');
     this.btnSend = document.getElementById('btnSend');
+    this.btnStop = document.getElementById('btnStop');
     this.selectionHint = document.getElementById('selectionHint');
     this.pageTitle = document.getElementById('pageTitle');
     this.btnExtract = document.getElementById('btnExtract');
@@ -278,6 +282,7 @@ class SidebarApp {
 
     // Export Conversation
     this.btnExportConversation = document.getElementById('btnExportConversation');
+    this.btnClearChat = document.getElementById('btnClearChat');
 
     // Batch Operations
     this.batchToolbar = document.getElementById('batchToolbar');
@@ -378,6 +383,7 @@ class SidebarApp {
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
     });
     this.btnSend.addEventListener('click', () => this.sendMessage());
+    this.btnStop.addEventListener('click', () => this.stopGeneration());
     this.userInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -480,6 +486,11 @@ class SidebarApp {
     // 导出对话
     if (this.btnExportConversation) {
       this.btnExportConversation.addEventListener('click', () => this.exportConversation());
+    }
+
+    // 清空对话
+    if (this.btnClearChat) {
+      this.btnClearChat.addEventListener('click', () => this.clearChat());
     }
 
     // 新手引导
@@ -1424,6 +1435,11 @@ class SidebarApp {
 
     const loadingEl = this.showLoading();
 
+    // 创建 AbortController 用于停止生成
+    this.abortController = new AbortController();
+    this.btnSend.classList.add('hidden');
+    this.btnStop.classList.remove('hidden');
+
     try {
       let fullResponse = '';
       let messageEl = null;
@@ -1454,7 +1470,7 @@ class SidebarApp {
           ...this.conversationHistory.slice(-6),
           userMessage
         ],
-        { systemPrompt: enhancedSystemPrompt }
+        { systemPrompt: enhancedSystemPrompt, signal: this.abortController.signal }
       )) {
         fullResponse += chunk;
         if (!messageEl) {
@@ -1532,11 +1548,42 @@ class SidebarApp {
         console.warn('[PageWise] batchEvolve failed:', e);
       }
 
+      // 恢复按钮状态
+      this.btnStop.classList.add('hidden');
+      this.btnSend.classList.remove('hidden');
+      this.abortController = null;
+
     } catch (error) {
       loadingEl.remove();
+      // 恢复按钮状态
+      this.btnStop.classList.add('hidden');
+      this.btnSend.classList.remove('hidden');
+      this.abortController = null;
+
+      if (error.name === 'AbortError') {
+        // 用户主动停止：追加"（已停止）"到已有内容
+        if (fullResponse && messageEl) {
+          this.updateAIMessage(messageEl, fullResponse + '\n\n*(已停止)*');
+          this.conversationHistory.push(
+            { role: 'user', content: text },
+            { role: 'assistant', content: fullResponse }
+          );
+          await saveConversation(this.conversationHistory, this.currentTabUrl);
+        } else {
+          this.addSystemMessage('（已停止）');
+        }
+        return;
+      }
+
       const retryCount = this._aiRetryCount || 0;
       this._aiRetryCount = 0;
       this.handleAIError(error, text, contentWithSelection, retryCount);
+    }
+  }
+
+  stopGeneration() {
+    if (this.abortController) {
+      this.abortController.abort();
     }
   }
 
@@ -1727,11 +1774,7 @@ class SidebarApp {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message message-ai';
     loadingDiv.innerHTML = `
-      <div class="typing-indicator">
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-        <div class="typing-dot"></div>
-      </div>
+      <div class="thinking-indicator">🤔 正在思考...</div>
     `;
     this.chatArea.appendChild(loadingDiv);
     this.scrollToBottom();
@@ -4322,6 +4365,15 @@ ${sendContent}
     const filename = `pagewise-对话-${dateStr}.md`;
 
     this.downloadFile(md, filename, 'text/markdown;charset=utf-8');
+  }
+
+  clearChat() {
+    if (this.conversationHistory.length === 0) return;
+    if (!confirm('确定要清空当前对话吗？此操作不可恢复。')) return;
+    this.conversationHistory = [];
+    this.chatArea.innerHTML = '';
+    saveConversation([], this.currentTabUrl);
+    this.updateTokenDisplay();
   }
 
   // ==================== 进化状态 ====================
