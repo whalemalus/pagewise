@@ -156,6 +156,24 @@ class SidebarApp {
 
     // 检查并显示新手引导
     await this.checkOnboarding();
+
+    // R045: 网页刷新/切换时自动刷新插件内容
+    this._refreshDebounce = debounce(() => {
+      if (this.userInput && this.userInput.value.trim()) return;
+      this.loadPageContext();
+      this.extractContent();
+    }, 300);
+
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+      if (tabId === this.currentTabId && changeInfo.status === 'complete') {
+        this._refreshDebounce();
+      }
+    });
+
+    chrome.tabs.onActivated.addListener((activeInfo) => {
+      this.currentTabId = activeInfo.tabId;
+      this.loadPageContext();
+    });
   }
 
   // ==================== 初始化 ====================
@@ -1107,12 +1125,14 @@ class SidebarApp {
             ${skill.trigger && skill.trigger.type === 'auto' ? '🟢 自动触发' : '🔵 手动触发'}
           </div>
           <div class="skill-card-actions">
+            <button class="skill-detail-btn" data-id="${skill.id}">ℹ️ 详情</button>
             ${isCustom ? `<button class="skill-card-edit-btn" data-id="${skill.id}">编辑</button>` : ''}
             ${isCustom ? `<button class="skill-card-delete-btn" data-id="${skill.id}">删除</button>` : ''}
             <button class="skill-run-btn" data-id="${skill.id}" ${skill.enabled ? '' : 'disabled'}>运行</button>
             <button class="skill-toggle ${skill.enabled ? 'on' : ''}" data-id="${skill.id}"></button>
           </div>
         </div>
+        <div class="skill-detail-panel" data-id="${skill.id}"></div>
       </div>
     `;
     }).join('');
@@ -1137,6 +1157,64 @@ class SidebarApp {
     this.skillsList.querySelectorAll('.skill-card-delete-btn').forEach(btn => {
       btn.addEventListener('click', () => this.handleDeleteCustomSkill(btn.dataset.id));
     });
+
+    // 技能详情面板
+    this.skillsList.querySelectorAll('.skill-detail-btn').forEach(btn => {
+      btn.addEventListener('click', () => this.toggleSkillDetail(btn.dataset.id));
+    });
+  }
+
+  toggleSkillDetail(skillId) {
+    const panel = this.skillsList.querySelector(`.skill-detail-panel[data-id="${skillId}"]`);
+    if (!panel) return;
+
+    if (panel.style.display === 'block') {
+      panel.style.display = 'none';
+      return;
+    }
+
+    // 首次展开时填充内容
+    if (!panel.dataset.loaded) {
+      const skill = this.skills.get(skillId);
+      if (!skill) return;
+
+      const hasParams = skill.parameters && skill.parameters.length > 0;
+      const paramsTable = hasParams
+        ? `<table class="skill-detail-table">
+            <thead><tr><th>参数名</th><th>类型</th><th>说明</th><th>必填</th></tr></thead>
+            <tbody>${skill.parameters.map(p => `
+              <tr>
+                <td><code>${this.escapeHtml(p.name)}</code></td>
+                <td>${this.escapeHtml(p.type || '-')}</td>
+                <td>${this.escapeHtml(p.description || '-')}</td>
+                <td>${p.required ? '✓' : '—'}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`
+        : '<p class="skill-detail-no-params">此技能无自定义参数</p>';
+
+      const triggerType = skill.trigger && skill.trigger.type === 'auto'
+        ? '自动触发 — 当页面满足特定条件时自动触发'
+        : '手动触发 — 用户点击运行时触发';
+
+      panel.innerHTML = `
+        <div class="skill-detail-section">
+          <div class="skill-detail-title">参数列表</div>
+          ${paramsTable}
+        </div>
+        <div class="skill-detail-section">
+          <div class="skill-detail-title">触发条件</div>
+          <p class="skill-detail-text">${triggerType}</p>
+        </div>
+        <div class="skill-detail-section">
+          <div class="skill-detail-title">说明</div>
+          <p class="skill-detail-text">${this.escapeHtml(skill.description || '暂无说明')}</p>
+        </div>
+      `;
+      panel.dataset.loaded = '1';
+    }
+
+    panel.style.display = 'block';
   }
 
   toggleSkill(skillId, btn) {

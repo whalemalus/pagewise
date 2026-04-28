@@ -755,6 +755,96 @@ body {
   cursor: not-allowed;
 }
 
+.skill-detail-btn {
+  padding: 3px 8px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.skill-detail-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.skill-detail-panel {
+  display: none;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border-color);
+  margin-top: 10px;
+  animation: skillDetailSlideDown 0.2s ease;
+}
+
+@keyframes skillDetailSlideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.skill-detail-section {
+  margin-bottom: 10px;
+}
+
+.skill-detail-section:last-child {
+  margin-bottom: 0;
+}
+
+.skill-detail-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.skill-detail-text {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.skill-detail-no-params {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.skill-detail-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.skill-detail-table th {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.skill-detail-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.skill-detail-table code {
+  background: var(--bg-tertiary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+[data-theme="dark"] .skill-detail-btn {
+  border-color: #374151;
+}
+
 .skills-hint {
   padding: 12px 16px;
   border-top: 1px solid var(--border-color);
