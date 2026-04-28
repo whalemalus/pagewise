@@ -19,6 +19,7 @@ import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSk
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
 import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
 import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats } from '../lib/stats.js';
+import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 
 // ==================== 提供商预设 ====================
 
@@ -105,6 +106,9 @@ class SidebarApp {
     await this.loadProfileList();
     this.checkDueReviews();
     this.updateTokenDisplay();
+
+    // 安装全局错误捕获
+    installGlobalErrorHandler((msg, type) => this.showToast(msg, type));
 
     // 清理超过 30 天的旧对话
     try {
@@ -660,7 +664,7 @@ class SidebarApp {
 
   async extractContent() {
     if (!this.currentTabId) {
-      this.addSystemMessage('无法获取当前标签页');
+      this.showToast('无法获取当前标签页', 'error');
       return false;
     }
     try {
@@ -684,11 +688,52 @@ class SidebarApp {
 
         return true;
       }
-      this.addSystemMessage('页面内容为空，请确认页面已完全加载');
+
+      // 内容为空 — 显示友好提示并提供手动输入选项
+      const isYouTube = this.isYouTubePage;
+      const isPdf = (this.currentTabUrl || '').toLowerCase().includes('.pdf');
+      const pageType = isYouTube ? 'youtube' : isPdf ? 'pdf' : 'general';
+      const contentError = classifyContentError(new Error('empty content'), pageType);
+
+      this.showContentErrorMessage(contentError);
       return false;
     } catch (e) {
-      this.addSystemMessage('提取失败：请刷新页面后重试');
+      // 分类提取错误
+      const isYouTube = this.isYouTubePage;
+      const isPdf = (this.currentTabUrl || '').toLowerCase().includes('.pdf');
+      const pageType = isYouTube ? 'youtube' : isPdf ? 'pdf' : 'general';
+      const contentError = classifyContentError(e, pageType);
+
+      this.showContentErrorMessage(contentError);
       return false;
+    }
+  }
+
+  /**
+   * 显示内容提取错误消息（带可选手动输入按钮）
+   */
+  showContentErrorMessage(contentError) {
+    const msgEl = this.addSystemMessage('');
+    let html = `<span class="system-msg-text">⚠️ ${this.escapeHtml(contentError.message)}</span>`;
+
+    if (contentError.fallback) {
+      html += ` <button class="btn-manual-input" style="
+        margin-left:8px;padding:2px 10px;font-size:12px;
+        border:1px solid var(--primary,#4f46e5);border-radius:4px;
+        background:transparent;color:var(--primary,#4f46e5);cursor:pointer;
+      ">手动输入</button>`;
+    }
+
+    msgEl.innerHTML = html;
+
+    // 手动输入按钮：聚焦输入框
+    const manualBtn = msgEl.querySelector('.btn-manual-input');
+    if (manualBtn) {
+      manualBtn.addEventListener('click', () => {
+        this.userInput.focus();
+        this.userInput.placeholder = '请粘贴页面内容或直接提问...';
+        this.showToast('请在输入框中粘贴页面内容', 'info');
+      });
     }
   }
 
@@ -1318,7 +1363,9 @@ class SidebarApp {
 
     } catch (error) {
       loadingEl.remove();
-      this.addSystemMessage(`出错了：${error.message}`);
+      const retryCount = this._aiRetryCount || 0;
+      this._aiRetryCount = 0;
+      this.handleAIError(error, text, contentWithSelection, retryCount);
     }
   }
 
@@ -1341,6 +1388,75 @@ class SidebarApp {
       this.tokenDisplay.className = 'token-display';
       this.tokenDisplay.title = '';
     }
+  }
+
+  /**
+   * 处理 AI 调用错误 — 分类显示友好提示，支持自动重试和手动重试
+   * @param {Error} error - 原始错误
+   * @param {string} userText - 用户输入文本（用于重试）
+   * @param {Object} contentWithSelection - 页面内容（用于重试）
+   * @param {number} _retryCount - 内部重试计数器
+   */
+  async handleAIError(error, userText, contentWithSelection, _retryCount = 0) {
+    const classified = classifyAIError(error);
+
+    // 速率限制：自动重试（最多 3 次，指数退避）
+    if (classified.type === ErrorType.RATE_LIMIT && _retryCount < 3) {
+      const delay = 1000 * Math.pow(2, _retryCount);
+      this.showToast(`请求过于频繁，${delay / 1000} 秒后自动重试...`, 'warning');
+      await new Promise(resolve => setTimeout(resolve, delay));
+      // 重新发送消息（传入重试计数）
+      this._retrySendMessage(userText, contentWithSelection, _retryCount + 1);
+      return;
+    }
+
+    // 构建友好错误消息
+    let errorMsg = `⚠️ ${classified.message}`;
+
+    // 网络错误和超时：提供重试按钮
+    if (classified.type === ErrorType.NETWORK || classified.type === ErrorType.TIMEOUT) {
+      const msgEl = this.addSystemMessage('');
+      msgEl.innerHTML = `
+        <span class="system-msg-text">${this.escapeHtml(errorMsg)}</span>
+        <button class="btn-retry-inline" style="
+          margin-left:8px;padding:2px 10px;font-size:12px;
+          border:1px solid var(--primary,#4f46e5);border-radius:4px;
+          background:transparent;color:var(--primary,#4f46e5);cursor:pointer;
+        ">重试</button>
+      `;
+      const retryBtn = msgEl.querySelector('.btn-retry-inline');
+      if (retryBtn) {
+        retryBtn.addEventListener('click', () => {
+          msgEl.remove();
+          this.userInput.value = userText;
+          this.sendMessage();
+        });
+      }
+      return;
+    }
+
+    // 其他错误：普通提示
+    this.addSystemMessage(errorMsg);
+  }
+
+  /**
+   * 重试发送消息（用于速率限制自动重试）
+   */
+  async _retrySendMessage(userText, contentWithSelection, retryCount) {
+    this.userInput.value = userText;
+    await this._sendMessageInternal(userText, contentWithSelection, retryCount);
+  }
+
+  /**
+   * sendMessage 的内部实现（拆分以便重试）
+   */
+  async _sendMessageInternal(text, _contentHint, retryCount = 0) {
+    // 复用 sendMessage 的核心逻辑
+    // 这里直接调用 sendMessage，它会重新从 userInput 取值
+    this.userInput.value = text;
+    // 在 sendMessage 的 catch 中传入 retryCount 避免无限递归
+    this._aiRetryCount = retryCount;
+    await this.sendMessage();
   }
 
   /**
@@ -1433,6 +1549,7 @@ class SidebarApp {
     `;
     this.chatArea.appendChild(messageDiv);
     this.scrollToBottom();
+    return messageDiv;
   }
 
   showLoading() {
