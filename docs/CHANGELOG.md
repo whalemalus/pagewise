@@ -121,3 +121,25 @@
 - **sidebar/sidebar.css**：新增 `.code-run-btn` / `.sandbox-result` / `.sandbox-output` 等样式
 - **tests/test-code-sandbox.js**：22 个新测试（代码块检测、提取、沙箱 HTML 构建、语言类名检测）
 - **docs/REQUIREMENTS.md**：新增 R021 需求
+
+### 飞轮迭代 #17 — 知识图谱可视化
+
+**需求**: Canvas 力导向图可视化展示知识条目之间的关联关系
+
+**新增文件**:
+- **lib/knowledge-graph.js**：图谱数据构建与力导向布局模块
+  - `buildGraphData(entries, relations)` — 构建图数据（nodes + edges）
+  - `forceDirectedLayout(nodes, edges, iterations)` — 力导向布局算法（斥力 + 引力，50 次迭代）
+  - 节点大小按关联数量缩放，颜色按标签分类
+  - 最大节点数限制 100 个
+- **tests/test-knowledge-graph.js**：20 个新测试（图数据构建 + 力布局验证）
+
+**修改文件**:
+- **sidebar/sidebar.html**：知识库面板新增「🕸️ 图谱」子标签和 Canvas 容器
+- **sidebar/sidebar.js**：
+  - 新增 `renderKnowledgeGraph()` — 获取知识条目、计算相似度、运行力布局、绘制图谱
+  - 新增 `drawKnowledgeGraph()` — Canvas 绘制节点和边（高亮/淡化效果）
+  - 新增 `handleGraphHover()` — 鼠标悬停高亮相关边，tooltip 显示节点名
+  - 新增 `handleGraphClick()` — 点击节点跳转到知识详情
+  - `switchKnowledgeSubtab()` 支持 graph 子标签切换
+- **sidebar/sidebar.css**：图谱面板样式（Canvas 容器 400px 高度、tooltip、工具栏）
