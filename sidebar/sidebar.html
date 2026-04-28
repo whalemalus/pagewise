@@ -129,6 +129,7 @@
       <div class="knowledge-tabs">
         <button class="knowledge-subtab active" data-subtab="entries">📚 知识条目</button>
         <button class="knowledge-subtab" data-subtab="highlights">📌 高亮标注</button>
+        <button class="knowledge-subtab" data-subtab="graph">🕸️ 图谱</button>
       </div>
       <div class="search-box">
           <input type="text" id="searchInput" placeholder="搜索知识库...">
@@ -180,6 +181,16 @@
             <p class="text-muted">选中文本后使用高亮功能保存</p>
           </div>
         </div>
+      </div>
+
+      <!-- 知识图谱面板 -->
+      <div class="knowledge-graph-panel hidden" id="knowledgeGraphPanel">
+        <div class="graph-toolbar">
+          <span class="graph-info" id="graphInfo">加载中...</span>
+          <button class="btn-sm" id="btnRefreshGraph">🔄 刷新图谱</button>
+        </div>
+        <canvas id="knowledgeGraphCanvas" class="graph-canvas"></canvas>
+        <div class="graph-tooltip hidden" id="graphTooltip"></div>
       </div>
     </div>
 

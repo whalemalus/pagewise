@@ -12,6 +12,7 @@ import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { calculateNextReview, getDueCards, formatReviewDate, initializeReviewData } from '../lib/spaced-repetition.js';
+import { buildGraphData, forceDirectedLayout } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
@@ -188,6 +189,13 @@ class SidebarApp {
     this.emptyHighlights = document.getElementById('emptyHighlights');
     this.btnClearHighlights = document.getElementById('btnClearHighlights');
 
+    // Knowledge Graph
+    this.knowledgeGraphPanel = document.getElementById('knowledgeGraphPanel');
+    this.knowledgeGraphCanvas = document.getElementById('knowledgeGraphCanvas');
+    this.graphInfo = document.getElementById('graphInfo');
+    this.graphTooltip = document.getElementById('graphTooltip');
+    this.btnRefreshGraph = document.getElementById('btnRefreshGraph');
+
     // Export Conversation
     this.btnExportConversation = document.getElementById('btnExportConversation');
 
@@ -288,6 +296,11 @@ class SidebarApp {
     // 高亮标注：清空全部
     if (this.btnClearHighlights) {
       this.btnClearHighlights.addEventListener('click', () => this.clearAllHighlights());
+    }
+
+    // 知识图谱：刷新
+    if (this.btnRefreshGraph) {
+      this.btnRefreshGraph.addEventListener('click', () => this.renderKnowledgeGraph());
     }
 
     // 导出对话
@@ -2057,7 +2070,7 @@ ${readme || '无法提取 README 内容'}
   // ==================== 高亮标注管理 ====================
 
   /**
-   * 切换知识库子标签（知识条目 / 高亮标注）
+   * 切换知识库子标签（知识条目 / 高亮标注 / 图谱）
    */
   switchKnowledgeSubtab(subtab) {
     document.querySelectorAll('.knowledge-subtab').forEach(t => {
@@ -2066,6 +2079,7 @@ ${readme || '无法提取 README 内容'}
 
     const isEntries = subtab === 'entries';
     const isHighlights = subtab === 'highlights';
+    const isGraph = subtab === 'graph';
 
     // 知识条目相关元素
     const knowledgeToolbar = this.searchInput?.closest('.knowledge-toolbar');
@@ -2083,9 +2097,291 @@ ${readme || '无法提取 README 内容'}
     if (this.highlightsPanel) {
       this.highlightsPanel.classList.toggle('hidden', !isHighlights);
     }
+    if (this.knowledgeGraphPanel) {
+      this.knowledgeGraphPanel.classList.toggle('hidden', !isGraph);
+    }
 
     if (isHighlights) {
       this.loadHighlights();
+    }
+    if (isGraph) {
+      this.renderKnowledgeGraph();
+    }
+  }
+
+  /**
+   * 渲染知识图谱
+   */
+  async renderKnowledgeGraph() {
+    const canvas = this.knowledgeGraphCanvas;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    const container = canvas.parentElement;
+
+    // 设置 canvas 实际像素大小
+    const dpr = window.devicePixelRatio || 1;
+    const rect = container.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = 400 * dpr;
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = '400px';
+    ctx.scale(dpr, dpr);
+
+    const w = rect.width;
+    const h = 400;
+
+    // 清空画布
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    try {
+      // 获取知识条目
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      await kb.init();
+      const entries = await kb.getAllEntries(100);
+
+      if (!entries || entries.length === 0) {
+        this.graphInfo.textContent = '暂无知识条目';
+        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text-muted').trim() || '#9ca3af';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('暂无知识条目，保存知识后即可查看图谱', w / 2, h / 2);
+        return;
+      }
+
+      // 计算条目间的关联关系
+      const relations = [];
+      const maxPairs = Math.min(entries.length * 5, 500);
+      for (let i = 0; i < entries.length && relations.length < maxPairs; i++) {
+        for (let j = i + 1; j < entries.length && relations.length < maxPairs; j++) {
+          const text1 = KnowledgeBase.getEntryCompareText(entries[i]);
+          const text2 = KnowledgeBase.getEntryCompareText(entries[j]);
+          const score = KnowledgeBase.calculateSimilarity(text1, text2);
+          if (score > 0.15) {
+            relations.push({
+              source: entries[i].id,
+              target: entries[j].id,
+              weight: score,
+            });
+          }
+        }
+      }
+
+      // 构建图数据
+      const { nodes, edges } = buildGraphData(entries, relations, 100);
+
+      if (nodes.length === 0) {
+        this.graphInfo.textContent = '无可用数据';
+        return;
+      }
+
+      this.graphInfo.textContent = `${nodes.length} 个节点，${edges.length} 条关联`;
+
+      // 运行力导向布局
+      forceDirectedLayout(nodes, edges, 50, { width: w, height: h });
+
+      // 保存图数据用于交互
+      this._graphNodes = nodes;
+      this._graphEdges = edges;
+      this._graphCtx = ctx;
+      this._graphW = w;
+      this._graphH = h;
+      this._graphDpr = dpr;
+      this._graphCanvas = canvas;
+      this._hoveredNode = null;
+
+      // 绘制图谱
+      this.drawKnowledgeGraph(nodes, edges, ctx, w, h);
+
+      // 绑定交互事件（仅绑定一次）
+      if (!this._graphEventsBound) {
+        this._graphEventsBound = true;
+
+        canvas.addEventListener('mousemove', (e) => {
+          if (!this._graphNodes) return;
+          const rect = canvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          this.handleGraphHover(mx, my, e.clientX, e.clientY);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+          if (this._hoveredNode) {
+            this._hoveredNode = null;
+            this.drawKnowledgeGraph(
+              this._graphNodes, this._graphEdges,
+              this._graphCtx, this._graphW, this._graphH
+            );
+            if (this.graphTooltip) this.graphTooltip.classList.add('hidden');
+          }
+        });
+
+        canvas.addEventListener('click', (e) => {
+          if (!this._graphNodes) return;
+          const rect = canvas.getBoundingClientRect();
+          const mx = e.clientX - rect.left;
+          const my = e.clientY - rect.top;
+          this.handleGraphClick(mx, my);
+        });
+      }
+    } catch (err) {
+      console.error('渲染知识图谱失败:', err);
+      this.graphInfo.textContent = '图谱加载失败';
+      ctx.fillStyle = '#ef4444';
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('图谱加载失败: ' + err.message, w / 2, h / 2);
+    }
+  }
+
+  /**
+   * 绘制知识图谱（节点、边、标签）
+   */
+  drawKnowledgeGraph(nodes, edges, ctx, w, h) {
+    ctx.clearRect(0, 0, w, h);
+
+    // 背景
+    const bgColor = getComputedStyle(document.body).getPropertyValue('--bg-primary').trim() || '#ffffff';
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, w, h);
+
+    const hoveredId = this._hoveredNode ? this._hoveredNode.id : null;
+    const connectedToHovered = new Set();
+    if (hoveredId !== null) {
+      for (const edge of edges) {
+        if (edge.source === hoveredId) connectedToHovered.add(edge.target);
+        if (edge.target === hoveredId) connectedToHovered.add(edge.source);
+      }
+    }
+
+    // 构建节点索引
+    const nodeMap = {};
+    for (const node of nodes) nodeMap[node.id] = node;
+
+    // 绘制边
+    for (const edge of edges) {
+      const src = nodeMap[edge.source];
+      const tgt = nodeMap[edge.target];
+      if (!src || !tgt) continue;
+
+      const isHighlighted = hoveredId !== null &&
+        (edge.source === hoveredId || edge.target === hoveredId);
+      const isDimmed = hoveredId !== null && !isHighlighted;
+
+      ctx.beginPath();
+      ctx.moveTo(src.x, src.y);
+      ctx.lineTo(tgt.x, tgt.y);
+
+      if (isHighlighted) {
+        ctx.strokeStyle = 'rgba(99, 102, 241, 0.7)';
+        ctx.lineWidth = 1 + edge.weight * 3;
+      } else if (isDimmed) {
+        ctx.strokeStyle = 'rgba(200, 200, 200, 0.15)';
+        ctx.lineWidth = 0.5;
+      } else {
+        ctx.strokeStyle = `rgba(180, 180, 180, ${0.2 + edge.weight * 0.4})`;
+        ctx.lineWidth = 0.5 + edge.weight * 2;
+      }
+      ctx.stroke();
+    }
+
+    // 绘制节点
+    for (const node of nodes) {
+      const isHovered = hoveredId === node.id;
+      const isConnected = connectedToHovered.has(node.id);
+      const isDimmed = hoveredId !== null && !isHovered && !isConnected;
+
+      // 节点圆
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+
+      if (isHovered) {
+        ctx.fillStyle = node.color;
+        ctx.fill();
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      } else if (isDimmed) {
+        ctx.fillStyle = node.color;
+        ctx.globalAlpha = 0.2;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      } else {
+        ctx.fillStyle = node.color;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 节点标签
+      if (!isDimmed) {
+        ctx.fillStyle = isHovered
+          ? (getComputedStyle(document.body).getPropertyValue('--text-primary').trim() || '#1a1a1a')
+          : (getComputedStyle(document.body).getPropertyValue('--text-secondary').trim() || '#6b7280');
+        ctx.font = isHovered ? 'bold 12px sans-serif' : '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(node.label, node.x, node.y + node.size + 14);
+      }
+    }
+  }
+
+  /**
+   * 处理图谱鼠标悬停
+   */
+  handleGraphHover(mx, my, clientX, clientY) {
+    let hovered = null;
+    for (const node of (this._graphNodes || [])) {
+      const dx = mx - node.x;
+      const dy = my - node.y;
+      if (dx * dx + dy * dy <= node.size * node.size) {
+        hovered = node;
+        break;
+      }
+    }
+
+    if (hovered !== this._hoveredNode) {
+      this._hoveredNode = hovered;
+      this.drawKnowledgeGraph(
+        this._graphNodes, this._graphEdges,
+        this._graphCtx, this._graphW, this._graphH
+      );
+
+      if (hovered && this.graphTooltip) {
+        this.graphTooltip.textContent = hovered.label;
+        this.graphTooltip.style.left = (clientX + 12) + 'px';
+        this.graphTooltip.style.top = (clientY - 24) + 'px';
+        this.graphTooltip.classList.remove('hidden');
+        this._graphCanvas.style.cursor = 'pointer';
+      } else {
+        if (this.graphTooltip) this.graphTooltip.classList.add('hidden');
+        if (this._graphCanvas) this._graphCanvas.style.cursor = 'default';
+      }
+    } else if (hovered && this.graphTooltip) {
+      // 更新 tooltip 位置
+      this.graphTooltip.style.left = (clientX + 12) + 'px';
+      this.graphTooltip.style.top = (clientY - 24) + 'px';
+    }
+  }
+
+  /**
+   * 处理图谱点击（跳转到知识详情）
+   */
+  handleGraphClick(mx, my) {
+    for (const node of (this._graphNodes || [])) {
+      const dx = mx - node.x;
+      const dy = my - node.y;
+      if (dx * dx + dy * dy <= node.size * node.size) {
+        if (node.entry && node.entry.id) {
+          // 切换到知识条目子标签并显示详情
+          this.switchKnowledgeSubtab('entries');
+          this.showKnowledgeDetail(node.entry.id);
+        }
+        break;
+      }
     }
   }
 
