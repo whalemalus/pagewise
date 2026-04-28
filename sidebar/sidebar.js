@@ -1342,7 +1342,9 @@ class SidebarApp {
     try {
       const selResponse = await chrome.tabs.sendMessage(this.currentTabId, { action: 'getSelection' });
       selection = selResponse?.selection || '';
-    } catch (e) {}
+    } catch (e) {
+      console.warn('[PageWise] getSelection failed (content script may not be injected):', e.message);
+    }
 
     this.userInput.value = '';
     this.userInput.style.height = 'auto';
@@ -1350,8 +1352,10 @@ class SidebarApp {
 
     // 如果没有页面内容，先提取
     if (!this.currentPageContent) {
+      console.log('[PageWise] No page content cached, extracting...');
       const extracted = await this.extractContent();
       if (!extracted) {
+        console.warn('[PageWise] Content extraction failed, using empty fallback');
         this.currentPageContent = {
           url: this.currentTabUrl || '',
           title: this.pageTitle.textContent || '',
@@ -1371,23 +1375,52 @@ class SidebarApp {
       selection
     };
 
+    console.log('[PageWise] sendMessage:', { question: text.slice(0, 80), hasContent: !!contentWithSelection.content, contentLength: contentWithSelection.content.length, hasSelection: !!selection, currentTabId: this.currentTabId });
+
     // 构建增强 prompt（加入记忆、页面感知、进化策略）
-    const memoryPrompt = await this.memory.toPrompt(text, this.aiClient);
-    const sensePrompt = this.pageSense.toPrompt(contentWithSelection);
-    const skillPrompt = this.skills.toPrompt();
-    const evolutionPrompt = this.evolution.getStrategyPrompt();
+    // 每个 toPrompt 单独 try-catch，确保子系统故障不影响问答
+    let memoryPrompt = '';
+    let sensePrompt = '';
+    let skillPrompt = '';
+    let evolutionPrompt = '';
+
+    try {
+      memoryPrompt = await this.memory.toPrompt(text, this.aiClient);
+    } catch (e) {
+      console.warn('[PageWise] memory.toPrompt failed (问答不受影响):', e);
+    }
+    try {
+      sensePrompt = this.pageSense.toPrompt(contentWithSelection);
+    } catch (e) {
+      console.warn('[PageWise] pageSense.toPrompt failed (问答不受影响):', e);
+    }
+    try {
+      skillPrompt = this.skills.toPrompt();
+    } catch (e) {
+      console.warn('[PageWise] skills.toPrompt failed (问答不受影响):', e);
+    }
+    try {
+      evolutionPrompt = this.evolution.getStrategyPrompt();
+    } catch (e) {
+      console.warn('[PageWise] evolution.getStrategyPrompt failed (问答不受影响):', e);
+    }
 
     const enhancedSystemPrompt = this.aiClient.getSystemPrompt()
       + memoryPrompt + sensePrompt + skillPrompt + evolutionPrompt;
 
     // 记录交互
-    const pageAnalysis = this.pageSense.analyze(contentWithSelection);
-    const interactionId = this.evolution.recordInteraction({
-      question: text,
-      pageType: pageAnalysis.primaryType?.type || 'generic',
-      pageUrl: contentWithSelection.url,
-      retrievalHits: 0
-    });
+    let interactionId = null;
+    try {
+      const pageAnalysis = this.pageSense.analyze(contentWithSelection);
+      interactionId = this.evolution.recordInteraction({
+        question: text,
+        pageType: pageAnalysis.primaryType?.type || 'generic',
+        pageUrl: contentWithSelection.url,
+        retrievalHits: 0
+      });
+    } catch (e) {
+      console.warn('[PageWise] evolution.recordInteraction failed (问答不受影响):', e);
+    }
 
     const loadingEl = this.showLoading();
 
@@ -1435,9 +1468,13 @@ class SidebarApp {
       await this.handleSkillCalls(fullResponse, contentWithSelection);
 
       // 更新交互记录
-      const interaction = this.evolution.interactions.find(i => i.id === interactionId);
-      if (interaction) {
-        interaction.answerLength = fullResponse.length;
+      try {
+        const interaction = this.evolution.interactions.find(i => i.id === interactionId);
+        if (interaction) {
+          interaction.answerLength = fullResponse.length;
+        }
+      } catch (e) {
+        console.warn('[PageWise] evolution.interactions update failed:', e);
       }
 
       // 保存对话历史
@@ -1470,17 +1507,29 @@ class SidebarApp {
       }
 
       // 自动学习
-      await this.memory.learnFromInteraction(text, fullResponse, contentWithSelection);
+      try {
+        await this.memory.learnFromInteraction(text, fullResponse, contentWithSelection);
+      } catch (e) {
+        console.warn('[PageWise] learnFromInteraction failed:', e);
+      }
 
       // 自动保存到知识库
-      const saved = await this.memory.autoSaveIfWorth(text, fullResponse, contentWithSelection, this.aiClient);
-      if (saved) {
-        this.evolution.recordSignal('saved_to_kb', interactionId);
+      try {
+        const saved = await this.memory.autoSaveIfWorth(text, fullResponse, contentWithSelection, this.aiClient);
+        if (saved && interactionId) {
+          this.evolution.recordSignal('saved_to_kb', interactionId);
+        }
+      } catch (e) {
+        console.warn('[PageWise] autoSaveIfWorth failed:', e);
       }
 
       // 定期批量进化（每 20 次交互）
-      if (this.evolution.strategies.totalInteractions % 20 === 0) {
-        this.evolution.batchEvolve();
+      try {
+        if (this.evolution.strategies.totalInteractions % 20 === 0) {
+          this.evolution.batchEvolve();
+        }
+      } catch (e) {
+        console.warn('[PageWise] batchEvolve failed:', e);
       }
 
     } catch (error) {
