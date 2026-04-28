@@ -528,3 +528,78 @@ describe('PageSense 提取器', () => {
     assert.equal(ps.detectGitHubPageType(undefined), 'unknown');
   });
 });
+
+// ==================== PDF 页面识别 ====================
+
+describe('PageSense PDF 页面识别', () => {
+  it('识别 PDF 文档（URL 以 .pdf 结尾）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/document.pdf',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'pdf'), '应识别为 PDF 类型');
+    const pdfType = result.types.find(t => t.type === 'pdf');
+    assert.equal(pdfType.label, 'PDF 文档');
+    assert.equal(pdfType.icon, '📑');
+  });
+
+  it('识别 PDF 文档（URL 含 .pdf? 参数）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/document.pdf?page=1',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'pdf'));
+  });
+
+  it('识别 PDF 文档（URL 含 .pdf# 锚点）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/document.pdf#section2',
+      content: '',
+    });
+    assert.ok(result.types.some(t => t.type === 'pdf'));
+  });
+
+  it('识别 PDF 文档（通过 isPdf 标记）', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/viewer',
+      content: '',
+      isPdf: true,
+    });
+    assert.ok(result.types.some(t => t.type === 'pdf'));
+  });
+
+  it('非 PDF 页面不识别', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/page.html',
+      content: '',
+    });
+    assert.ok(!result.types.some(t => t.type === 'pdf'));
+  });
+
+  it('PDF 文档提取正确的元信息', () => {
+    const result = ps.analyze({
+      url: 'https://example.com/report.pdf',
+      content: 'Some PDF content here',
+    });
+    const pdfType = result.types.find(t => t.type === 'pdf');
+    assert.equal(pdfType.pdfUrl, 'https://example.com/report.pdf');
+    assert.equal(pdfType.pdfContentLength, 21);
+  });
+
+  it('PDF 页面推荐分析技能', () => {
+    const suggestions = ps.suggestSkills({
+      url: 'https://example.com/document.pdf',
+      content: '',
+    }, null);
+    assert.ok(suggestions.some(s => s.skillId === 'pdf-analyze'), '应推荐 pdf-analyze 技能');
+  });
+
+  it('PDF 页面 toPrompt 包含 PDF 文档标记', () => {
+    const prompt = ps.toPrompt({
+      url: 'https://example.com/document.pdf',
+      content: '',
+    });
+    assert.ok(prompt.includes('页面感知结果'));
+    assert.ok(prompt.includes('PDF 文档'));
+  });
+});

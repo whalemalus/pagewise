@@ -992,6 +992,124 @@
     }
   });
 
+  // ==================== PDF 文档提取 ====================
+
+  /**
+   * 检测当前页面是否为 PDF 文档
+   * @returns {{ isPdf: boolean, pdfUrl: string, method: string }}
+   */
+  function detectPdfPage() {
+    const url = location.href.toLowerCase();
+
+    // 方法 1：URL 以 .pdf 结尾
+    if (url.endsWith('.pdf') || url.includes('.pdf?') || url.includes('.pdf#')) {
+      return { isPdf: true, pdfUrl: location.href, method: 'url' };
+    }
+
+    // 方法 2：检测 Chrome 内置 PDF viewer 元素
+    const hasPdfViewer = document.querySelector('embed[type="application/pdf"]')
+      || document.querySelector('#plugin[type="application/pdf"]')
+      || document.querySelector('chrome-pdf-viewer')
+      || document.querySelector('#pdfViewer')
+      || document.querySelector('.pdfViewer');
+    if (hasPdfViewer) {
+      return { isPdf: true, pdfUrl: location.href, method: 'viewer-dom' };
+    }
+
+    // 方法 3：检测 Content-Type 为 PDF 的 embed/iframe
+    const embeds = document.querySelectorAll('embed, iframe');
+    for (const el of embeds) {
+      const type = el.getAttribute('type') || '';
+      const src = (el.src || '').toLowerCase();
+      if (type === 'application/pdf' || src.endsWith('.pdf')) {
+        return { isPdf: true, pdfUrl: el.src || location.href, method: 'embed' };
+      }
+    }
+
+    return { isPdf: false, pdfUrl: '', method: '' };
+  }
+
+  /**
+   * 从 PDF viewer 的可访问 DOM 中提取文本
+   * Chrome 内置 PDF viewer 使用 shadow DOM，部分文本可能可访问
+   * @returns {{ content: string, title: string, method: string, needsFallback: boolean }}
+   */
+  function extractPdfContent() {
+    const url = location.href;
+    const title = document.title || '';
+
+    // 策略 1：尝试从 Chrome PDF viewer 的内部 DOM 提取文本
+    const textParts = [];
+
+    // Chrome PDF viewer 通常有 text layer 元素
+    const textLayerElements = document.querySelectorAll(
+      '.text-layer span, .textLayer span, [role="presentation"], .highlight'
+    );
+    for (const el of textLayerElements) {
+      const text = el.textContent?.trim();
+      if (text && text.length > 0) {
+        textParts.push(text);
+      }
+    }
+
+    // 策略 2：尝试从 #viewer 容器中提取所有文本节点
+    if (textParts.length === 0) {
+      const viewer = document.querySelector('#viewer, .pdfViewer, chrome-pdf-viewer, #pdfViewer');
+      if (viewer) {
+        const walker = document.createTreeWalker(viewer, NodeFilter.SHOW_TEXT);
+        let node;
+        while ((node = walker.nextNode())) {
+          const text = node.textContent?.trim();
+          if (text && text.length > 1) {
+            textParts.push(text);
+          }
+        }
+      }
+    }
+
+    // 策略 3：尝试从整个 body 中提取可见文本（排除脚本等）
+    if (textParts.length === 0) {
+      const excludeTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'SVG']);
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT,
+        {
+          acceptNode(node) {
+            if (excludeTags.has(node.parentElement?.tagName)) return NodeFilter.FILTER_REJECT;
+            return NodeFilter.FILTER_ACCEPT;
+          }
+        }
+      );
+      let node;
+      while ((node = walker.nextNode())) {
+        const text = node.textContent?.trim();
+        if (text && text.length > 2) {
+          textParts.push(text);
+        }
+      }
+    }
+
+    const content = textParts.join('\n');
+
+    // 如果提取到的内容很少，可能需要 fallback
+    const needsFallback = content.length < 100;
+
+    // 判断提取方法
+    let method = 'dom-text';
+    if (needsFallback) {
+      method = 'fallback-needed';
+    }
+
+    return {
+      content: content.slice(0, 50000), // 限制 50K 字符
+      title: title.replace(/\.pdf$/i, '').trim() || 'PDF 文档',
+      method,
+      needsFallback,
+      pdfUrl: url,
+      extractedAt: new Date().toISOString()
+    };
+  }
+
   // ==================== 消息监听 ====================
 
   /**
@@ -1158,6 +1276,20 @@
           break;
         }
         sendResponse(extractGitHubRepoInfo());
+        break;
+      }
+
+      case 'detectPdfPage':
+        sendResponse(detectPdfPage());
+        break;
+
+      case 'extractPdfContent': {
+        const pdfInfo = detectPdfPage();
+        if (!pdfInfo.isPdf) {
+          sendResponse({ error: '不是 PDF 文档页面' });
+          break;
+        }
+        sendResponse(extractPdfContent());
         break;
       }
 

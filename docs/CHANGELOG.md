@@ -150,3 +150,29 @@
   - 新增 `handleGraphClick()` — 点击节点跳转到知识详情
   - `switchKnowledgeSubtab()` 支持 graph 子标签切换
 - **sidebar/sidebar.css**：图谱面板样式（Canvas 容器 400px 高度、tooltip、工具栏）
+
+### 飞轮迭代 #22 — PDF 阅读
+
+**需求**: 在浏览器中打开 PDF 时，PageWise 可以阅读和问答 PDF 内容
+
+**修改文件**:
+- **lib/page-sense.js**：
+  - 新增 `pdf` 分析器，识别 PDF 文档页面
+  - URL 以 `.pdf` 结尾（含查询参数和锚点）或 `isPdf` 标记
+  - `suggestSkills()` 对 pdf 类型推荐 pdf-analyze 技能
+  - `toPrompt()` 包含 PDF 文档标记
+- **content/content.js**：
+  - 新增 `detectPdfPage()` 检测 PDF 页面（URL 模式 + Chrome PDF viewer DOM + embed/iframe）
+  - 新增 `extractPdfContent()` 多策略文本提取（text layer → viewer 容器 → 全 body 文本节点）
+  - 新增消息处理器 `detectPdfPage` 和 `extractPdfContent`
+  - fallback 提示：无法直接提取时引导用户使用复制全文功能
+- **sidebar/sidebar.js**：
+  - 新增 `detectAndShowPdfActions()` 检测并显示 PDF 快捷按钮
+  - 新增 `showPdfQuickActions()` 显示「📄 分析这个 PDF」和「📝 提取 PDF 内容」
+  - 新增 `pdfExtractContent()` 提取 PDF 内容并展示
+  - 新增 `pdfAnalyze()` 使用 AI 分析 PDF 文档（概述、要点、结构、概念、总结）
+  - 新增 `sendPdfAnalysisRequest()` 发送 PDF 内容给 AI
+  - 新增 `fetchPdfTextFallback()` 通过 URL 获取 PDF 并用正则提取 Tj/TJ 文本操作符
+  - PDF 页面图标更新为 📑
+- **tests/test-page-sense.js**：8 个新测试（PDF URL 识别、isPdf 标记、非 PDF 排除、元信息、技能推荐、toPrompt）
+- **总计 415 个测试，全部通过**

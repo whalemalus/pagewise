@@ -553,9 +553,15 @@ class SidebarApp {
         // GitHub 仓库页面检测并显示快捷按钮
         this.detectAndShowGitHubRepoActions(tab.id);
 
+        // PDF 文档页面检测并显示快捷按钮
+        this.detectAndShowPdfActions(tab.id);
+
         // 更新页面图标
         const pageIcon = document.querySelector('.page-icon');
-        if (pageIcon) pageIcon.textContent = isYouTube ? '📺' : '📄';
+        if (pageIcon) {
+          const isPdf = (tab.url || '').toLowerCase().endsWith('.pdf') || (tab.url || '').toLowerCase().includes('.pdf?');
+          pageIcon.textContent = isPdf ? '📑' : isYouTube ? '📺' : '📄';
+        }
       }
     } catch (e) {
       this.pageTitle.textContent = '无法获取页面信息';
@@ -2053,6 +2059,313 @@ ${readme || '无法提取 README 内容'}
       }
     } catch (e) {
       this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  // ==================== PDF 文档功能 ====================
+
+  /**
+   * 检测当前页面是否为 PDF 文档，如果是则显示快捷操作按钮
+   * @param {number} tabId - 当前标签页 ID
+   */
+  async detectAndShowPdfActions(tabId) {
+    if (!tabId) return;
+    try {
+      const response = await chrome.tabs.sendMessage(tabId, { action: 'detectPdfPage' });
+      if (response?.isPdf) {
+        this.isPdfPage = true;
+        this.pdfUrl = response.pdfUrl;
+        this.showPdfQuickActions();
+        // 更新页面图标
+        const pageIcon = document.querySelector('.page-icon');
+        if (pageIcon) pageIcon.textContent = '📑';
+      }
+    } catch (e) {
+      // content script 可能未加载，忽略
+    }
+  }
+
+  /**
+   * 在欢迎消息区域显示 PDF 专用快捷按钮
+   */
+  showPdfQuickActions() {
+    const welcome = this.chatArea.querySelector('.welcome-message');
+    if (!welcome) return;
+
+    // 检查是否已经添加过 PDF 按钮
+    if (welcome.querySelector('.pdf-actions')) return;
+
+    const quickActions = welcome.querySelector('.quick-actions');
+    if (!quickActions) return;
+
+    const pdfDiv = document.createElement('div');
+    pdfDiv.className = 'pdf-actions';
+    pdfDiv.style.cssText = 'margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-color);';
+    pdfDiv.innerHTML = `
+      <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 6px;">📑 PDF 文档工具</div>
+      <div class="quick-actions" style="gap: 6px;">
+        <button class="btn-quick" id="btnPdfAnalyze">📄 分析这个 PDF</button>
+        <button class="btn-quick" id="btnPdfExtract">📝 提取 PDF 内容</button>
+      </div>
+    `;
+
+    quickActions.parentNode.insertBefore(pdfDiv, quickActions.nextSibling);
+
+    // 绑定事件
+    document.getElementById('btnPdfAnalyze')?.addEventListener('click', () => {
+      this.pdfAnalyze();
+    });
+    document.getElementById('btnPdfExtract')?.addEventListener('click', () => {
+      this.pdfExtractContent();
+    });
+  }
+
+  /**
+   * 提取 PDF 内容并显示
+   */
+  async pdfExtractContent() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    this.addSystemMessage('正在提取 PDF 内容...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractPdfContent'
+      });
+
+      if (!response || response.error) {
+        this.addSystemMessage(`❌ ${response?.error || '无法提取 PDF 内容'}`);
+        return;
+      }
+
+      const { content, title, method, needsFallback, pdfUrl } = response;
+
+      if (needsFallback) {
+        this.addSystemMessage(
+          '⚠️ 无法直接提取 PDF 文本内容（Chrome PDF viewer 的限制）。\n\n' +
+          '💡 **备选方案**：\n' +
+          '1. 在 PDF 页面中按 Ctrl+A 全选，Ctrl+C 复制，然后粘贴到对话框\n' +
+          '2. 或使用浏览器的「打印」功能将 PDF 转为网页后再提取'
+        );
+        return;
+      }
+
+      // 保存为当前页面内容
+      this.currentPageContent = {
+        url: pdfUrl,
+        title,
+        content,
+        codeBlocks: [],
+        meta: { description: 'PDF 文档', author: '', keywords: '', siteName: '' },
+        extractedAt: new Date().toISOString(),
+        isPdf: true
+      };
+
+      const charCount = content.length;
+      this.addSystemMessage(`✅ 已提取 PDF 内容：${charCount} 字（提取方式：${method}）`);
+
+      // 页面感知
+      const sense = this.pageSense.analyze(this.currentPageContent);
+      if (sense.types.length > 0) {
+        const icons = sense.types.map(t => `${t.icon} ${t.label}`).join(' | ');
+        this.addSystemMessage(`页面类型：${icons}`);
+      }
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 使用 AI 分析 PDF 文档
+   */
+  async pdfAnalyze() {
+    if (!this.currentTabId) {
+      this.addSystemMessage('无法获取当前标签页');
+      return;
+    }
+
+    if (!this.aiClient) {
+      this.addSystemMessage('请先在设置中配置 API Key');
+      this.switchTab('settings');
+      return;
+    }
+
+    this.addSystemMessage('正在提取并分析 PDF 内容...');
+
+    try {
+      const response = await chrome.tabs.sendMessage(this.currentTabId, {
+        action: 'extractPdfContent'
+      });
+
+      if (!response || response.error) {
+        this.addSystemMessage(`❌ ${response?.error || '无法提取 PDF 内容'}`);
+        return;
+      }
+
+      const { content, title, needsFallback, pdfUrl } = response;
+
+      if (needsFallback) {
+        // 内容提取不足，给用户提示
+        this.addSystemMessage(
+          '⚠️ 无法直接提取 PDF 文本内容（Chrome PDF viewer 的限制）。\n\n' +
+          '💡 **备选方案**：\n' +
+          '1. 在 PDF 页面中按 Ctrl+A 全选，Ctrl+C 复制，然后粘贴到对话框提问\n' +
+          '2. 或使用浏览器的「打印」功能将 PDF 转为网页后再提取\n\n' +
+          '我将尝试用 URL 获取 PDF 进行简单文本提取...'
+        );
+
+        // 尝试通过 URL 获取 PDF 的简单文本提取
+        const fallbackResult = await this.fetchPdfTextFallback(pdfUrl);
+        if (fallbackResult && fallbackResult.length > 50) {
+          this.sendPdfAnalysisRequest(fallbackResult, title || 'PDF 文档', pdfUrl);
+          return;
+        }
+
+        this.addSystemMessage('❌ 无法提取 PDF 内容。请手动复制 PDF 文本后粘贴到对话框。');
+        return;
+      }
+
+      // 保存为当前页面内容
+      this.currentPageContent = {
+        url: pdfUrl,
+        title,
+        content,
+        codeBlocks: [],
+        meta: { description: 'PDF 文档', author: '', keywords: '', siteName: '' },
+        extractedAt: new Date().toISOString(),
+        isPdf: true
+      };
+
+      this.sendPdfAnalysisRequest(content, title || 'PDF 文档', pdfUrl);
+    } catch (e) {
+      this.addSystemMessage('提取失败：请刷新页面后重试');
+    }
+  }
+
+  /**
+   * 发送 PDF 内容给 AI 进行分析
+   * @param {string} content - PDF 文本内容
+   * @param {string} title - 文档标题
+   * @param {string} pdfUrl - PDF URL
+   */
+  async sendPdfAnalysisRequest(content, title, pdfUrl) {
+    this.switchTab('chat');
+    const loadingEl = this.showLoading();
+
+    // 限制内容长度
+    const MAX_CHARS = 12000;
+    const truncated = content.length > MAX_CHARS;
+    const sendContent = content.slice(0, MAX_CHARS);
+
+    try {
+      let fullResponse = '';
+      let messageEl = null;
+
+      const prompt = `请分析以下 PDF 文档内容，生成一份结构化的文档概览。
+
+文档标题：${title}
+${pdfUrl ? `来源：${pdfUrl}` : ''}
+内容长度：${content.length} 字${truncated ? '（已截取前 ' + MAX_CHARS + ' 字）' : ''}
+
+文档内容：
+${sendContent}
+
+请按照以下格式生成分析：
+1. **文档概述**：这份文档的主要内容是什么？
+2. **核心要点**：列出 3-5 个关键要点
+3. **结构分析**：文档的主要章节/部分有哪些？
+4. **关键概念**：涉及哪些重要概念或术语？
+5. **总结**：用 2-3 句话总结文档精华`;
+
+      for await (const chunk of this.aiClient.chatStream(
+        [
+          ...this.conversationHistory.slice(-6),
+          { role: 'user', content: prompt }
+        ],
+        { systemPrompt: this.aiClient.getSystemPrompt() + '\n\n用户正在阅读 PDF 文档，你需要根据提取的文档内容生成结构化的文档分析。请用中文回答。' }
+      )) {
+        fullResponse += chunk;
+        if (!messageEl) {
+          loadingEl.remove();
+          messageEl = this.addAIMessage('');
+        }
+        this.updateAIMessage(messageEl, fullResponse);
+      }
+
+      // 保存对话
+      this.conversationHistory.push(
+        { role: 'user', content: `📄 分析 PDF: ${title}` },
+        { role: 'assistant', content: fullResponse }
+      );
+      await saveConversation(this.conversationHistory, this.currentTabUrl);
+
+      // 持久化到 IndexedDB
+      try {
+        await saveConversationIDB(
+          this.currentTabUrl || '',
+          `分析 PDF: ${title}`,
+          this.conversationHistory
+        );
+      } catch (e) {}
+
+    } catch (error) {
+      loadingEl.remove();
+      this.addSystemMessage(`PDF 分析失败：${error.message}`);
+    }
+  }
+
+  /**
+   * 备选方案：通过 URL 获取 PDF 文件并进行简单文本提取
+   * 使用正则匹配 PDF 中的文本流，不依赖 PDF.js
+   * @param {string} url - PDF 文件 URL
+   * @returns {Promise<string>} 提取到的文本
+   */
+  async fetchPdfTextFallback(url) {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return '';
+
+      const buffer = await response.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+
+      // 简单的 PDF 文本提取：
+      // PDF 文件中，文本通常在 BT (Begin Text) 和 ET (End Text) 标记之间
+      // 使用 Tj 和 TJ 操作符显示文本
+      const decoder = new TextDecoder('latin1');
+      const raw = decoder.decode(bytes);
+
+      const textParts = [];
+
+      // 匹配 Tj 操作符（单个字符串）
+      const tjPattern = /\(([^)]*)\)\s*Tj/g;
+      let match;
+      while ((match = tjPattern.exec(raw)) !== null) {
+        const text = match[1].trim();
+        if (text.length > 1 && /[\x20-\x7E]/.test(text)) {
+          textParts.push(text);
+        }
+      }
+
+      // 匹配 TJ 操作符（数组字符串）
+      const tjArrayPattern = /\[(.*?)\]\s*TJ/g;
+      while ((match = tjArrayPattern.exec(raw)) !== null) {
+        const arrayContent = match[1];
+        const stringPattern = /\(([^)]*)\)/g;
+        let strMatch;
+        while ((strMatch = stringPattern.exec(arrayContent)) !== null) {
+          const text = strMatch[1].trim();
+          if (text.length > 1 && /[\x20-\x7E]/.test(text)) {
+            textParts.push(text);
+          }
+        }
+      }
+
+      return textParts.join(' ').slice(0, 50000);
+    } catch (e) {
+      return '';
     }
   }
 
