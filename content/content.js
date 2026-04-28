@@ -65,6 +65,54 @@
     }
   }
 
+  // ==================== 图片提取 ====================
+
+  /** @type {number} 最多提取的图片数量 */
+  const MAX_IMAGES = 20;
+
+  /** @type {number} 图片最小宽高过滤（px） */
+  const MIN_IMAGE_SIZE = 100;
+
+  /**
+   * 提取页面中所有可见图片（宽高 > 100px，http/https URL）
+   * @returns {{ images: Array<{ src: string, alt: string, width: number, height: number }> }}
+   */
+  function extractPageImages() {
+    const images = [];
+    const seenSrcs = new Set();
+    const imgElements = document.querySelectorAll('img');
+
+    for (const img of imgElements) {
+      if (images.length >= MAX_IMAGES) break;
+
+      const src = img.src || img.currentSrc || '';
+      // 只提取 http/https 图片，排除 data: URL
+      if (!src || !src.startsWith('http')) continue;
+      // 去重
+      if (seenSrcs.has(src)) continue;
+
+      // 使用 naturalWidth/naturalHeight 优先，fallback 到 offset
+      const width = img.naturalWidth || img.width || img.offsetWidth || 0;
+      const height = img.naturalHeight || img.height || img.offsetHeight || 0;
+
+      // 过滤尺寸过小的图片（图标等）
+      if (width <= MIN_IMAGE_SIZE || height <= MIN_IMAGE_SIZE) continue;
+
+      // 过滤不可见图片
+      if (!isVisible(img)) continue;
+
+      seenSrcs.add(src);
+      images.push({
+        src,
+        alt: img.alt || '',
+        width,
+        height
+      });
+    }
+
+    return { images };
+  }
+
   // ==================== 高亮功能 ====================
 
   /**
@@ -1086,6 +1134,10 @@
         });
         break;
       }
+
+      case 'extractPageImages':
+        sendResponse(extractPageImages());
+        break;
 
       case 'extractAPIEndpoints':
         sendResponse(extractAPIEndpoints());

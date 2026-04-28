@@ -75,3 +75,89 @@ describe('AIClient 构造函数', () => {
     assert.equal(client.baseUrl, 'https://api.openai.com');
   });
 });
+
+describe('AIClient vision 消息格式', () => {
+  it('OpenAI 请求保留 image_url 数组格式', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'openai' });
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: '这是什么图片？' },
+        { type: 'image_url', image_url: { url: 'https://example.com/img.png' } }
+      ]
+    }];
+    const { body } = client.buildOpenAIRequest(messages, {
+      systemPrompt: 'test', model: 'gpt-4o', maxTokens: 100, stream: false
+    });
+    const userMsg = body.messages[1];
+    assert.ok(Array.isArray(userMsg.content), 'content 应为数组');
+    assert.equal(userMsg.content[0].type, 'text');
+    assert.equal(userMsg.content[0].text, '这是什么图片？');
+    assert.equal(userMsg.content[1].type, 'image_url');
+    assert.equal(userMsg.content[1].image_url.url, 'https://example.com/img.png');
+  });
+
+  it('Claude 请求将 image_url 转换为 image.source 格式', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'claude' });
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: '描述这张图' },
+        { type: 'image_url', image_url: { url: 'https://example.com/pic.jpg' } }
+      ]
+    }];
+    const { body } = client.buildClaudeRequest(messages, {
+      systemPrompt: 'test', model: 'claude-sonnet-4-6', maxTokens: 100, stream: false
+    });
+    const userMsg = body.messages[0];
+    assert.ok(Array.isArray(userMsg.content), 'content 应为数组');
+    assert.equal(userMsg.content[0].type, 'text');
+    assert.equal(userMsg.content[0].text, '描述这张图');
+    assert.equal(userMsg.content[1].type, 'image');
+    assert.equal(userMsg.content[1].source.type, 'url');
+    assert.equal(userMsg.content[1].source.url, 'https://example.com/pic.jpg');
+  });
+
+  it('OpenAI 请求：非 vision 数组仍合并为字符串', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'openai' });
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: 'hello' },
+        { type: 'text', text: 'world' }
+      ]
+    }];
+    const { body } = client.buildOpenAIRequest(messages, {
+      systemPrompt: 'test', model: 'gpt-4o', maxTokens: 100, stream: false
+    });
+    const userMsg = body.messages[1];
+    assert.equal(typeof userMsg.content, 'string', '非 vision 数组应合并为字符串');
+    assert.ok(userMsg.content.includes('hello'));
+    assert.ok(userMsg.content.includes('world'));
+  });
+
+  it('OpenAI 请求：字符串格式 content 不受影响', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'openai' });
+    const messages = [{ role: 'user', content: '普通文本' }];
+    const { body } = client.buildOpenAIRequest(messages, {
+      systemPrompt: 'test', model: 'gpt-4o', maxTokens: 100, stream: false
+    });
+    assert.equal(body.messages[1].content, '普通文本');
+  });
+
+  it('Claude 请求：image 类型直接透传', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'claude' });
+    const messages = [{
+      role: 'user',
+      content: [
+        { type: 'text', text: '看图' },
+        { type: 'image', source: { type: 'url', url: 'https://example.com/x.png' } }
+      ]
+    }];
+    const { body } = client.buildClaudeRequest(messages, {
+      systemPrompt: 'test', model: 'claude-sonnet-4-6', maxTokens: 100, stream: false
+    });
+    assert.equal(body.messages[0].content[1].type, 'image');
+    assert.equal(body.messages[0].content[1].source.url, 'https://example.com/x.png');
+  });
+});

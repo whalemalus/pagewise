@@ -57,6 +57,10 @@ class SidebarApp {
     this.selectMode = false;
     this.selectedIds = new Set();
 
+    // 图片问答状态
+    this.selectedImageUrl = null;
+    this.pageImages = [];
+
     // 复习系统状态
     this.reviewCards = [];
     this.reviewIndex = 0;
@@ -190,6 +194,7 @@ class SidebarApp {
     this.previewMeta = document.getElementById('previewMeta');
     this.previewContent = document.getElementById('previewContent');
     this.previewCode = document.getElementById('previewCode');
+    this.previewImages = document.getElementById('previewImages');
 
     // Highlights
     this.highlightsPanel = document.getElementById('highlightsPanel');
@@ -662,6 +667,70 @@ class SidebarApp {
     }
   }
 
+  /**
+   * 提取并展示页面图片缩略图
+   */
+  async loadPageImages() {
+    if (!this.previewImages) return;
+    this.previewImages.innerHTML = '';
+
+    try {
+      if (!this.currentTabId) return;
+      const response = await chrome.tabs.sendMessage(this.currentTabId, { action: 'extractPageImages' });
+      if (!response || !response.images || response.images.length === 0) return;
+
+      this.pageImages = response.images;
+
+      let html = '<div class="page-preview-images-header">🖼️ 页面图片（点击提问）</div>';
+      html += '<div class="image-grid">';
+      response.images.forEach((img, i) => {
+        const alt = img.alt ? this.escapeHtml(img.alt) : '';
+        html += `
+          <div class="image-grid-item" data-index="${i}" data-src="${this.escapeHtml(img.src)}" title="${alt || img.src}">
+            <img src="${this.escapeHtml(img.src)}" alt="${alt}" loading="lazy" />
+            ${alt ? `<span class="image-alt">${alt}</span>` : ''}
+            <span class="image-ask-badge">🔍 问AI</span>
+          </div>
+        `;
+      });
+      html += '</div>';
+      this.previewImages.innerHTML = html;
+
+      // 绑定点击事件
+      this.previewImages.querySelectorAll('.image-grid-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const src = item.dataset.src;
+          // 切换选中状态
+          const wasSelected = item.classList.contains('selected');
+          this.previewImages.querySelectorAll('.image-grid-item').forEach(el => el.classList.remove('selected'));
+
+          if (wasSelected) {
+            this.selectedImageUrl = null;
+          } else {
+            item.classList.add('selected');
+            this.selectedImageUrl = src;
+            // 切换到聊天 tab 并填入提示
+            this.userInput.value = '请解释这张图片的内容';
+            this.switchTab('chat');
+          }
+        });
+      });
+    } catch (e) {
+      // content script 可能未注入，静默处理
+    }
+  }
+
+  /**
+   * 检查当前模型是否支持 vision（视觉）能力
+   * @returns {boolean}
+   */
+  supportsVision() {
+    const model = (this.settings.model || '').toLowerCase();
+    // 已知支持 vision 的模型关键词
+    const visionKeywords = ['gpt-4o', 'gpt-4-turbo', 'gpt-4-vision', 'claude-sonnet', 'claude-opus', 'claude-haiku'];
+    return visionKeywords.some(kw => model.includes(kw));
+  }
+
   showSkillSuggestions(suggestions) {
     const container = document.createElement('div');
     container.className = 'skill-suggestions';
@@ -1055,10 +1124,31 @@ class SidebarApp {
       let fullResponse = '';
       let messageEl = null;
 
+      // 构建用户消息（支持 vision 图片附加）
+      const promptText = this.aiClient.buildPageQuestionPrompt(contentWithSelection, text);
+      let userMessage;
+      if (this.selectedImageUrl) {
+        if (!this.supportsVision()) {
+          this.addSystemMessage('⚠️ 当前模型不支持图片理解，请切换到支持 vision 的模型（如 GPT-4o、Claude Sonnet 等）');
+          this.selectedImageUrl = null;
+          return;
+        }
+        userMessage = {
+          role: 'user',
+          content: [
+            { type: 'text', text: promptText },
+            { type: 'image_url', image_url: { url: this.selectedImageUrl } }
+          ]
+        };
+        this.selectedImageUrl = null; // 用完后清除
+      } else {
+        userMessage = { role: 'user', content: promptText };
+      }
+
       for await (const chunk of this.aiClient.chatStream(
         [
           ...this.conversationHistory.slice(-6),
-          { role: 'user', content: this.aiClient.buildPageQuestionPrompt(contentWithSelection, text) }
+          userMessage
         ],
         { systemPrompt: enhancedSystemPrompt }
       )) {

@@ -74,6 +74,13 @@
   - 入口：页面预览面板 header + 问答面板快捷操作
   - 28 个多页面联合分析测试
 - **总计 188 个测试，全部通过**
+- **多模态图片理解**：
+  - Content Script：`extractPageImages()` 提取页面可见图片（>100px，http/https，最多 20 张）
+  - Sidebar：页面预览面板显示图片缩略图网格，点击选中后自动填入提问
+  - AI Client：`buildOpenAIRequest` / `buildClaudeRequest` 支持 vision 消息格式（image_url / image 数组 content）
+  - 模型能力检测：`supportsVision()` 检查当前模型是否支持 vision
+  - 不支持 vision 的模型会提示用户切换
+  - 5 个 vision 消息格式测试
 
 ### 自定义技能系统
 - **lib/custom-skills.js**：IndexedDB 存储模块，独立数据库 `pagewise_custom_skills`
