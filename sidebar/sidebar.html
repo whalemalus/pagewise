@@ -37,6 +37,12 @@
 
     <!-- 问答面板 -->
     <div class="panel active" id="panelChat">
+      <!-- 复习提醒条 -->
+      <div class="review-banner hidden" id="reviewBanner">
+        <span class="review-banner-text" id="reviewBannerText"></span>
+        <button class="btn-review-start" id="btnStartReview">开始复习</button>
+      </div>
+
       <!-- 对话区域 -->
       <div class="chat-area" id="chatArea">
         <div class="welcome-message">
@@ -48,6 +54,40 @@
             <button class="btn-quick" id="btnExplain">💡 解释选中内容</button>
             <button class="btn-quick" id="btnMultiTabChat">📑 分析所有标签页</button>
             <button class="btn-quick" id="btnHistory">🕐 历史对话</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 复习模式面板 -->
+      <div class="review-overlay hidden" id="reviewOverlay">
+        <div class="review-container">
+          <div class="review-header">
+            <h3 class="review-title">📚 知识复习</h3>
+            <div class="review-progress" id="reviewProgress">0 / 0</div>
+            <button class="btn-icon review-close" id="btnCloseReview">&times;</button>
+          </div>
+
+          <!-- 复习卡片 -->
+          <div class="review-card" id="reviewCard">
+            <div class="review-card-question" id="reviewQuestion"></div>
+            <button class="btn-show-answer" id="btnShowAnswer">显示答案</button>
+            <div class="review-card-answer hidden" id="reviewAnswer"></div>
+            <div class="review-rating hidden" id="reviewRating">
+              <p class="rating-label">你记住了吗？</p>
+              <div class="rating-buttons">
+                <button class="btn-rate btn-rate-forgot" data-quality="1">😰 忘记</button>
+                <button class="btn-rate btn-rate-fuzzy" data-quality="3">🤔 模糊</button>
+                <button class="btn-rate btn-rate-remembered" data-quality="5">😊 记住</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 复习完成统计 -->
+          <div class="review-summary hidden" id="reviewSummary">
+            <div class="summary-icon">🎉</div>
+            <h3>复习完成！</h3>
+            <div class="summary-stats" id="summaryStats"></div>
+            <button class="btn-review-done" id="btnReviewDone">完成</button>
           </div>
         </div>
       </div>

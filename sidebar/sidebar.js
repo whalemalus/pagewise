@@ -11,6 +11,7 @@ import { EvolutionEngine } from '../lib/evolution.js';
 import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
+import { calculateNextReview, getDueCards, formatReviewDate, initializeReviewData } from '../lib/spaced-repetition.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
@@ -47,6 +48,12 @@ class SidebarApp {
     this.memory = new MemorySystem();
     this.evolution = new EvolutionEngine();
 
+    // 复习系统状态
+    this.reviewCards = [];
+    this.reviewIndex = 0;
+    this.reviewCorrect = 0;
+    this.reviewTotal = 0;
+
     this.init();
   }
 
@@ -65,6 +72,7 @@ class SidebarApp {
     this.applyTheme();
     this.renderProviderCards();
     await this.loadProfileList();
+    this.checkDueReviews();
 
     // 清理超过 30 天的旧对话
     try {
@@ -142,6 +150,22 @@ class SidebarApp {
 
     // Toast 容器
     this.toastContainer = document.getElementById('toastContainer');
+
+    // 间隔复习
+    this.reviewBanner = document.getElementById('reviewBanner');
+    this.reviewBannerText = document.getElementById('reviewBannerText');
+    this.btnStartReview = document.getElementById('btnStartReview');
+    this.reviewOverlay = document.getElementById('reviewOverlay');
+    this.reviewProgress = document.getElementById('reviewProgress');
+    this.btnCloseReview = document.getElementById('btnCloseReview');
+    this.reviewCard = document.getElementById('reviewCard');
+    this.reviewQuestion = document.getElementById('reviewQuestion');
+    this.btnShowAnswer = document.getElementById('btnShowAnswer');
+    this.reviewAnswer = document.getElementById('reviewAnswer');
+    this.reviewRating = document.getElementById('reviewRating');
+    this.reviewSummary = document.getElementById('reviewSummary');
+    this.summaryStats = document.getElementById('summaryStats');
+    this.btnReviewDone = document.getElementById('btnReviewDone');
 
     // API 配置（新）
     this.providerCards = document.getElementById('providerCards');
@@ -301,6 +325,27 @@ class SidebarApp {
     if (this.tabSelectorModal) {
       this.tabSelectorModal.querySelector('.tab-selector-overlay')?.addEventListener('click', () => this.hideMultiTabSelector());
     }
+
+    // 间隔复习
+    if (this.btnStartReview) {
+      this.btnStartReview.addEventListener('click', () => this.startReview());
+    }
+    if (this.btnShowAnswer) {
+      this.btnShowAnswer.addEventListener('click', () => this.showReviewAnswer());
+    }
+    if (this.btnCloseReview) {
+      this.btnCloseReview.addEventListener('click', () => this.closeReview());
+    }
+    if (this.btnReviewDone) {
+      this.btnReviewDone.addEventListener('click', () => this.closeReview());
+    }
+    // 评分按钮
+    document.querySelectorAll('.btn-rate').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const quality = parseInt(btn.dataset.quality, 10);
+        this.rateReviewCard(quality);
+      });
+    });
   }
 
   async loadSettings() {
@@ -3311,6 +3356,159 @@ ${readme || '无法提取 README 内容'}
         setTimeout(() => toast.remove(), 300);
       }
     }, 3000);
+  }
+
+  // ==================== 间隔复习 ====================
+
+  /**
+   * 检查有多少到期卡片并显示复习提醒
+   */
+  async checkDueReviews() {
+    try {
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      const entries = await kb.getAllEntries(10000);
+      const dueCards = getDueCards(entries);
+
+      if (dueCards.length > 0 && this.reviewBanner && this.reviewBannerText) {
+        this.reviewBannerText.textContent = `📚 你有 ${dueCards.length} 条知识待复习`;
+        this.reviewBanner.classList.remove('hidden');
+      }
+    } catch (e) {
+      // 静默处理
+    }
+  }
+
+  /**
+   * 开始复习模式
+   */
+  async startReview() {
+    try {
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      const entries = await kb.getAllEntries(10000);
+      this.reviewCards = getDueCards(entries);
+
+      if (this.reviewCards.length === 0) {
+        this.showToast('没有待复习的知识卡片', 'info');
+        return;
+      }
+
+      this.reviewIndex = 0;
+      this.reviewCorrect = 0;
+      this.reviewTotal = this.reviewCards.length;
+
+      // 显示复习面板
+      this.reviewOverlay.classList.remove('hidden');
+      this.reviewSummary.classList.add('hidden');
+      this.reviewCard.classList.remove('hidden');
+      this.showCurrentReviewCard();
+    } catch (e) {
+      this.showToast('启动复习失败', 'error');
+    }
+  }
+
+  /**
+   * 显示当前复习卡片
+   */
+  showCurrentReviewCard() {
+    if (this.reviewIndex >= this.reviewCards.length) {
+      this.showReviewSummary();
+      return;
+    }
+
+    const card = this.reviewCards[this.reviewIndex];
+
+    // 更新进度
+    this.reviewProgress.textContent = `${this.reviewIndex + 1} / ${this.reviewTotal}`;
+
+    // 显示问题
+    const questionText = card.question || card.title || '（无问题）';
+    this.reviewQuestion.innerHTML = this.escapeHtml(questionText);
+
+    // 重置答案和评分区域
+    this.reviewAnswer.classList.add('hidden');
+    this.reviewRating.classList.add('hidden');
+    this.btnShowAnswer.classList.remove('hidden');
+  }
+
+  /**
+   * 显示答案
+   */
+  showReviewAnswer() {
+    const card = this.reviewCards[this.reviewIndex];
+    const answerText = card.answer || card.summary || card.content || '（无答案）';
+
+    this.reviewAnswer.innerHTML = renderMarkdown(answerText);
+    this.reviewAnswer.classList.remove('hidden');
+    this.reviewRating.classList.remove('hidden');
+    this.btnShowAnswer.classList.add('hidden');
+  }
+
+  /**
+   * 评分并更新复习调度
+   * @param {number} quality - 评分 (1/3/5)
+   */
+  async rateReviewCard(quality) {
+    const card = this.reviewCards[this.reviewIndex];
+
+    try {
+      const currentReview = card.review || initializeReviewData();
+      const newReview = calculateNextReview(quality, currentReview);
+
+      // 更新到数据库
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      await kb.updateEntry(card.id, { review: newReview });
+
+      // 统计正确数（quality >= 3 为正确）
+      if (quality >= 3) {
+        this.reviewCorrect++;
+      }
+    } catch (e) {
+      // 静默处理
+    }
+
+    // 下一张
+    this.reviewIndex++;
+    this.showCurrentReviewCard();
+  }
+
+  /**
+   * 显示复习完成统计
+   */
+  showReviewSummary() {
+    this.reviewCard.classList.add('hidden');
+    this.reviewSummary.classList.remove('hidden');
+
+    const accuracy = this.reviewTotal > 0
+      ? Math.round((this.reviewCorrect / this.reviewTotal) * 100)
+      : 0;
+
+    this.summaryStats.innerHTML = `
+      <div class="stat-item">复习总数：<span class="stat-value">${this.reviewTotal}</span></div>
+      <div class="stat-item">正确数：<span class="stat-value">${this.reviewCorrect}</span></div>
+      <div class="stat-item">正确率：<span class="stat-value">${accuracy}%</span></div>
+    `;
+
+    // 隐藏复习提醒条
+    if (this.reviewBanner) {
+      this.reviewBanner.classList.add('hidden');
+    }
+  }
+
+  /**
+   * 关闭复习模式
+   */
+  closeReview() {
+    this.reviewOverlay.classList.add('hidden');
+    this.reviewCards = [];
+    this.reviewIndex = 0;
+    this.reviewCorrect = 0;
+    this.reviewTotal = 0;
+
+    // 重新检查是否有到期卡片
+    this.checkDueReviews();
   }
 }
 
