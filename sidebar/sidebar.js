@@ -1182,6 +1182,215 @@ class SidebarApp {
     });
   }
 
+  /**
+   * R047: 从在线商店加载技能列表
+   */
+  async loadStoreSkills() {
+    this.skillsSummary.textContent = '正在加载在线技能...';
+    this.skillsList.innerHTML = `<div class="empty-state"><div class="lp-loading"><div class="lp-loading-spinner"></div><span>正在从技能商店加载...</span></div></div>`;
+
+    try {
+      const storeSkills = await this.skillStore.fetchSkills();
+
+      if (!storeSkills || storeSkills.length === 0) {
+        this.skillsSummary.textContent = '在线技能商店';
+        this.skillsList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div><p>暂无在线技能，请手动导入</p><p class="text-muted">可通过右上角 📥 导入按钮导入本地技能文件</p></div>`;
+        return;
+      }
+
+      this.skillsSummary.textContent = `在线技能商店 — 共 ${storeSkills.length} 个技能`;
+
+      this.skillsList.innerHTML = storeSkills.map(skill => `
+      <div class="skill-card store-card" data-id="${this.escapeHtml(skill.id || '')}">
+        <div class="skill-card-header">
+          <div class="skill-card-name">
+            📦 ${this.escapeHtml(skill.name || '未命名技能')}
+          </div>
+          <span class="skill-card-category">by ${this.escapeHtml(skill.author || '未知')}</span>
+        </div>
+        <div class="skill-card-desc">${this.escapeHtml(skill.description || '暂无描述')}</div>
+        <div class="skill-card-footer">
+          <div class="skill-card-trigger">
+            ⬇️ ${skill.installs || 0} 次安装
+          </div>
+          <div class="skill-card-actions">
+            <button class="skill-store-install-btn" data-skill='${JSON.stringify(skill).replace(/'/g, "&#39;")}'>安装</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+      // 绑定安装按钮
+      this.skillsList.querySelectorAll('.skill-store-install-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          try {
+            const skill = JSON.parse(btn.dataset.skill);
+            btn.disabled = true;
+            btn.textContent = '安装中...';
+
+            const exists = await this.skillStore.isInstalled(skill.id);
+            if (exists) {
+              if (!confirm(`技能「${skill.name}」已存在，是否覆盖？`)) {
+                btn.disabled = false;
+                btn.textContent = '安装';
+                return;
+              }
+            }
+
+            await this.skillStore.installSkill(skill);
+            await this.loadCustomSkills();
+            btn.textContent = '已安装 ✓';
+            this.showToast(`技能「${skill.name}」安装成功`, 'success');
+          } catch (e) {
+            console.error('安装技能失败:', e);
+            this.showToast(`安装失败: ${e.message}`, 'error');
+            btn.disabled = false;
+            btn.textContent = '安装';
+          }
+        });
+      });
+    } catch (e) {
+      console.error('加载商店技能失败:', e);
+      this.skillsSummary.textContent = '在线技能商店';
+      this.skillsList.innerHTML = `<div class="empty-state"><div class="empty-icon">🏪</div><p>暂无在线技能，请手动导入</p><p class="text-muted">网络请求失败，请检查网络或稍后重试</p></div>`;
+    }
+  }
+
+  /**
+   * R046: 处理本地技能文件导入
+   * @param {Event} e - file input change 事件
+   */
+  async handleImportSkill(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const file = files[0];
+
+    // 文件大小限制 100KB
+    if (file.size > 100 * 1024) {
+      this.showToast('文件过大，请选择 100KB 以内的文件', 'error');
+      e.target.value = '';
+      return;
+    }
+
+    try {
+      const content = await this.readFileContent(file);
+      let skillData;
+
+      if (file.name.endsWith('.json')) {
+        skillData = this.parseSkillJson(content);
+      } else if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+        skillData = this.parseSkillMarkdown(content);
+      } else {
+        this.showToast('不支持的文件格式，请使用 .json 或 .md 文件', 'error');
+        e.target.value = '';
+        return;
+      }
+
+      if (!skillData) {
+        e.target.value = '';
+        return;
+      }
+
+      // 验证必填字段
+      if (!skillData.id || !skillData.name || !skillData.description) {
+        this.showToast('技能文件缺少必填字段（id, name, description）', 'error');
+        e.target.value = '';
+        return;
+      }
+
+      // 检查 id 是否重复
+      const existing = await getCustomSkillById(skillData.id);
+      if (existing) {
+        if (!confirm(`技能「${skillData.name}」(${skillData.id}) 已存在，是否覆盖？`)) {
+          e.target.value = '';
+          return;
+        }
+      }
+
+      // 保存到 IndexedDB
+      await saveCustomSkill({
+        id: skillData.id,
+        name: skillData.name,
+        description: skillData.description || '',
+        category: skillData.category || 'custom',
+        prompt: skillData.prompt || '',
+        parameters: skillData.parameters || [],
+        trigger: skillData.trigger || { type: 'manual' }
+      });
+
+      // 刷新技能注册
+      await this.loadCustomSkills();
+      this.loadSkillsList();
+      this.showToast(`技能「${skillData.name}」导入成功`, 'success');
+    } catch (err) {
+      console.error('导入技能失败:', err);
+      this.showToast(`导入失败: ${err.message}`, 'error');
+    }
+
+    // 清空 file input 以便重复选择同一文件
+    e.target.value = '';
+  }
+
+  /**
+   * 读取文件内容
+   * @param {File} file
+   * @returns {Promise<string>}
+   */
+  readFileContent(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error('文件读取失败'));
+      reader.readAsText(file, 'utf-8');
+    });
+  }
+
+  /**
+   * 解析 JSON 格式技能文件
+   * @param {string} content
+   * @returns {Object|null}
+   */
+  parseSkillJson(content) {
+    try {
+      return JSON.parse(content);
+    } catch (e) {
+      this.showToast('JSON 解析失败: ' + e.message, 'error');
+      return null;
+    }
+  }
+
+  /**
+   * 解析 Markdown 格式技能文件（frontmatter + 正文）
+   * @param {string} content
+   * @returns {Object|null}
+   */
+  parseSkillMarkdown(content) {
+    const fmMatch = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
+    if (!fmMatch) {
+      this.showToast('Markdown 文件格式错误：缺少 frontmatter（---）', 'error');
+      return null;
+    }
+
+    const frontmatter = fmMatch[1];
+    const body = fmMatch[2].trim();
+
+    // 简单 YAML 解析（key: value）
+    const data = {};
+    for (const line of frontmatter.split('\n')) {
+      const kvMatch = line.match(/^(\w+)\s*:\s*(.+)$/);
+      if (kvMatch) {
+        data[kvMatch[1].trim()] = kvMatch[2].trim();
+      }
+    }
+
+    if (body) {
+      data.prompt = body;
+    }
+
+    return data;
+  }
+
   toggleSkillDetail(skillId) {
     const panel = this.skillsList.querySelector(`.skill-detail-panel[data-id="${skillId}"]`);
     if (!panel) return;

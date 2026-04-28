@@ -631,6 +631,46 @@ body {
   border-color: var(--accent);
 }
 
+/* R046: 导入技能按钮 */
+.btn-import-skill {
+  padding: 3px 10px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--accent);
+  transition: all 0.15s;
+  margin-left: auto;
+}
+
+.btn-import-skill:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* R047: 商店卡片 */
+.store-card .skill-store-install-btn {
+  padding: 3px 12px;
+  border: 1px solid var(--success);
+  background: transparent;
+  color: var(--success);
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.store-card .skill-store-install-btn:hover {
+  background: var(--success);
+  color: white;
+}
+
+.store-card .skill-store-install-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .skills-list {
   flex: 1;
   overflow-y: auto;
