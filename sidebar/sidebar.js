@@ -13,7 +13,7 @@ import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { calculateNextReview, getDueCards, formatReviewDate, initializeReviewData } from '../lib/spaced-repetition.js';
 import { buildGraphData, forceDirectedLayout } from '../lib/knowledge-graph.js';
-import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
+import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, throttle, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
@@ -67,6 +67,17 @@ class SidebarApp {
     this.branches = [];
     this.activeBranchId = null;
     this.mainConversationSnapshot = null; // 主对话快照（进入分支前）
+
+    // 性能优化：分页加载状态
+    this._pageSize = 20;
+    this._currentPage = 0;
+    this._allFilteredEntries = [];
+    this._isLoadingMore = false;
+    this._hasMoreEntries = true;
+    this._loadMoreObserver = null;
+
+    // 性能优化：懒加载标记
+    this._statsLoaded = false;
 
     // 复习系统状态
     this.reviewCards = [];
@@ -589,8 +600,19 @@ class SidebarApp {
     this.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
     this.panels.forEach(p => p.classList.toggle('active', p.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
     if (tabName === 'skills') this.loadSkillsList();
-    else if (tabName === 'knowledge') { this.loadKnowledgeList(); this.loadHighlights(); }
-    else if (tabName === 'settings') { this.loadSettingsForm(); this.loadEvolutionStats(); this.loadStatsPanel(); }
+    else if (tabName === 'knowledge') {
+      this.loadKnowledgeList();
+      // 高亮面板懒加载：只在切换到高亮子标签时加载
+    }
+    else if (tabName === 'settings') {
+      this.loadSettingsForm();
+      this.loadEvolutionStats();
+      // 统计面板懒加载：只在首次切换时加载
+      if (!this._statsLoaded) {
+        this._statsLoaded = true;
+        this.loadStatsPanel();
+      }
+    }
     else if (tabName === 'page') this.loadPagePreview();
   }
 
@@ -2647,15 +2669,31 @@ ${sendContent}
   // ==================== 知识库 ====================
 
   async loadKnowledgeList() {
-    const entries = await this.memory.getAllEntries(50);
+    const entries = await this.memory.getAllEntries(10000);
     if (entries.length === 0) {
       this.emptyKnowledge.classList.remove('hidden');
       this.knowledgeList.innerHTML = '';
       this.knowledgeList.appendChild(this.emptyKnowledge);
+      this._allFilteredEntries = [];
+      this._hasMoreEntries = false;
       return;
     }
     this.emptyKnowledge.classList.add('hidden');
-    this.renderKnowledgeList(entries);
+
+    // 按标签过滤
+    const filtered = this.activeTag
+      ? entries.filter(e => e.tags?.includes(this.activeTag))
+      : entries;
+
+    // 分页重置
+    this._allFilteredEntries = filtered;
+    this._currentPage = 0;
+    this._hasMoreEntries = true;
+
+    // 仅渲染第一页
+    this.knowledgeList.innerHTML = '';
+    this.appendKnowledgePage();
+    this.setupInfiniteScroll();
   }
 
   async loadKnowledgeTags() {
@@ -2738,17 +2776,206 @@ ${sendContent}
             }
           }
           item.classList.toggle('selected', this.selectedIds.has(id));
+         this.updateBatchCount();
+       } else {
+         this.showKnowledgeDetail(parseInt(item.dataset.id));
+       }
+     });
+   });
+ }
+ /**
+  * 追加下一页知识条目（分页加载）
+  */
+  appendKnowledgePage() {
+    if (this._isLoadingMore || !this._hasMoreEntries) return;
+    this._isLoadingMore = true;
+
+    const start = this._currentPage * this._pageSize;
+    const end = start + this._pageSize;
+    const pageEntries = this._allFilteredEntries.slice(start, end);
+
+    if (pageEntries.length === 0) {
+      this._hasMoreEntries = false;
+      this._isLoadingMore = false;
+      return;
+    }
+
+    this._currentPage++;
+    this._hasMoreEntries = end < this._allFilteredEntries.length;
+
+    // 保存当前过滤后的条目用于批量操作
+    this._currentEntries = this._allFilteredEntries.slice(0, end);
+
+    if (this.selectMode) {
+      this.knowledgeList.classList.add('select-mode');
+    } else {
+      this.knowledgeList.classList.remove('select-mode');
+    }
+
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = pageEntries.map(entry => `
+      <div class="knowledge-item ${this.selectedIds.has(entry.id) ? 'selected' : ''}" data-id="${entry.id}">
+        <div class="knowledge-item-checkbox">
+          <input type="checkbox" data-id="${entry.id}" ${this.selectedIds.has(entry.id) ? 'checked' : ''}>
+        </div>
+        <div class="knowledge-item-content">
+          <div class="knowledge-item-title">${this.escapeHtml(entry.title)}</div>
+          <div class="knowledge-item-summary">${this.escapeHtml(entry.summary || entry.question || '')}</div>
+          <div class="knowledge-item-meta">
+            <span>${formatTime(entry.createdAt)}</span>
+            <div class="knowledge-item-tags">
+              ${(entry.tags || []).map(t => `<span class="knowledge-item-tag">${this.escapeHtml(t)}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
+    this.knowledgeList.appendChild(fragment);
+
+    // 绑定点击事件（仅绑定新添加的条目）
+    this.knowledgeList.querySelectorAll('.knowledge-item:not([data-bound])').forEach(item => {
+      item.setAttribute('data-bound', '1');
+      item.addEventListener('click', (e) => {
+        if (this.selectMode) {
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          const id = parseInt(item.dataset.id);
+          if (e.target.type === 'checkbox') {
+            if (e.target.checked) {
+              this.selectedIds.add(id);
+            } else {
+              this.selectedIds.delete(id);
+            }
+          } else {
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+              this.selectedIds.add(id);
+            } else {
+              this.selectedIds.delete(id);
+            }
+          }
+          item.classList.toggle('selected', this.selectedIds.has(id));
           this.updateBatchCount();
         } else {
           this.showKnowledgeDetail(parseInt(item.dataset.id));
         }
       });
     });
+
+    this._isLoadingMore = false;
+  }
+
+  /**
+   * 设置无限滚动（IntersectionObserver）
+   */
+  setupInfiniteScroll() {
+    // 清除旧的 observer
+    if (this._loadMoreObserver) {
+      this._loadMoreObserver.disconnect();
+      this._loadMoreObserver = null;
+    }
+
+    // 移除旧的 sentinel
+    const oldSentinel = document.getElementById('loadMoreSentinel');
+    if (oldSentinel) oldSentinel.remove();
+
+    if (!this._hasMoreEntries) return;
+
+    // 创建 sentinel 元素
+    const sentinel = document.createElement('div');
+    sentinel.id = 'loadMoreSentinel';
+    sentinel.style.height = '1px';
+    sentinel.style.width = '100%';
+    this.knowledgeList.appendChild(sentinel);
+
+   this._loadMoreObserver = new IntersectionObserver((entries) => {
+     for (const entry of entries) {
+       if (entry.isIntersecting && this._hasMoreEntries && !this._isLoadingMore) {
+          if (this._searchMode === 'semantic') {
+            this.appendSearchPage();
+          } else {
+            this.appendKnowledgePage();
+          }
+        }
+      }
+    }, { root: this.knowledgeList.parentElement, threshold: 0.1 });
+
+    this._loadMoreObserver.observe(sentinel);
+  }
+
+  /**
+   * 追加下一页语义搜索结果（带匹配分数和高亮）
+   */
+  appendSearchPage() {
+    if (this._isLoadingMore || !this._hasMoreEntries) return;
+    this._isLoadingMore = true;
+
+    const start = this._currentPage * this._pageSize;
+    const end = start + this._pageSize;
+    const pageResults = (this._allSemanticResults || []).slice(start, end);
+
+    if (pageResults.length === 0) {
+      this._hasMoreEntries = false;
+      this._isLoadingMore = false;
+      return;
+    }
+
+    this._currentPage++;
+    this._hasMoreEntries = end < (this._allSemanticResults || []).length;
+
+    // 保存当前过滤后的条目用于批量操作
+    this._currentEntries = (this._allSemanticResults || []).slice(0, end).map(r => r.entry);
+
+    const query = this._searchQuery || '';
+    const fragment = document.createDocumentFragment();
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = pageResults.map(result => {
+      const entry = result.entry;
+      const percent = Math.round(result.score * 100);
+      const matchType = result.matchType || 'semantic';
+      const titleHtml = this.highlightText(entry.title || '', query);
+      const summaryText = entry.summary || entry.question || '';
+      const summaryHtml = this.highlightText(summaryText, query);
+
+      return `
+        <div class="knowledge-item" data-id="${entry.id}">
+          <div class="knowledge-item-header">
+            <div class="knowledge-item-title">${titleHtml}</div>
+            <div class="search-score-badge ${matchType}">${percent}%</div>
+          </div>
+          <div class="knowledge-item-summary">${summaryHtml}</div>
+          <div class="knowledge-item-meta">
+            <span>${formatTime(entry.createdAt)}</span>
+            <span class="search-match-type">${matchType === 'keyword' ? '🔤 关键词' : '🧠 语义'}</span>
+            <div class="knowledge-item-tags">
+              ${(entry.tags || []).map(t => `<span class="knowledge-item-tag">${this.escapeHtml(t)}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    while (tempDiv.firstChild) {
+      fragment.appendChild(tempDiv.firstChild);
+    }
+    this.knowledgeList.appendChild(fragment);
+
+    // 绑定点击事件
+    this.knowledgeList.querySelectorAll('.knowledge-item:not([data-bound])').forEach(item => {
+      item.setAttribute('data-bound', '1');
+      item.addEventListener('click', () => this.showKnowledgeDetail(parseInt(item.dataset.id)));
+    });
+
+    this._isLoadingMore = false;
   }
 
   async showKnowledgeDetail(id) {
     const entry = await this.memory.getEntry(id);
-    if (!entry) return;
+   if (!entry) return;
 
     this.selectedEntryId = id;
     this.knowledgeList.classList.add('hidden');
@@ -2993,15 +3220,34 @@ ${sendContent}
 
   async searchKnowledge() {
     const query = this.searchInput.value.trim();
-    if (!query) { this.loadKnowledgeList(); return; }
+    if (!query) {
+      this._searchMode = null;
+      this._searchQuery = null;
+      this.loadKnowledgeList();
+      return;
+    }
+
+    this._searchQuery = query;
 
     if (this.searchMode === 'semantic') {
       // 语义搜索 + 综合搜索
-      const results = await this.memory.kb.combinedSearch(query, 30);
+      const results = await this.memory.kb.combinedSearch(query, 1000);
       if (results.length === 0) {
         this.renderNoResults(query);
       } else {
-        this.renderSemanticResults(results, query);
+        this._searchMode = 'semantic';
+        // 按标签过滤
+        const filtered = this.activeTag
+          ? results.filter(r => r.entry.tags?.includes(this.activeTag))
+          : results;
+        // 分页重置
+        this._allFilteredEntries = filtered.map(r => r.entry);
+        this._allSemanticResults = filtered;
+        this._currentPage = 0;
+        this._hasMoreEntries = true;
+        this.knowledgeList.innerHTML = '';
+        this.appendSearchPage();
+        this.setupInfiniteScroll();
       }
     } else {
       // 关键词搜索（原有逻辑）
@@ -3009,7 +3255,17 @@ ${sendContent}
       if (results.length === 0) {
         this.renderNoResults(query);
       } else {
-        this.renderKnowledgeList(results);
+        this._searchMode = 'keyword';
+        const filtered = this.activeTag
+          ? results.filter(e => e.tags?.includes(this.activeTag))
+          : results;
+        this._allFilteredEntries = filtered;
+        this._allSemanticResults = null;
+        this._currentPage = 0;
+        this._hasMoreEntries = true;
+        this.knowledgeList.innerHTML = '';
+        this.appendKnowledgePage();
+        this.setupInfiniteScroll();
       }
     }
   }
@@ -3407,13 +3663,13 @@ ${sendContent}
       if (!this._graphEventsBound) {
         this._graphEventsBound = true;
 
-        canvas.addEventListener('mousemove', (e) => {
+        canvas.addEventListener('mousemove', throttle((e) => {
           if (!this._graphNodes) return;
           const rect = canvas.getBoundingClientRect();
           const mx = e.clientX - rect.left;
           const my = e.clientY - rect.top;
           this.handleGraphHover(mx, my, e.clientX, e.clientY);
-        });
+        }, 100));
 
         canvas.addEventListener('mouseleave', () => {
           if (this._hoveredNode) {
