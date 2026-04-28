@@ -20,6 +20,7 @@ import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, va
 import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
 import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats } from '../lib/stats.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
+import { onboarding } from '../lib/onboarding.js';
 
 // ==================== 提供商预设 ====================
 
@@ -80,6 +81,11 @@ class SidebarApp {
     // 性能优化：懒加载标记
     this._statsLoaded = false;
 
+    // 引导流程状态
+    this.onboardingStep = 0;
+    this.onboardingSteps = [];
+    this.onboardingActive = false;
+
     // 复习系统状态
     this.reviewCards = [];
     this.reviewIndex = 0;
@@ -116,6 +122,9 @@ class SidebarApp {
     } catch (e) {
       // 静默处理
     }
+
+    // 检查并显示新手引导
+    await this.checkOnboarding();
   }
 
   // ==================== 初始化 ====================
@@ -301,6 +310,18 @@ class SidebarApp {
     this.statsSkillsList = document.getElementById('statsSkillsList');
     this.statsTrendChart = document.getElementById('statsTrendChart');
     this.btnResetStats = document.getElementById('btnResetStats');
+
+    // 新手引导
+    this.onboardingOverlay = document.getElementById('onboardingOverlay');
+    this.onboardingCard = document.getElementById('onboardingCard');
+    this.onboardingIcon = document.getElementById('onboardingIcon');
+    this.onboardingTitle = document.getElementById('onboardingTitle');
+    this.onboardingDescription = document.getElementById('onboardingDescription');
+    this.onboardingHighlight = document.getElementById('onboardingHighlight');
+    this.onboardingStepsContainer = document.getElementById('onboardingSteps');
+    this.btnOnboardingNext = document.getElementById('onboardingNext');
+    this.btnOnboardingSkip = document.getElementById('onboardingSkip');
+    this.btnRetriggerOnboarding = document.getElementById('btnRetriggerOnboarding');
   }
 
   bindEvents() {
@@ -410,6 +431,17 @@ class SidebarApp {
     // 导出对话
     if (this.btnExportConversation) {
       this.btnExportConversation.addEventListener('click', () => this.exportConversation());
+    }
+
+    // 新手引导
+    if (this.btnOnboardingNext) {
+      this.btnOnboardingNext.addEventListener('click', () => this.onboardingNext());
+    }
+    if (this.btnOnboardingSkip) {
+      this.btnOnboardingSkip.addEventListener('click', () => this.onboardingComplete());
+    }
+    if (this.btnRetriggerOnboarding) {
+      this.btnRetriggerOnboarding.addEventListener('click', () => this.retriggerOnboarding());
     }
 
     // 历史对话
@@ -5620,6 +5652,119 @@ ${sendContent}
     } catch (err) {
       this.showToast(`删除失败: ${err.message}`, 'error');
     }
+  }
+
+  // ==================== 新手引导 ====================
+
+  /** 检查并显示引导 */
+  async checkOnboarding() {
+    try {
+      const shouldShow = await onboarding.shouldShowOnboarding();
+      if (shouldShow) {
+        this.showOnboarding();
+      }
+    } catch (e) {
+      // 静默处理
+    }
+  }
+
+  /** 显示引导覆盖层 */
+  showOnboarding() {
+    this.onboardingSteps = onboarding.getStepConfig();
+    this.onboardingStep = 0;
+    this.onboardingActive = true;
+    this.renderOnboardingStep();
+    this.onboardingOverlay.classList.remove('hidden');
+  }
+
+  /** 隐藏引导覆盖层 */
+  hideOnboarding() {
+    this.onboardingOverlay.classList.add('hidden');
+    this.onboardingActive = false;
+  }
+
+  /** 渲染当前引导步骤 */
+  renderOnboardingStep() {
+    const step = this.onboardingSteps[this.onboardingStep];
+    if (!step) return;
+
+    // 更新卡片内容
+    this.onboardingIcon.textContent = step.icon;
+    this.onboardingTitle.textContent = step.title;
+    this.onboardingDescription.textContent = step.description;
+
+    // 更新步骤指示器
+    this.onboardingStepsContainer.innerHTML = '';
+    this.onboardingSteps.forEach((_, idx) => {
+      const dot = document.createElement('div');
+      dot.className = 'onboarding-step-dot';
+      if (idx === this.onboardingStep) dot.classList.add('active');
+      else if (idx < this.onboardingStep) dot.classList.add('completed');
+      this.onboardingStepsContainer.appendChild(dot);
+    });
+
+    // 高亮区域提示
+    if (step.highlight) {
+      const targetPanel = document.getElementById(step.highlight);
+      if (targetPanel) {
+        const panelName = step.highlight === 'panelSettings' ? '⚙️ 设置面板' : '💬 问答面板';
+        this.onboardingHighlight.innerHTML = `<p style="text-align:center;font-size:12px;color:var(--text-muted);margin:0">引导你前往: <strong>${panelName}</strong></p>`;
+      } else {
+        this.onboardingHighlight.innerHTML = '';
+      }
+    } else {
+      this.onboardingHighlight.innerHTML = '';
+    }
+
+    // 更新按钮文本
+    const isLast = this.onboardingStep === this.onboardingSteps.length - 1;
+    this.btnOnboardingNext.textContent = isLast ? '开始使用' : '下一步';
+  }
+
+  /** 引导 - 下一步 */
+  onboardingNext() {
+    const currentStep = this.onboardingSteps[this.onboardingStep];
+    const isLast = this.onboardingStep === this.onboardingSteps.length - 1;
+
+    if (isLast) {
+      this.onboardingComplete();
+      return;
+    }
+
+    // 如果当前步骤有高亮面板，切换到对应 tab
+    if (currentStep && currentStep.highlight) {
+      const tabMap = {
+        'panelSettings': 'settings',
+        'panelChat': 'chat'
+      };
+      const tabName = tabMap[currentStep.highlight];
+      if (tabName) this.switchTab(tabName);
+    }
+
+    this.onboardingStep++;
+    this.renderOnboardingStep();
+  }
+
+  /** 引导 - 完成/跳过 */
+  async onboardingComplete() {
+    try {
+      await onboarding.completeOnboarding();
+    } catch (e) {
+      // 静默处理
+    }
+    this.hideOnboarding();
+    this.showToast('引导完成！开始探索智阅 PageWise 吧 🎉', 'success');
+  }
+
+  /** 重新触发引导 */
+  async retriggerOnboarding() {
+    try {
+      await onboarding.resetOnboarding();
+    } catch (e) {
+      // 静默处理
+    }
+    this.switchTab('chat');
+    this.showOnboarding();
   }
 
   /** HTML 转义（防 XSS） */

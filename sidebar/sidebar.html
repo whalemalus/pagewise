@@ -488,6 +488,36 @@
           </div>
           <button class="btn-sm btn-danger" id="btnResetStats" style="margin-top:10px">重置统计数据</button>
         </div>
+
+        <div class="onboarding-section">
+          <h3 class="section-title">🚀 新手引导</h3>
+          <p class="text-muted" style="font-size:12px;margin-bottom:8px">如果你想重新查看首次使用引导，点击下方按钮。</p>
+          <button class="btn-sm" id="btnRetriggerOnboarding">重新触发引导</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新手引导覆盖层 -->
+  <div id="onboardingOverlay" class="onboarding-overlay hidden">
+    <div class="onboarding-backdrop"></div>
+    <div class="onboarding-card" id="onboardingCard">
+      <div class="onboarding-header">
+        <div class="onboarding-icon" id="onboardingIcon">👋</div>
+        <h2 class="onboarding-title" id="onboardingTitle">欢迎</h2>
+      </div>
+      <div class="onboarding-body">
+        <p class="onboarding-description" id="onboardingDescription"></p>
+        <div class="onboarding-highlight-area" id="onboardingHighlight"></div>
+      </div>
+      <div class="onboarding-footer">
+        <div class="onboarding-steps" id="onboardingSteps">
+          <!-- JS 动态生成步骤指示器 -->
+        </div>
+        <div class="onboarding-actions">
+          <button class="onboarding-btn onboarding-btn-skip" id="onboardingSkip">跳过</button>
+          <button class="onboarding-btn onboarding-btn-next" id="onboardingNext">下一步</button>
+        </div>
       </div>
     </div>
   </div>
