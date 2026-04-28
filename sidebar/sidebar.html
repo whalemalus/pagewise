@@ -140,10 +140,24 @@
           </div>
         </div>
         <div class="knowledge-actions">
+          <button class="btn-sm" id="btnSelectMode">☑️ 选择模式</button>
           <button class="btn-sm btn-primary-sm" id="btnImport">导入</button>
           <button class="btn-sm" id="btnExportMd">导出 MD</button>
           <button class="btn-sm" id="btnExportJson">导出 JSON</button>
           <input type="file" id="fileImport" accept=".json,.md,.markdown,.txt" multiple style="display:none">
+        </div>
+      </div>
+
+      <!-- 批量操作工具栏 -->
+      <div class="batch-toolbar hidden" id="batchToolbar">
+        <label class="batch-select-all">
+          <input type="checkbox" id="batchSelectAll"> 全选
+        </label>
+        <span class="batch-count" id="batchCount">已选 0 条</span>
+        <div class="batch-actions">
+          <button class="btn-sm btn-batch" id="btnBatchTag" title="批量打标签">🏷️ 批量打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDelete" title="批量删除">🗑️ 批量删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExport" title="批量导出">📤 批量导出</button>
         </div>
       </div>
 
@@ -155,6 +169,17 @@
           <p>还没有保存的知识条目</p>
           <p class="text-muted">在问答中点击「保存」即可添加到知识库</p>
         </div>
+      </div>
+
+      <!-- 批量操作浮动底栏 -->
+      <div class="batch-floating-bar hidden" id="batchFloatingBar">
+        <span class="batch-floating-count" id="batchFloatingCount">已选 0 条</span>
+        <div class="batch-floating-actions">
+          <button class="btn-sm btn-batch" id="btnBatchTagFloat">🏷️ 打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDeleteFloat">🗑️ 删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExportFloat">📤 导出</button>
+        </div>
+        <button class="btn-sm" id="btnBatchExit">退出选择</button>
       </div>
 
     <!-- 知识条目详情 -->

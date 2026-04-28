@@ -53,6 +53,10 @@ class SidebarApp {
     // 搜索模式
     this.searchMode = 'keyword'; // 'keyword' | 'semantic'
 
+    // 批量操作状态
+    this.selectMode = false;
+    this.selectedIds = new Set();
+
     // 复习系统状态
     this.reviewCards = [];
     this.reviewIndex = 0;
@@ -209,6 +213,21 @@ class SidebarApp {
 
     // Export Conversation
     this.btnExportConversation = document.getElementById('btnExportConversation');
+
+    // Batch Operations
+    this.batchToolbar = document.getElementById('batchToolbar');
+    this.batchSelectAll = document.getElementById('batchSelectAll');
+    this.batchCount = document.getElementById('batchCount');
+    this.btnSelectMode = document.getElementById('btnSelectMode');
+    this.btnBatchTag = document.getElementById('btnBatchTag');
+    this.btnBatchDelete = document.getElementById('btnBatchDelete');
+    this.btnBatchExport = document.getElementById('btnBatchExport');
+    this.batchFloatingBar = document.getElementById('batchFloatingBar');
+    this.batchFloatingCount = document.getElementById('batchFloatingCount');
+    this.btnBatchTagFloat = document.getElementById('btnBatchTagFloat');
+    this.btnBatchDeleteFloat = document.getElementById('btnBatchDeleteFloat');
+    this.btnBatchExportFloat = document.getElementById('btnBatchExportFloat');
+    this.btnBatchExit = document.getElementById('btnBatchExit');
 
     // History
     this.btnHistory = document.getElementById('btnHistory');
@@ -388,6 +407,37 @@ class SidebarApp {
         this.rateReviewCard(quality);
       });
     });
+
+    // 批量操作
+    if (this.btnSelectMode) {
+      this.btnSelectMode.addEventListener('click', () => this.toggleSelectMode());
+    }
+    if (this.batchSelectAll) {
+      this.batchSelectAll.addEventListener('change', () => this.toggleSelectAll());
+    }
+    // 顶部工具栏按钮
+    if (this.btnBatchTag) {
+      this.btnBatchTag.addEventListener('click', () => this.batchTag());
+    }
+    if (this.btnBatchDelete) {
+      this.btnBatchDelete.addEventListener('click', () => this.batchDelete());
+    }
+    if (this.btnBatchExport) {
+      this.btnBatchExport.addEventListener('click', () => this.batchExport());
+    }
+    // 浮动底栏按钮
+    if (this.btnBatchTagFloat) {
+      this.btnBatchTagFloat.addEventListener('click', () => this.batchTag());
+    }
+    if (this.btnBatchDeleteFloat) {
+      this.btnBatchDeleteFloat.addEventListener('click', () => this.batchDelete());
+    }
+    if (this.btnBatchExportFloat) {
+      this.btnBatchExportFloat.addEventListener('click', () => this.batchExport());
+    }
+    if (this.btnBatchExit) {
+      this.btnBatchExit.addEventListener('click', () => this.toggleSelectMode());
+    }
   }
 
   async loadSettings() {
@@ -1960,21 +2010,61 @@ ${readme || '无法提取 README 内容'}
       ? entries.filter(e => e.tags?.includes(this.activeTag))
       : entries;
 
+    // 保存当前过滤后的条目用于批量操作
+    this._currentEntries = filtered;
+
+    if (this.selectMode) {
+      this.knowledgeList.classList.add('select-mode');
+    } else {
+      this.knowledgeList.classList.remove('select-mode');
+    }
+
     this.knowledgeList.innerHTML = filtered.map(entry => `
-      <div class="knowledge-item" data-id="${entry.id}">
-        <div class="knowledge-item-title">${this.escapeHtml(entry.title)}</div>
-        <div class="knowledge-item-summary">${this.escapeHtml(entry.summary || entry.question || '')}</div>
-        <div class="knowledge-item-meta">
-          <span>${formatTime(entry.createdAt)}</span>
-          <div class="knowledge-item-tags">
-            ${(entry.tags || []).map(t => `<span class="knowledge-item-tag">${this.escapeHtml(t)}</span>`).join('')}
+      <div class="knowledge-item ${this.selectedIds.has(entry.id) ? 'selected' : ''}" data-id="${entry.id}">
+        <div class="knowledge-item-checkbox">
+          <input type="checkbox" data-id="${entry.id}" ${this.selectedIds.has(entry.id) ? 'checked' : ''}>
+        </div>
+        <div class="knowledge-item-content">
+          <div class="knowledge-item-title">${this.escapeHtml(entry.title)}</div>
+          <div class="knowledge-item-summary">${this.escapeHtml(entry.summary || entry.question || '')}</div>
+          <div class="knowledge-item-meta">
+            <span>${formatTime(entry.createdAt)}</span>
+            <div class="knowledge-item-tags">
+              ${(entry.tags || []).map(t => `<span class="knowledge-item-tag">${this.escapeHtml(t)}</span>`).join('')}
+            </div>
           </div>
         </div>
       </div>
     `).join('');
 
     this.knowledgeList.querySelectorAll('.knowledge-item').forEach(item => {
-      item.addEventListener('click', () => this.showKnowledgeDetail(parseInt(item.dataset.id)));
+      item.addEventListener('click', (e) => {
+        if (this.selectMode) {
+          // 选择模式下，点击切换选中状态
+          const checkbox = item.querySelector('input[type="checkbox"]');
+          const id = parseInt(item.dataset.id);
+          if (e.target.type === 'checkbox') {
+            // 直接点击复选框
+            if (e.target.checked) {
+              this.selectedIds.add(id);
+            } else {
+              this.selectedIds.delete(id);
+            }
+          } else {
+            // 点击条目，切换复选框
+            checkbox.checked = !checkbox.checked;
+            if (checkbox.checked) {
+              this.selectedIds.add(id);
+            } else {
+              this.selectedIds.delete(id);
+            }
+          }
+          item.classList.toggle('selected', this.selectedIds.has(id));
+          this.updateBatchCount();
+        } else {
+          this.showKnowledgeDetail(parseInt(item.dataset.id));
+        }
+      });
     });
   }
 
@@ -2008,6 +2098,148 @@ ${readme || '无法提取 README 内容'}
     this.knowledgeDetail.classList.add('hidden');
     this.knowledgeList.classList.remove('hidden');
     this.selectedEntryId = null;
+  }
+
+  // ==================== 批量操作 ====================
+
+  /**
+   * 进入/退出选择模式
+   */
+  toggleSelectMode() {
+    this.selectMode = !this.selectMode;
+    this.selectedIds.clear();
+
+    // 切换工具栏显示
+    this.batchToolbar.classList.toggle('hidden', !this.selectMode);
+    this.batchFloatingBar.classList.toggle('hidden', !this.selectMode);
+
+    // 更新按钮文本
+    if (this.btnSelectMode) {
+      this.btnSelectMode.textContent = this.selectMode ? '✖️ 取消选择' : '☑️ 选择模式';
+    }
+
+    // 重置全选复选框
+    if (this.batchSelectAll) {
+      this.batchSelectAll.checked = false;
+    }
+
+    // 更新计数
+    this.updateBatchCount();
+
+    // 重新渲染列表
+    this.loadKnowledgeList();
+  }
+
+  /**
+   * 全选/取消全选
+   */
+  toggleSelectAll() {
+    const isChecked = this.batchSelectAll.checked;
+    const items = this.knowledgeList.querySelectorAll('.knowledge-item');
+
+    items.forEach(item => {
+      const id = parseInt(item.dataset.id);
+      const checkbox = item.querySelector('input[type="checkbox"]');
+      if (isChecked) {
+        this.selectedIds.add(id);
+        if (checkbox) checkbox.checked = true;
+        item.classList.add('selected');
+      } else {
+        this.selectedIds.delete(id);
+        if (checkbox) checkbox.checked = false;
+        item.classList.remove('selected');
+      }
+    });
+
+    this.updateBatchCount();
+  }
+
+  /**
+   * 更新批量操作选中计数
+   */
+  updateBatchCount() {
+    const count = this.selectedIds.size;
+    const text = `已选 ${count} 条`;
+    if (this.batchCount) this.batchCount.textContent = text;
+    if (this.batchFloatingCount) this.batchFloatingCount.textContent = text;
+  }
+
+  /**
+   * 批量删除
+   */
+  async batchDelete() {
+    if (this.selectedIds.size === 0) {
+      this.showToast('请先选择要删除的条目', 'warning');
+      return;
+    }
+
+    const count = this.selectedIds.size;
+    if (!confirm(`确定要删除选中的 ${count} 条知识条目吗？此操作不可撤销。`)) {
+      return;
+    }
+
+    try {
+      const ids = Array.from(this.selectedIds);
+      const deleted = await this.memory.kb.batchDelete(ids);
+      this.showToast(`成功删除 ${deleted} 条知识条目`);
+      this.toggleSelectMode();
+      this.loadKnowledgeTags();
+    } catch (error) {
+      this.showToast(`批量删除失败：${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * 批量打标签
+   */
+  async batchTag() {
+    if (this.selectedIds.size === 0) {
+      this.showToast('请先选择要打标签的条目', 'warning');
+      return;
+    }
+
+    const tag = prompt('请输入要添加的标签：');
+    if (!tag || !tag.trim()) return;
+
+    try {
+      const ids = Array.from(this.selectedIds);
+      const updated = await this.memory.kb.batchAddTag(ids, tag.trim());
+      this.showToast(`成功为 ${updated} 条知识添加标签「${tag.trim()}」`);
+      this.toggleSelectMode();
+      this.loadKnowledgeTags();
+    } catch (error) {
+      this.showToast(`批量打标签失败：${error.message}`, 'error');
+    }
+  }
+
+  /**
+   * 批量导出
+   */
+  batchExport() {
+    if (this.selectedIds.size === 0) {
+      this.showToast('请先选择要导出的条目', 'warning');
+      return;
+    }
+
+    // 从当前渲染的条目中过滤选中的
+    const entries = (this._currentEntries || []).filter(e => this.selectedIds.has(e.id));
+    if (entries.length === 0) {
+      this.showToast('没有找到选中的条目', 'warning');
+      return;
+    }
+
+    const json = JSON.stringify(entries, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pagewise-batch-export-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    this.showToast(`已导出 ${entries.length} 条知识条目`);
   }
 
   /**

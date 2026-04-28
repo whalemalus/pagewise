@@ -1035,6 +1035,126 @@ body {
   font-size: 10px;
 }
 
+/* ==================== Batch Operations ==================== */
+
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--accent-light);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  margin: 8px 0;
+  flex-wrap: wrap;
+}
+
+.batch-select-all {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.batch-select-all input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.batch-count {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.btn-batch {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.btn-batch-danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.btn-batch-danger:hover {
+  background: var(--danger);
+  color: white;
+}
+
+/* 选择模式下的知识条目 */
+.knowledge-item-checkbox {
+  display: none;
+  flex-shrink: 0;
+}
+
+.select-mode .knowledge-item-checkbox {
+  display: flex;
+  align-items: center;
+}
+
+.select-mode .knowledge-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.select-mode .knowledge-item-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.knowledge-item-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  margin-top: 4px;
+}
+
+.knowledge-item.selected {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+
+/* 浮动操作栏 */
+.batch-floating-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-primary);
+  border-top: 2px solid var(--accent);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.batch-floating-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.batch-floating-actions {
+  display: flex;
+  gap: 6px;
+}
+
 /* ==================== Search Mode Toggle & Semantic Search ==================== */
 
 .search-box {
