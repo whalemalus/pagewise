@@ -17,6 +17,7 @@ import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, saveCo
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
+import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
 
 // ==================== 提供商预设 ====================
 
@@ -250,6 +251,20 @@ class SidebarApp {
     this.tabSelectorClose = document.getElementById('tabSelectorClose');
     this.tabSelectorCancel = document.getElementById('tabSelectorCancel');
     this.tabSelectorConfirm = document.getElementById('tabSelectorConfirm');
+
+    // Prompt 模板
+    this.btnTemplate = document.getElementById('btnTemplate');
+    this.templatePopup = document.getElementById('templatePopup');
+    this.templateList = document.getElementById('templateList');
+    this.btnCloseTemplate = document.getElementById('btnCloseTemplate');
+    this.btnSaveAsTemplate = document.getElementById('btnSaveAsTemplate');
+    this.templateForm = document.getElementById('templateForm');
+    this.tplName = document.getElementById('tplName');
+    this.tplContent = document.getElementById('tplContent');
+    this.tplCategory = document.getElementById('tplCategory');
+    this.tplEditId = document.getElementById('tplEditId');
+    this.btnCancelTemplateForm = document.getElementById('btnCancelTemplateForm');
+    this.btnConfirmTemplateForm = document.getElementById('btnConfirmTemplateForm');
   }
 
   bindEvents() {
@@ -442,6 +457,23 @@ class SidebarApp {
     }
     if (this.btnBatchExit) {
       this.btnBatchExit.addEventListener('click', () => this.toggleSelectMode());
+    }
+
+    // Prompt 模板
+    if (this.btnTemplate) {
+      this.btnTemplate.addEventListener('click', () => this.toggleTemplatePopup());
+    }
+    if (this.btnCloseTemplate) {
+      this.btnCloseTemplate.addEventListener('click', () => this.hideTemplatePopup());
+    }
+    if (this.btnSaveAsTemplate) {
+      this.btnSaveAsTemplate.addEventListener('click', () => this.openTemplateForm());
+    }
+    if (this.btnCancelTemplateForm) {
+      this.btnCancelTemplateForm.addEventListener('click', () => this.closeTemplateForm());
+    }
+    if (this.btnConfirmTemplateForm) {
+      this.btnConfirmTemplateForm.addEventListener('click', () => this.handleSaveTemplate());
     }
   }
 
@@ -4736,6 +4768,176 @@ ${sendContent}
 
     // 重新检查是否有到期卡片
     this.checkDueReviews();
+  }
+
+  // ==================== Prompt 模板管理 ====================
+
+  /** 切换模板弹窗显示/隐藏 */
+  toggleTemplatePopup() {
+    if (this.templatePopup.classList.contains('hidden')) {
+      this.showTemplatePopup();
+    } else {
+      this.hideTemplatePopup();
+    }
+  }
+
+  /** 显示模板弹窗 */
+  async showTemplatePopup() {
+    this.templatePopup.classList.remove('hidden');
+    this.closeTemplateForm();
+    await this.renderTemplateList();
+  }
+
+  /** 隐藏模板弹窗 */
+  hideTemplatePopup() {
+    this.templatePopup.classList.add('hidden');
+    this.closeTemplateForm();
+  }
+
+  /** 渲染模板列表 */
+  async renderTemplateList() {
+    try {
+      const templates = await getAllTemplates();
+      if (templates.length === 0) {
+        this.templateList.innerHTML = '<div class="template-empty">暂无模板</div>';
+        return;
+      }
+
+      const categoryIcons = { code: '💻', debug: '🐛', learning: '📖', custom: '⚙️' };
+
+      this.templateList.innerHTML = templates.map(tpl => `
+        <div class="template-item" data-id="${tpl.id}">
+          <div class="template-item-info">
+            <div class="template-item-name">
+              ${categoryIcons[tpl.category] || '📋'} ${this._escapeHtml(tpl.name)}
+              ${tpl.isBuiltin ? '<span class="template-item-badge">内置</span>' : ''}
+            </div>
+            <div class="template-item-preview">${this._escapeHtml(tpl.content.substring(0, 60))}</div>
+          </div>
+          <div class="template-item-actions">
+            ${!tpl.isBuiltin ? `<button class="template-item-btn btn-tpl-edit" data-id="${tpl.id}" title="编辑">✏️</button>` : ''}
+            ${!tpl.isBuiltin ? `<button class="template-item-btn btn-tpl-delete" data-id="${tpl.id}" title="删除">🗑️</button>` : ''}
+          </div>
+        </div>
+      `).join('');
+
+      // 绑定点击事件：选择模板
+      this.templateList.querySelectorAll('.template-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+          // 如果点的是操作按钮，不触发选择
+          if (e.target.closest('.template-item-btn')) return;
+          this.selectTemplate(item.dataset.id);
+        });
+      });
+
+      // 编辑按钮
+      this.templateList.querySelectorAll('.btn-tpl-edit').forEach(btn => {
+        btn.addEventListener('click', () => this.editTemplate(btn.dataset.id));
+      });
+
+      // 删除按钮
+      this.templateList.querySelectorAll('.btn-tpl-delete').forEach(btn => {
+        btn.addEventListener('click', () => this.handleDeleteTemplate(btn.dataset.id));
+      });
+    } catch (err) {
+      this.templateList.innerHTML = `<div class="template-empty">加载失败: ${err.message}</div>`;
+    }
+  }
+
+  /** 选择模板并填入输入框 */
+  async selectTemplate(id) {
+    try {
+      const text = await renderPromptTemplate(id, {});
+      this.userInput.value = text;
+      this.userInput.style.height = 'auto';
+      this.userInput.style.height = Math.min(this.userInput.scrollHeight, 120) + 'px';
+      this.userInput.focus();
+      this.hideTemplatePopup();
+    } catch (err) {
+      this.showToast(`使用模板失败: ${err.message}`, 'error');
+    }
+  }
+
+  /** 打开新建模板表单 */
+  openTemplateForm() {
+    this.tplEditId.value = '';
+    this.tplName.value = '';
+    this.tplContent.value = this.userInput.value || '';
+    this.tplCategory.value = 'custom';
+    this.templateForm.classList.remove('hidden');
+    this.tplName.focus();
+  }
+
+  /** 编辑已有模板 */
+  async editTemplate(id) {
+    try {
+      const templates = await getAllTemplates();
+      const tpl = templates.find(t => t.id === id);
+      if (!tpl) return;
+
+      this.tplEditId.value = tpl.id;
+      this.tplName.value = tpl.name;
+      this.tplContent.value = tpl.content;
+      this.tplCategory.value = tpl.category || 'custom';
+      this.templateForm.classList.remove('hidden');
+      this.tplName.focus();
+    } catch (err) {
+      this.showToast(`编辑失败: ${err.message}`, 'error');
+    }
+  }
+
+  /** 关闭模板表单 */
+  closeTemplateForm() {
+    this.templateForm.classList.add('hidden');
+    this.tplName.value = '';
+    this.tplContent.value = '';
+    this.tplEditId.value = '';
+  }
+
+  /** 保存模板（新建或更新） */
+  async handleSaveTemplate() {
+    const name = this.tplName.value.trim();
+    const content = this.tplContent.value.trim();
+    const category = this.tplCategory.value;
+    const editId = this.tplEditId.value;
+
+    if (!name) {
+      this.showToast('请输入模板名称', 'error');
+      return;
+    }
+    if (!content) {
+      this.showToast('请输入模板内容', 'error');
+      return;
+    }
+
+    try {
+      const tplData = editId ? { id: editId, name, content, category } : { name, content, category };
+      await savePromptTemplate(tplData);
+      this.showToast(editId ? '模板已更新' : '模板已保存', 'success');
+      this.closeTemplateForm();
+      await this.renderTemplateList();
+    } catch (err) {
+      this.showToast(`保存失败: ${err.message}`, 'error');
+    }
+  }
+
+  /** 删除模板 */
+  async handleDeleteTemplate(id) {
+    if (!confirm('确定删除此模板？')) return;
+    try {
+      await deletePromptTemplate(id);
+      this.showToast('模板已删除', 'success');
+      await this.renderTemplateList();
+    } catch (err) {
+      this.showToast(`删除失败: ${err.message}`, 'error');
+    }
+  }
+
+  /** HTML 转义（防 XSS） */
+  _escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 }
 

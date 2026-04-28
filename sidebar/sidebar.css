@@ -3473,3 +3473,249 @@ mark.search-highlight {
   background: var(--bg-secondary);
   border-color: #374151;
 }
+
+/* ==================== Prompt 模板 ==================== */
+
+.template-toolbar {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.btn-template {
+  padding: 3px 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn-template:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-light);
+}
+
+.template-popup {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  max-height: 60vh;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+}
+
+.template-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.template-popup-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.template-popup-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.template-popup-close {
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.template-list {
+  overflow-y: auto;
+  max-height: 40vh;
+  padding: 6px 0;
+}
+
+.template-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+  gap: 8px;
+}
+
+.template-item:hover {
+  background: var(--accent-light);
+}
+
+.template-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.template-item-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.template-item-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.template-item-preview {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}
+
+.template-item-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.template-item:hover .template-item-actions {
+  opacity: 1;
+}
+
+.template-item-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  transition: all 0.15s;
+}
+
+.template-item-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.template-item-btn.btn-tpl-delete:hover {
+  color: var(--danger);
+}
+
+.template-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+/* 新建/编辑表单 */
+.template-form {
+  padding: 12px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.template-form-group {
+  margin-bottom: 10px;
+}
+
+.template-form-group label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.template-form-group input[type="text"],
+.template-form-group textarea,
+.template-form-group select {
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  resize: vertical;
+}
+
+.template-form-group input:focus,
+.template-form-group textarea:focus,
+.template-form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
+.template-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.template-category-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+/* 输入区域相对定位（模板弹窗定位基准） */
+.input-area {
+  position: relative;
+}
+
+/* Dark theme */
+[data-theme="dark"] .btn-template {
+  background: var(--bg-tertiary);
+  border-color: #374151;
+}
+
+[data-theme="dark"] .template-popup {
+  background: var(--bg-primary);
+  border-color: #374151;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .template-form {
+  background: var(--bg-tertiary);
+  border-color: #374151;
+}
+
+[data-theme="dark"] .template-form-group input,
+[data-theme="dark"] .template-form-group textarea,
+[data-theme="dark"] .template-form-group select {
+  background: var(--bg-secondary);
+  border-color: #374151;
+  color: var(--text-primary);
+}

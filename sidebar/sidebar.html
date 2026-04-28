@@ -105,6 +105,50 @@
 
       <!-- 输入区域 -->
       <div class="input-area">
+        <!-- 模板工具栏 -->
+        <div class="template-toolbar">
+          <button class="btn-template" id="btnTemplate" title="Prompt 模板">📋 模板</button>
+        </div>
+
+        <!-- 模板列表弹窗 -->
+        <div class="template-popup hidden" id="templatePopup">
+          <div class="template-popup-header">
+            <span class="template-popup-title">Prompt 模板</span>
+            <div class="template-popup-actions">
+              <button class="btn-sm btn-primary-sm" id="btnSaveAsTemplate" title="从输入框保存为模板">➕ 新建</button>
+              <button class="btn-icon template-popup-close" id="btnCloseTemplate">&times;</button>
+            </div>
+          </div>
+          <div class="template-list" id="templateList">
+            <!-- JS 动态生成 -->
+          </div>
+          <!-- 新建/编辑模板表单 -->
+          <div class="template-form hidden" id="templateForm">
+            <div class="template-form-group">
+              <label for="tplName">模板名称</label>
+              <input type="text" id="tplName" placeholder="例如：代码审查" maxlength="30">
+            </div>
+            <div class="template-form-group">
+              <label for="tplContent">模板内容</label>
+              <textarea id="tplContent" rows="4" placeholder="使用 {{变量名}} 作为占位符"></textarea>
+            </div>
+            <div class="template-form-group">
+              <label for="tplCategory">分类</label>
+              <select id="tplCategory">
+                <option value="code">代码</option>
+                <option value="debug">调试</option>
+                <option value="learning">学习</option>
+                <option value="custom" selected>自定义</option>
+              </select>
+            </div>
+            <div class="template-form-actions">
+              <button class="btn-sm" id="btnCancelTemplateForm">取消</button>
+              <button class="btn-sm btn-primary-sm" id="btnConfirmTemplateForm">保存</button>
+            </div>
+            <input type="hidden" id="tplEditId">
+          </div>
+        </div>
+
         <div class="input-wrapper">
           <textarea
             id="userInput"
