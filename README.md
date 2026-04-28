@@ -24,24 +24,42 @@
 - 支持多轮对话，保持上下文
 - 选中文本右键提问，一键总结页面
 - 支持 Claude / ChatGPT / DeepSeek / Ollama 等任意兼容 API
+- 多页面联合分析（同时分析最多 5 个标签页）
 
 ### 知识库
 - 自动将有价值的问答整理到本地知识库（IndexedDB）
 - AI 自动生成摘要和标签
 - 全文搜索、标签筛选、按时间浏览
+- **语义搜索**：bigram 向量余弦相似度智能搜索
+- **知识图谱可视化**：Canvas 力导向图展示知识关联
+- **知识关联引擎**：自动发现知识条目间的关联
+- 批量管理：批量选择、删除、打标签、导出
 - 导出为 Markdown（兼容 Obsidian）或 JSON
 - 导入 JSON / Markdown / 纯文本文件
 
 ### 技能系统
 - 7 个内置技能：代码解释、代码审查、错误诊断、API 摘要、学习路径、知识卡片、Obsidian 导出
+- **自定义技能系统**：用户可创建最多 20 个自定义技能
 - 根据页面内容自动推荐相关技能
 - 支持启用/禁用、手动触发
 - AI 可在回答中自动调用技能
 
 ### 页面感知
-- 自动识别页面类型：代码仓库、API 文档、技术问答、博客、代码片段、错误页面
+- 自动识别 6 种页面类型：通用网页、API 文档、GitHub 仓库、YouTube、PDF、代码仓库
 - 根据页面类型推荐对应操作
 - 提取结构化信息（端点、代码语言、错误信息）
+- PDF 文档阅读（Chrome PDF viewer）
+- YouTube 视频字幕提取与总结
+
+### 智能功能
+- **多模态图片理解**：页面图片提取与 AI 视觉问答
+- **代码执行沙箱**：AI 回答中的 HTML/JavaScript 代码可在侧边栏直接运行
+- **Prompt 模板库**：5 个内置模板 + 自定义模板一键调用
+- **对话分支**：从任意 AI 回答节点分叉探索不同方向
+- **Token 窗口管理**：对话 token 用量估算与警告
+- **学习路径生成**：AI 基于知识库生成个性化学习路线
+- **间隔复习系统**：基于 SM-2 算法的知识卡片复习
+- **页面高亮标注**：选中文本高亮保存，跨访问持久化
 
 ### 记忆系统
 - 用户画像：自动学习技术水平、常用语言、关注领域
@@ -56,13 +74,29 @@
 - 用户水平推断：初学者 / 中级 / 高级，调整解释深度
 - 检索策略调优：根据重复提问等信号自动扩大/缩小检索范围
 - 技能推荐校准：根据使用/忽略情况调整推荐阈值
-- 避免模式记忆：记录用户纠正过的行为，下次避免
+
+### 界面与交互
+- AxonHub 风格 API 配置：提供商卡片选择器，模型发现
+- 多配置 Profile：保存/切换/删除多套 API 配置
+- 暗色主题：CSS 变量切换，支持跟随系统
+- 划词提问：选中文本后浮动按钮直接提问
+- 新手引导流程：首次安装分步引导
+- 数据统计仪表盘：使用统计与趋势分析
+- 快捷键：Ctrl+Shift+Y（打开侧边栏）、Ctrl+Shift+S（总结页面）、Ctrl+Shift+X（切换侧边栏）
+- 国际化：支持中文和英文界面
+- 可访问性：ARIA 标签、键盘导航、焦点管理
+
+### 错误处理
+- 全局错误捕获
+- 友好错误提示
+- 自动重试机制
+- Toast 通知系统（info/success/error/warning）
 
 ---
 
-## 快速开始
+## 安装
 
-### 安装
+### 从源码安装（开发者模式）
 
 1. 克隆或下载本仓库
 2. 打开 Chrome，访问 `chrome://extensions/`
@@ -70,7 +104,17 @@
 4. 点击「加载已解压的扩展程序」，选择项目目录
 5. 点击扩展图标，打开侧边栏
 
-### 配置
+### 从打包文件安装
+
+1. 从 Releases 页面下载 `pagewise-v1.0.0.zip`
+2. 解压到本地目录
+3. 打开 Chrome，访问 `chrome://extensions/`
+4. 开启右上角「开发者模式」
+5. 点击「加载已解压的扩展程序」，选择解压后的目录
+
+---
+
+## 配置
 
 1. 在侧边栏中切换到「设置」标签
 2. 选择 API 协议：
@@ -80,14 +124,17 @@
 4. 填写模型名称（如 `gpt-4o`、`claude-sonnet-4-6`、`deepseek-chat`）
 5. 点击「测试连接」验证配置
 
-### 使用
+---
+
+## 使用
 
 - **提问**：打开侧边栏，输入问题，AI 会结合当前页面内容回答
-- **总结页面**：点击「总结当前页面」按钮
+- **总结页面**：点击「总结当前页面」按钮或按 Ctrl+Shift+S
 - **解释选中内容**：选中文本后点击「解释选中内容」或右键菜单
 - **使用技能**：点击「技能」标签，手动运行技能
 - **保存知识**：AI 回答后点击「保存」按钮，自动整理到知识库
 - **导入导出**：在知识库标签中导入/导出文件
+- **复习知识**：使用间隔复习系统回顾已保存的知识
 
 ---
 
@@ -102,59 +149,6 @@
 | 学习路径 | learning | 手动触发 | 生成从入门到精通的学习路线图 |
 | 知识卡片 | learning | 手动触发 | 将内容转化为 Q&A 格式的复习卡片 |
 | Obsidian 导出 | export | 手动触发 | 整理为带 YAML frontmatter 的 Obsidian 笔记 |
-
----
-
-## 导入格式
-
-知识库支持导入以下格式的文件：
-
-### JSON
-
-从本扩展导出的 JSON 可直接导入，完整保留所有字段。
-
-```json
-[
-  {
-    "title": "React Hooks 详解",
-    "tags": ["react", "hooks"],
-    "question": "什么是 Hooks？",
-    "answer": "Hooks 是 React 16.8 引入的...",
-    "sourceUrl": "https://react.dev"
-  }
-]
-```
-
-### Markdown（Obsidian 兼容）
-
-```markdown
----
-title: React Hooks 详解
-tags: [react, hooks]
-source: https://react.dev
-date: 2024-01-15
----
-
-正文内容...
-```
-
-### Markdown（H2 分隔）
-
-```markdown
-## 条目标题 1
-标签: tag1, tag2
-
-内容...
-
-## 条目标题 2
-标签: tag3
-
-内容...
-```
-
-### 纯文本
-
-按空行分隔，每段第一条作为标题。
 
 ---
 
@@ -176,19 +170,30 @@ date: 2024-01-15
 │  ┌───────────────────────┴──────────────────────────────┐ │
 │  │                      Lib Layer                        │ │
 │  │                                                        │ │
-│  │  ai-client.js     Claude/OpenAI 双协议，流式输出       │ │
-│  │  skill-engine.js  技能注册、发现、执行                 │ │
-│  │  page-sense.js    页面类型识别、结构化提取             │ │
-│  │  memory.js        知识召回、用户画像、自动保存         │ │
-│  │  evolution.js     隐式反馈、策略调优、自进化           │ │
-│  │  agent-loop.js    任务分解、规划执行                   │ │
-│  │  importer.js      多格式导入解析                      │ │
-│  │  knowledge-base.js IndexedDB 知识库存储               │ │
-│  │  utils.js         通用工具函数                        │ │
+│  │  ai-client.js       AI API 客户端（Claude + OpenAI）  │ │
+│  │  skill-engine.js    技能注册、发现、执行               │ │
+│  │  page-sense.js      页面类型识别、结构化提取           │ │
+│  │  memory.js          知识召回、用户画像、自动保存       │ │
+│  │  evolution.js       隐式反馈、策略调优、自进化         │ │
+│  │  agent-loop.js      任务分解、规划执行                 │ │
+│  │  importer.js        多格式导入解析                    │ │
+│  │  knowledge-base.js  IndexedDB 知识库存储              │ │
+│  │  knowledge-graph.js 知识关联图谱                      │ │
+│  │  spaced-repetition.js SM-2 间隔复习                   │ │
+│  │  prompt-templates.js Prompt 模板管理                  │ │
+│  │  conversation-store.js 对话历史持久化                 │ │
+│  │  highlight-store.js 页面高亮存储                      │ │
+│  │  learning-path.js   学习路径生成                      │ │
+│  │  custom-skills.js   自定义技能管理                    │ │
+│  │  stats.js           使用统计                          │ │
+│  │  error-handler.js   全局错误处理                      │ │
+│  │  onboarding.js      新手引导                          │ │
+│  │  utils.js           通用工具函数                      │ │
 │  └────────────────────────────────────────────────────────┘ │
 │  ┌────────────────────────────────────────────────────────┐ │
 │  │  chrome.storage.sync   设置 / API Key                   │ │
 │  │  chrome.storage.local  进化状态                         │ │
+│  │  chrome.storage.session 对话历史（24h 过期）             │ │
 │  │  IndexedDB             知识库 / 对话历史                │ │
 │  └────────────────────────────────────────────────────────┘ │
 └──────────────────────────────────────────────────────────┘
@@ -211,6 +216,7 @@ date: 2024-01-15
 | 设置存储 | chrome.storage.sync | 跨设备同步 |
 | 进化状态 | chrome.storage.local | 本地持久化 |
 | 知识库存储 | IndexedDB | 纯本地，大容量 |
+| 国际化 | _locales | 中英文支持 |
 
 ---
 
@@ -236,7 +242,7 @@ pagewise/
 │   ├── options.html              # 设置页面
 │   ├── options.css
 │   └── options.js
-├── lib/
+├── lib/                          # 核心库（20 个模块）
 │   ├── ai-client.js              # AI API 封装（Claude + OpenAI 双协议）
 │   ├── skill-engine.js           # 技能引擎
 │   ├── page-sense.js             # 页面感知
@@ -245,6 +251,16 @@ pagewise/
 │   ├── agent-loop.js             # Agent 规划执行
 │   ├── importer.js               # 多格式导入
 │   ├── knowledge-base.js         # IndexedDB 知识库
+│   ├── knowledge-graph.js        # 知识关联图谱
+│   ├── spaced-repetition.js      # SM-2 间隔复习
+│   ├── prompt-templates.js       # Prompt 模板管理
+│   ├── conversation-store.js     # 对话历史持久化
+│   ├── highlight-store.js        # 页面高亮存储
+│   ├── learning-path.js          # 学习路径生成
+│   ├── custom-skills.js          # 自定义技能管理
+│   ├── stats.js                  # 使用统计
+│   ├── error-handler.js          # 全局错误处理
+│   ├── onboarding.js             # 新手引导
 │   └── utils.js                  # 工具函数
 ├── skills/
 │   └── builtin-skills.js         # 内置技能集
@@ -252,33 +268,52 @@ pagewise/
 │   ├── icon16.png
 │   ├── icon48.png
 │   └── icon128.png
-└── docs/
-    └── product-spec.md           # 产品规格说明书
+├── _locales/
+│   ├── zh_CN/messages.json       # 中文语言包
+│   └── en/messages.json          # 英文语言包
+├── tests/                        # 测试套件（23 个测试文件）
+│   └── helpers/                  # 测试辅助工具
+├── scripts/
+│   └── build.sh                  # 打包脚本
+├── docs/                         # 项目文档
+├── README.md
+├── CHANGELOG.md
+├── PRIVACY.md
+└── LICENSE
 ```
 
 ---
 
-## 自进化机制
+## 测试
 
-助手通过隐式反馈信号自动学习，无需用户手动评分：
+项目使用 Node.js 内置 test runner，无需外部依赖。
 
-```
-用户行为信号                      系统学习
-──────────────────────────────────────────────────
-复制了回答            →    这种回答风格有效，保持
-保存到知识库          →    这类内容有价值，加权
-30 秒内追问           →    回答不够深入，增加详细度
-重复问同一问题        →    检索不准，扩大搜索范围
-忽略推荐的技能        →    技能不匹配，提高推荐阈值
-纠正 AI 的说法        →    记录避免模式，下次不再犯
+```bash
+# 运行全部测试
+node --test tests/test-*.js
+
+# 运行单个测试文件
+node --test tests/test-utils.js
 ```
 
-进化维度包括：
-- **回答风格**：简洁 / 均衡 / 详细
-- **代码详细度**：最小 / 中等 / 完整
-- **检索策略**：搜索范围、权重分配
-- **用户水平**：初学者 / 中级 / 高级
-- **技能推荐**：置信度阈值动态调整
+**测试统计**（v1.0.0）：
+- 测试文件：23 个
+- 测试套件：122 个
+- 测试用例：537 个
+- 通过率：100%
+
+覆盖模块：utils、page-sense、skill-engine、knowledge-base、ai-client、conversation-store、highlight-store、onboarding、error-handler、stats、token-estimation、conversation-branch、prompt-templates、multi-tab、code-sandbox、custom-skills、knowledge-graph、spaced-repetition、knowledge-correlation、semantic-search、learning-path、batch-operations、conversation-storage
+
+---
+
+## 打包
+
+```bash
+# 生成 Chrome Web Store 上传用的 zip
+bash scripts/build.sh
+
+# 输出：dist/pagewise-v1.0.0.zip
+```
 
 ---
 
@@ -289,6 +324,8 @@ pagewise/
 - **页面内容**：仅在用户主动操作时提取，发送到用户自己配置的 AI API
 - **无追踪**：不收集任何使用数据或分析信息
 - **开源透明**：所有代码可审计
+
+详见 [PRIVACY.md](PRIVACY.md)。
 
 ---
 
@@ -303,13 +340,19 @@ pagewise/
 
 ---
 
-## 贡献
+## 开发指南
 
-欢迎贡献代码、报告问题或提出建议。
-
-### 开发
+### 开发环境
 
 项目无构建步骤，直接修改源码后在 Chrome 扩展管理页面点击刷新即可。
+
+### 项目约定
+
+- **代码风格**：ES Module，const/let 优先，无 var
+- **命名**：camelCase（变量/函数），PascalCase（类）
+- **注释**：关键函数必须有 JSDoc 注释
+- **提交规范**：Conventional Commits（feat/fix/docs/refactor/test）
+- **不引入外部依赖**：保持零依赖
 
 ### 添加新技能
 
@@ -322,39 +365,32 @@ export const mySkill = {
   description: '技能描述',
   category: 'general',
   trigger: (pageContext) => {
-    // 返回 true 表示当前页面适合此技能
     return pageContext.content?.includes('关键词');
   },
   parameters: [
     { name: 'param1', type: 'string', description: '参数说明', required: false }
   ],
   async execute(params, context) {
-    // context.ai - AI 客户端
-    // context.memory - 记忆系统
     const response = await context.ai.chat([...]);
     return response.content;
   }
 };
-
-// 加入数组
-export const allBuiltinSkills = [
-  ...existingSkills,
-  mySkill
-];
 ```
 
----
+### 添加新测试
 
-## 未来规划
+在 `tests/` 目录创建 `test-xxx.js` 文件，使用 Node.js 内置 `node:test`：
 
-- [ ] 划词浮动提问按钮
-- [ ] 页面高亮关联（AI 回答引用的代码可定位到页面原位置）
-- [ ] 快捷键支持（Alt+A 打开侧边栏）
-- [ ] 知识图谱可视化
-- [ ] 云端同步（可选）
-- [ ] 多模型同时对比
-- [ ] 间隔重复复习模式（类似 Anki）
-- [ ] Firefox 支持
+```javascript
+import { describe, it, beforeEach } from 'node:test';
+import assert from 'node:assert/strict';
+
+describe('MyModule', () => {
+  it('should do something', () => {
+    assert.strictEqual(actual, expected);
+  });
+});
+```
 
 ---
 

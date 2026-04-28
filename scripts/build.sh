@@ -38,6 +38,7 @@ cp -r sidebar "$TEMP_DIR/"
 cp -r options "$TEMP_DIR/"
 cp -r lib "$TEMP_DIR/"
 cp -r skills "$TEMP_DIR/"
+cp -r _locales "$TEMP_DIR/"
 
 # 打包 zip (Windows 用 PowerShell，其他系统用 zip)
 if command -v zip &> /dev/null; then
