@@ -136,6 +136,10 @@ class SidebarApp {
     this.evolutionLog = document.getElementById('evolutionLog');
     this.btnResetEvolution = document.getElementById('btnResetEvolution');
 
+    // Related entries
+    this.relatedEntries = document.getElementById('relatedEntries');
+    this.relatedList = document.getElementById('relatedList');
+
     // Toast 容器
     this.toastContainer = document.getElementById('toastContainer');
 
@@ -1908,12 +1912,59 @@ ${readme || '无法提取 README 内容'}
       ${entry.summary ? `<div class="section"><div class="section-title">摘要</div><div class="section-body">${this.escapeHtml(entry.summary)}</div></div>` : ''}
       ${entry.content ? `<div class="section"><div class="section-title">原始内容</div><div class="section-body" style="max-height:200px;overflow-y:auto;font-size:12px;color:var(--text-secondary);">${this.escapeHtml(entry.content.slice(0, 2000))}</div></div>` : ''}
     `;
+
+    // 加载并展示相关知识
+    this.loadRelatedEntries(id);
   }
 
   showKnowledgeList() {
     this.knowledgeDetail.classList.add('hidden');
     this.knowledgeList.classList.remove('hidden');
     this.selectedEntryId = null;
+  }
+
+  /**
+   * 加载并渲染与当前条目相关的知识
+   */
+  async loadRelatedEntries(entryId) {
+    if (!this.relatedEntries || !this.relatedList) return;
+
+    try {
+      const related = await this.memory.kb.findRelatedEntries(entryId, 5);
+
+      if (related.length === 0) {
+        this.relatedEntries.classList.add('hidden');
+        return;
+      }
+
+      this.relatedEntries.classList.remove('hidden');
+      this.relatedList.innerHTML = related.map(({ entry, score }) => {
+        const percent = Math.round(score * 100);
+        const summary = entry.summary
+          ? this.escapeHtml(entry.summary.slice(0, 80)) + (entry.summary.length > 80 ? '...' : '')
+          : '';
+        return `
+          <div class="related-card" data-id="${entry.id}">
+            <div class="related-card-header">
+              <span class="related-card-title">${this.escapeHtml(entry.title)}</span>
+              <span class="related-card-score">${percent}%</span>
+            </div>
+            ${summary ? `<div class="related-card-summary">${summary}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // 绑定点击事件
+      this.relatedList.querySelectorAll('.related-card').forEach(card => {
+        card.addEventListener('click', () => {
+          const id = parseInt(card.dataset.id);
+          this.showKnowledgeDetail(id);
+        });
+      });
+    } catch (e) {
+      // 关联加载失败不阻塞详情展示
+      this.relatedEntries.classList.add('hidden');
+    }
   }
 
   async saveToKnowledgeBase(answerText) {
