@@ -19,6 +19,7 @@ import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSk
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
 import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
 import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats } from '../lib/stats.js';
+import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
 
@@ -53,6 +54,7 @@ class SidebarApp {
     this.pageSense = new PageSense();
     this.memory = new MemorySystem();
     this.evolution = new EvolutionEngine();
+    this.skillStore = new SkillStore();
 
     // 搜索模式
     this.searchMode = 'keyword'; // 'keyword' | 'semantic'
@@ -219,6 +221,8 @@ class SidebarApp {
     // Skills
     this.skillsSummary = document.getElementById('skillsSummary');
     this.skillsList = document.getElementById('skillsList');
+    this.btnImportSkill = document.getElementById('btnImportSkill');
+    this.skillFileInput = document.getElementById('skillFileInput');
 
     // Skill Editor
     this.skillEditor = document.getElementById('skillEditor');
@@ -468,6 +472,14 @@ class SidebarApp {
     }
     if (this.btnSaveSkillEditor) {
       this.btnSaveSkillEditor.addEventListener('click', () => this.handleSaveSkill());
+    }
+
+    // R046: 本地技能导入
+    if (this.btnImportSkill) {
+      this.btnImportSkill.addEventListener('click', () => this.skillFileInput.click());
+    }
+    if (this.skillFileInput) {
+      this.skillFileInput.addEventListener('change', (e) => this.handleImportSkill(e));
     }
 
     // API 配置（新）
@@ -1087,6 +1099,12 @@ class SidebarApp {
   // ==================== 技能面板 ====================
 
   loadSkillsList(category = 'all') {
+    // R047: 商店分类 — 从远程 API 加载
+    if (category === 'store') {
+      this.loadStoreSkills();
+      return;
+    }
+
     const allSkills = this.skills.getAll();
     const filtered = category === 'all'
       ? allSkills
@@ -1397,6 +1415,103 @@ class SidebarApp {
       this.addSystemMessage(`技能「${skill.name}」已删除`);
     } catch (e) {
       this.addSystemMessage(`删除失败：${e.message}`);
+    }
+  }
+
+  /**
+   * 导入技能文件（JSON 或 Markdown）
+   */
+  async handleImportSkill(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (evt) => {
+      try {
+        const text = evt.target.result;
+        let skill;
+
+        if (file.name.endsWith('.json')) {
+          skill = JSON.parse(text);
+          if (!skill.id || !skill.name || !skill.description) {
+            this.showToast('JSON 技能文件缺少必要字段（id/name/description）', 'error');
+            return;
+          }
+        } else if (file.name.endsWith('.md') || file.name.endsWith('.markdown')) {
+          const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
+          if (!fmMatch) {
+            this.showToast('Markdown 文件缺少 frontmatter（--- 之间的元数据）', 'error');
+            return;
+          }
+          const meta = {};
+          fmMatch[1].split('\n').forEach(line => {
+            const idx = line.indexOf(':');
+            if (idx > 0) {
+              meta[line.slice(0, idx).trim()] = line.slice(idx + 1).trim();
+            }
+          });
+          skill = {
+            id: meta.id || `skill_${Date.now()}`,
+            name: meta.name || file.name.replace(/\.(md|markdown)$/i, ''),
+            description: meta.description || '',
+            category: meta.category || 'custom',
+            prompt: text.slice(fmMatch[0].length).trim(),
+            parameters: [],
+            trigger: { type: meta.trigger === 'auto' ? 'auto' : 'manual' }
+          };
+          if (!skill.prompt) {
+            this.showToast('Markdown 文件中 frontmatter 之后缺少 Prompt 内容', 'error');
+            return;
+          }
+        } else {
+          this.showToast('仅支持 .json / .md / .markdown 文件', 'error');
+          return;
+        }
+
+        // 检查 id 重复
+        const existing = await getCustomSkillById(skill.id);
+        if (existing) {
+          this.showToast(`技能「${skill.id}」已存在，请修改 id 后重试`, 'error');
+          return;
+        }
+
+        await saveCustomSkill({
+          id: skill.id,
+          name: skill.name,
+          description: skill.description || '',
+          category: skill.category || 'custom',
+          prompt: skill.prompt || '',
+          parameters: skill.parameters || [],
+          trigger: skill.trigger || { type: 'manual' },
+          enabled: true
+        });
+
+        this.loadSkillsList();
+        this.showToast(`技能「${skill.name}」已导入`, 'success');
+      } catch (err) {
+        this.showToast(`导入失败：${err.message}`, 'error');
+      } finally {
+        e.target.value = '';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  /**
+   * 安装在线商店技能
+   */
+  async handleInstallStoreSkill(skill) {
+    try {
+      const installed = await this.skillStore.isInstalled(skill.id);
+      if (installed) {
+        this.showToast(`技能「${skill.name}」已安装`, 'info');
+        return;
+      }
+      await this.skillStore.installSkill(skill);
+      this.loadSkillsList('store');
+      this.showToast(`技能「${skill.name}」已安装`, 'success');
+    } catch (e) {
+      this.showToast(`安装失败：${e.message}`, 'error');
     }
   }
 
