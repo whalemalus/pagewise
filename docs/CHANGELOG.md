@@ -4,6 +4,14 @@
 
 ---
 
+## [1.1.1] - 2026-04-28
+
+### 修复
+- **Claude API 请求 403 错误** — `buildClaudeRequest` 缺少 `anthropic-dangerous-direct-browser-access: true` header，导致所有 Claude API 调用被拒绝。现已添加该 header，Claude 协议的 AI 问答和测试连接功能恢复正常。
+- **侧边栏初始化崩溃** — `init()` 中 IndexedDB 操作（memory.init、loadCustomSkills）失败时会杀死整个初始化链，导致侧边栏空白无响应。现在每个关键步骤都有独立的 try-catch，单个模块失败不影响其他功能。
+
+---
+
 ## [1.0.0] - 2026-04-25
 
 ### 新增
