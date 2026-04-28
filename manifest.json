@@ -2,9 +2,8 @@
   "manifest_version": 3,
   "name": "智阅 PageWise",
   "version": "1.0.0",
-  "description": "浏览网页时，让 AI 帮你理解技术内容，并自动整理到知识库",
+  "description": "Browse the web with AI — ask questions about any page and auto-organize answers into a knowledge base. 浏览网页时让 AI 帮你理解技术内容，自动整理到知识库。",
   "permissions": [
-    "activeTab",
     "storage",
     "sidePanel",
     "contextMenus",
