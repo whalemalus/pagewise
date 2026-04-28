@@ -96,20 +96,48 @@ class SidebarApp {
   }
 
   async init() {
-    await this.loadSettings();
-    await this.memory.init();
+    try {
+      await this.loadSettings();
+    } catch (e) {
+      console.warn('加载设置失败，使用默认设置:', e);
+    }
+
+    try {
+      await this.memory.init();
+    } catch (e) {
+      console.warn('记忆系统初始化失败，跳过:', e);
+    }
+
     this.skills.registerAll(allBuiltinSkills);
-    await this.loadCustomSkills();
+
+    try {
+      await this.loadCustomSkills();
+    } catch (e) {
+      console.warn('加载自定义技能失败，跳过:', e);
+    }
+
     this.bindElements();
     this.bindEvents();
     this.loadPageContext();
     this.loadKnowledgeTags();
     this.listenMessages();
-    this.restoreConversation();
+
+    try {
+      this.restoreConversation();
+    } catch (e) {
+      console.warn('恢复对话失败，跳过:', e);
+    }
+
     this.bindCopyButtonEvents();
     this.applyTheme();
     this.renderProviderCards();
-    await this.loadProfileList();
+
+    try {
+      await this.loadProfileList();
+    } catch (e) {
+      console.warn('加载模型配置列表失败，跳过:', e);
+    }
+
     this.checkDueReviews();
     this.updateTokenDisplay();
 
