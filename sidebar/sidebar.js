@@ -62,6 +62,11 @@ class SidebarApp {
     this.selectedImageUrl = null;
     this.pageImages = [];
 
+    // 对话分支状态
+    this.branches = [];
+    this.activeBranchId = null;
+    this.mainConversationSnapshot = null; // 主对话快照（进入分支前）
+
     // 复习系统状态
     this.reviewCards = [];
     this.reviewIndex = 0;
@@ -265,6 +270,11 @@ class SidebarApp {
     this.tplEditId = document.getElementById('tplEditId');
     this.btnCancelTemplateForm = document.getElementById('btnCancelTemplateForm');
     this.btnConfirmTemplateForm = document.getElementById('btnConfirmTemplateForm');
+
+    // 对话分支
+    this.branchBar = document.getElementById('branchBar');
+    this.branchBarText = document.getElementById('branchBarText');
+    this.btnReturnMain = document.getElementById('btnReturnMain');
   }
 
   bindEvents() {
@@ -474,6 +484,11 @@ class SidebarApp {
     }
     if (this.btnConfirmTemplateForm) {
       this.btnConfirmTemplateForm.addEventListener('click', () => this.handleSaveTemplate());
+    }
+
+    // 对话分支
+    if (this.btnReturnMain) {
+      this.btnReturnMain.addEventListener('click', () => this.returnToMainConversation());
     }
   }
 
@@ -1091,6 +1106,10 @@ class SidebarApp {
     // /clear 命令：清除对话
     if (text === '/clear') {
       this.conversationHistory = [];
+      this.branches = [];
+      this.activeBranchId = null;
+      this.mainConversationSnapshot = null;
+      this.updateBranchBar();
       await clearConversation();
       this.chatArea.innerHTML = '';
       this.addSystemMessage('对话已清除');
@@ -1305,6 +1324,7 @@ class SidebarApp {
         <button class="msg-action-btn" data-action="copy">复制</button>
         <button class="msg-action-btn" data-action="save">💾 保存</button>
         <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
+        <button class="msg-action-btn" data-action="branch">🔀 分支</button>
         ${hasRunnableCode ? '<button class="msg-action-btn msg-action-run" data-action="run">▶️ 运行</button>' : ''}
       </div>
     `;
@@ -1417,7 +1437,172 @@ class SidebarApp {
         if (interactionId) this.evolution.recordSignal('highlighted', interactionId);
         break;
       }
+      case 'branch':
+        this.handleBranch(messageEl);
+        break;
     }
+  }
+
+  // ==================== 对话分支 ====================
+
+  /**
+   * 处理分支操作：从当前 AI 回答位置分叉对话
+   * @param {HTMLElement} messageEl - AI 消息 DOM 元素
+   */
+  handleBranch(messageEl) {
+    const MAX_BRANCHES = 5;
+
+    // 检查分支数量限制
+    if (this.branches.length >= MAX_BRANCHES) {
+      this.addSystemMessage(`已达到最大分支数量（${MAX_BRANCHES} 个），请先删除其他分支`);
+      return;
+    }
+
+    // 找到该消息在 chatArea 中的位置
+    const allMessages = Array.from(this.chatArea.querySelectorAll('.message'));
+    let messageIndex = -1;
+    for (let i = 0; i < allMessages.length; i++) {
+      if (allMessages[i] === messageEl) {
+        messageIndex = i;
+        break;
+      }
+    }
+
+    if (messageIndex === -1) {
+      this.addSystemMessage('无法定位消息');
+      return;
+    }
+
+    // 找到对应的用户问题（前一条消息）
+    let branchQuestion = '';
+    for (let i = messageIndex - 1; i >= 0; i--) {
+      if (allMessages[i].classList.contains('message-user')) {
+        branchQuestion = allMessages[i].querySelector('.message-bubble')?.textContent?.trim() || '';
+        break;
+      }
+    }
+
+    // 保存主对话快照（仅在首次进入分支时）
+    if (!this.mainConversationSnapshot) {
+      this.mainConversationSnapshot = {
+        conversationHistory: [...this.conversationHistory],
+        chatAreaHTML: this.chatArea.innerHTML
+      };
+    }
+
+    // 计算到分支点为止的 user+assistant 消息对数（对应 conversationHistory）
+    let historyIndex = 0;
+    for (let i = 0; i <= messageIndex; i++) {
+      if (allMessages[i].classList.contains('message-user') ||
+          allMessages[i].classList.contains('message-ai')) {
+        historyIndex++;
+      }
+    }
+    // conversationHistory 是 [user, assistant, user, assistant, ...] 交替排列
+    // historyIndex 是 DOM 中 user+ai 消息总数，直接用于 slice
+    const branchHistory = this.conversationHistory.slice(0, historyIndex);
+
+    // 创建分支
+    const branchId = `branch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const branchName = `分支 ${this.branches.length + 1}`;
+
+    const branch = {
+      id: branchId,
+      name: branchName,
+      messages: branchHistory,
+      branchQuestion: branchQuestion,
+      branchPointIndex: messageIndex,
+      conversationHistory: [...branchHistory],
+      createdAt: new Date().toISOString()
+    };
+
+    this.branches.push(branch);
+    this.activeBranchId = branchId;
+
+    // 清空当前消息之后的内容（DOM 层面）
+    const messages = this.chatArea.querySelectorAll('.message');
+    for (let i = messageIndex + 1; i < messages.length; i++) {
+      messages[i].remove();
+    }
+
+    // 更新对话历史为分支版本
+    this.conversationHistory = [...branch.conversationHistory];
+
+    // 显示分支信息条
+    this.updateBranchBar();
+
+    this.addSystemMessage(`已创建分支 "${branchName}"，从这里继续探索新方向`);
+    this.scrollToBottom();
+  }
+
+  /**
+   * 返回主对话
+   */
+  returnToMainConversation() {
+    if (!this.mainConversationSnapshot) {
+      this.addSystemMessage('没有可返回的主对话');
+      return;
+    }
+
+    // 保存当前分支的对话历史
+    if (this.activeBranchId) {
+      const branch = this.branches.find(b => b.id === this.activeBranchId);
+      if (branch) {
+        branch.conversationHistory = [...this.conversationHistory];
+      }
+    }
+
+    // 恢复主对话
+    this.conversationHistory = [...this.mainConversationSnapshot.conversationHistory];
+    this.chatArea.innerHTML = this.mainConversationSnapshot.chatAreaHTML;
+
+    // 重新绑定消息按钮事件
+    this.rebindMessageActionEvents();
+
+    // 重置分支状态
+    this.activeBranchId = null;
+    this.mainConversationSnapshot = null;
+
+    // 隐藏分支信息条
+    this.updateBranchBar();
+
+    this.addSystemMessage('已返回主对话');
+    this.scrollToBottom();
+  }
+
+  /**
+   * 更新分支信息条的显示/隐藏
+   */
+  updateBranchBar() {
+    if (!this.branchBar) return;
+
+    const isInBranch = this.activeBranchId !== null;
+    this.branchBar.classList.toggle('hidden', !isInBranch);
+
+    if (isInBranch) {
+      const branch = this.branches.find(b => b.id === this.activeBranchId);
+      if (branch && this.branchBarText) {
+        const shortQuestion = branch.branchQuestion.length > 40
+          ? branch.branchQuestion.slice(0, 40) + '...'
+          : branch.branchQuestion;
+        this.branchBarText.textContent = `分支自: ${shortQuestion}`;
+      }
+    }
+  }
+
+  /**
+   * 重新绑定聊天区域内所有消息的操作按钮事件
+   * （用于从 innerHTML 恢复 DOM 后重新建立事件监听）
+   */
+  rebindMessageActionEvents() {
+    this.chatArea.querySelectorAll('.msg-action-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const messageDiv = btn.closest('.message');
+        if (messageDiv) {
+          this.handleMessageAction(btn.dataset.action, messageDiv);
+        }
+      });
+    });
   }
 
   async quickSummarize() {
