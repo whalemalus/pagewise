@@ -326,6 +326,27 @@ class SidebarApp {
 
   bindEvents() {
     this.tabs.forEach(tab => {
+      // 键盘导航：Arrow Left/Right 在 tabs 之间切换
+      tab.setAttribute('tabindex', tab.classList.contains('active') ? '0' : '-1');
+      tab.addEventListener('keydown', (e) => {
+        const tabArray = Array.from(this.tabs);
+        const currentIndex = tabArray.indexOf(tab);
+        let nextIndex = -1;
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          nextIndex = (currentIndex + 1) % tabArray.length;
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          nextIndex = (currentIndex - 1 + tabArray.length) % tabArray.length;
+        } else if (e.key === 'Home') {
+          nextIndex = 0;
+        } else if (e.key === 'End') {
+          nextIndex = tabArray.length - 1;
+        }
+        if (nextIndex >= 0) {
+          e.preventDefault();
+          tabArray[nextIndex].focus();
+          this.switchTab(tabArray[nextIndex].dataset.tab);
+        }
+      });
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
     });
     this.btnSend.addEventListener('click', () => this.sendMessage());
@@ -558,6 +579,42 @@ class SidebarApp {
         this.addSystemMessage('统计数据已重置');
       });
     }
+
+    // 键盘导航：Escape 关闭弹窗
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        // 关闭模板弹窗
+        if (this.templatePopup && !this.templatePopup.classList.contains('hidden')) {
+          this.hideTemplatePopup();
+          e.stopPropagation();
+          return;
+        }
+        // 关闭多标签页选择器
+        if (this.tabSelectorModal && !this.tabSelectorModal.classList.contains('hidden')) {
+          this.hideMultiTabSelector();
+          e.stopPropagation();
+          return;
+        }
+        // 关闭复习模式
+        if (this.reviewOverlay && !this.reviewOverlay.classList.contains('hidden')) {
+          this.closeReview();
+          e.stopPropagation();
+          return;
+        }
+        // 关闭历史面板
+        if (this.historyVisible) {
+          this.toggleHistoryPanel();
+          e.stopPropagation();
+          return;
+        }
+        // 关闭技能编辑器
+        if (this.skillEditor && !this.skillEditor.classList.contains('hidden')) {
+          this.closeSkillEditor();
+          e.stopPropagation();
+          return;
+        }
+      }
+    });
   }
 
   async loadSettings() {
@@ -633,7 +690,12 @@ class SidebarApp {
   // ==================== Tab 切换 ====================
 
   switchTab(tabName) {
-    this.tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === tabName));
+    this.tabs.forEach(t => {
+      const isActive = t.dataset.tab === tabName;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      t.setAttribute('tabindex', isActive ? '0' : '-1');
+    });
     this.panels.forEach(p => p.classList.toggle('active', p.id === `panel${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`));
     if (tabName === 'skills') this.loadSkillsList();
     else if (tabName === 'knowledge') {
@@ -3682,7 +3744,9 @@ ${sendContent}
    */
   switchKnowledgeSubtab(subtab) {
     document.querySelectorAll('.knowledge-subtab').forEach(t => {
-      t.classList.toggle('active', t.dataset.subtab === subtab);
+      const isActive = t.dataset.subtab === subtab;
+      t.classList.toggle('active', isActive);
+      t.setAttribute('aria-selected', isActive ? 'true' : 'false');
     });
 
     const isEntries = subtab === 'entries';

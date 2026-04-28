@@ -13,12 +13,12 @@
       <div class="header-left">
         <h1 class="logo">智阅 PageWise</h1>
       </div>
-      <nav class="tabs">
-        <button class="tab active" data-tab="chat">问答</button>
-        <button class="tab" data-tab="skills">技能</button>
-        <button class="tab" data-tab="knowledge">知识库</button>
-        <button class="tab" data-tab="page">页面</button>
-        <button class="tab" data-tab="settings">设置</button>
+      <nav class="tabs" role="tablist">
+        <button class="tab active" data-tab="chat" role="tab" aria-selected="true" aria-controls="panelChat">问答</button>
+        <button class="tab" data-tab="skills" role="tab" aria-selected="false" aria-controls="panelSkills">技能</button>
+        <button class="tab" data-tab="knowledge" role="tab" aria-selected="false" aria-controls="panelKnowledge">知识库</button>
+        <button class="tab" data-tab="page" role="tab" aria-selected="false" aria-controls="panelPage">页面</button>
+        <button class="tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="panelSettings">设置</button>
       </nav>
     </header>
 
@@ -29,14 +29,14 @@
         <span class="page-title" id="pageTitle">加载中...</span>
       </div>
       <div class="page-actions">
-        <button class="btn-icon" id="btnExtract" title="提取页面内容">📥</button>
-        <button class="btn-icon" id="btnRefresh" title="刷新">🔄</button>
-        <button class="btn-icon" id="btnExportConversation" title="导出对话为 Markdown">📤</button>
+        <button class="btn-icon" id="btnExtract" title="提取页面内容" aria-label="提取页面内容">📥</button>
+        <button class="btn-icon" id="btnRefresh" title="刷新" aria-label="刷新页面">🔄</button>
+        <button class="btn-icon" id="btnExportConversation" title="导出对话为 Markdown" aria-label="导出对话为 Markdown">📤</button>
       </div>
     </div>
 
     <!-- 问答面板 -->
-    <div class="panel active" id="panelChat">
+    <div class="panel active" id="panelChat" role="tabpanel" aria-label="问答面板">
       <!-- 复习提醒条 -->
       <div class="review-banner hidden" id="reviewBanner">
         <span class="review-banner-text" id="reviewBannerText"></span>
@@ -51,20 +51,20 @@
           <span class="branch-bar-text" id="branchBarText">分支自: ...</span>
         </div>
         <div class="branch-bar-actions">
-          <button class="btn-branch-return" id="btnReturnMain">↩️ 返回主对话</button>
+          <button class="btn-branch-return" id="btnReturnMain" aria-label="返回主对话">↩️ 返回主对话</button>
         </div>
       </div>
 
-      <div class="chat-area" id="chatArea">
+      <div class="chat-area" id="chatArea" aria-live="polite" aria-label="对话区域">
         <div class="welcome-message">
           <div class="welcome-icon">🤖</div>
           <h2>你好！我是你的技术知识助手</h2>
           <p>浏览网页时遇到不懂的技术内容，直接问我就好。</p>
           <div class="quick-actions">
-            <button class="btn-quick" id="btnSummarize">📋 总结当前页面</button>
-            <button class="btn-quick" id="btnExplain">💡 解释选中内容</button>
-            <button class="btn-quick" id="btnMultiTabChat">📑 分析所有标签页</button>
-            <button class="btn-quick" id="btnHistory">🕐 历史对话</button>
+            <button class="btn-quick" id="btnSummarize" aria-label="总结当前页面">📋 总结当前页面</button>
+            <button class="btn-quick" id="btnExplain" aria-label="解释选中内容">💡 解释选中内容</button>
+            <button class="btn-quick" id="btnMultiTabChat" aria-label="分析所有标签页">📑 分析所有标签页</button>
+            <button class="btn-quick" id="btnHistory" aria-label="查看历史对话">🕐 历史对话</button>
           </div>
         </div>
       </div>
@@ -75,20 +75,20 @@
           <div class="review-header">
             <h3 class="review-title">📚 知识复习</h3>
             <div class="review-progress" id="reviewProgress">0 / 0</div>
-            <button class="btn-icon review-close" id="btnCloseReview">&times;</button>
+            <button class="btn-icon review-close" id="btnCloseReview" aria-label="关闭复习">&times;</button>
           </div>
 
           <!-- 复习卡片 -->
           <div class="review-card" id="reviewCard">
             <div class="review-card-question" id="reviewQuestion"></div>
-            <button class="btn-show-answer" id="btnShowAnswer">显示答案</button>
+            <button class="btn-show-answer" id="btnShowAnswer" aria-label="显示答案">显示答案</button>
             <div class="review-card-answer hidden" id="reviewAnswer"></div>
             <div class="review-rating hidden" id="reviewRating">
               <p class="rating-label">你记住了吗？</p>
               <div class="rating-buttons">
-                <button class="btn-rate btn-rate-forgot" data-quality="1">😰 忘记</button>
-                <button class="btn-rate btn-rate-fuzzy" data-quality="3">🤔 模糊</button>
-                <button class="btn-rate btn-rate-remembered" data-quality="5">😊 记住</button>
+                <button class="btn-rate btn-rate-forgot" data-quality="1" aria-label="忘记">😰 忘记</button>
+                <button class="btn-rate btn-rate-fuzzy" data-quality="3" aria-label="模糊">🤔 模糊</button>
+                <button class="btn-rate btn-rate-remembered" data-quality="5" aria-label="记住">😊 记住</button>
               </div>
             </div>
           </div>
@@ -98,7 +98,7 @@
             <div class="summary-icon">🎉</div>
             <h3>复习完成！</h3>
             <div class="summary-stats" id="summaryStats"></div>
-            <button class="btn-review-done" id="btnReviewDone">完成</button>
+            <button class="btn-review-done" id="btnReviewDone" aria-label="完成复习">完成</button>
           </div>
         </div>
       </div>
@@ -107,9 +107,9 @@
       <div class="history-panel hidden" id="historyPanel">
         <div class="history-toolbar">
           <div class="history-search-box">
-            <input type="text" id="historySearch" placeholder="搜索历史对话...">
+            <input type="text" id="historySearch" placeholder="搜索历史对话..." aria-label="搜索历史对话">
           </div>
-          <button class="btn-sm btn-danger" id="btnClearHistory">清空全部</button>
+          <button class="btn-sm btn-danger" id="btnClearHistory" aria-label="清空全部历史对话">清空全部</button>
         </div>
         <div class="history-list" id="historyList"></div>
       </div>
@@ -118,7 +118,7 @@
       <div class="input-area">
         <!-- 模板工具栏 -->
         <div class="template-toolbar">
-          <button class="btn-template" id="btnTemplate" title="Prompt 模板">📋 模板</button>
+          <button class="btn-template" id="btnTemplate" title="Prompt 模板" aria-label="打开 Prompt 模板">📋 模板</button>
         </div>
 
         <!-- 模板列表弹窗 -->
@@ -126,8 +126,8 @@
           <div class="template-popup-header">
             <span class="template-popup-title">Prompt 模板</span>
             <div class="template-popup-actions">
-              <button class="btn-sm btn-primary-sm" id="btnSaveAsTemplate" title="从输入框保存为模板">➕ 新建</button>
-              <button class="btn-icon template-popup-close" id="btnCloseTemplate">&times;</button>
+              <button class="btn-sm btn-primary-sm" id="btnSaveAsTemplate" title="从输入框保存为模板" aria-label="新建模板">➕ 新建</button>
+              <button class="btn-icon template-popup-close" id="btnCloseTemplate" aria-label="关闭模板列表">&times;</button>
             </div>
           </div>
           <div class="template-list" id="templateList">
@@ -137,15 +137,15 @@
           <div class="template-form hidden" id="templateForm">
             <div class="template-form-group">
               <label for="tplName">模板名称</label>
-              <input type="text" id="tplName" placeholder="例如：代码审查" maxlength="30">
+              <input type="text" id="tplName" placeholder="例如：代码审查" maxlength="30" aria-label="模板名称">
             </div>
             <div class="template-form-group">
               <label for="tplContent">模板内容</label>
-              <textarea id="tplContent" rows="4" placeholder="使用 {{变量名}} 作为占位符"></textarea>
+              <textarea id="tplContent" rows="4" placeholder="使用 {{变量名}} 作为占位符" aria-label="模板内容"></textarea>
             </div>
             <div class="template-form-group">
               <label for="tplCategory">分类</label>
-              <select id="tplCategory">
+              <select id="tplCategory" aria-label="模板分类">
                 <option value="code">代码</option>
                 <option value="debug">调试</option>
                 <option value="learning">学习</option>
@@ -153,8 +153,8 @@
               </select>
             </div>
             <div class="template-form-actions">
-              <button class="btn-sm" id="btnCancelTemplateForm">取消</button>
-              <button class="btn-sm btn-primary-sm" id="btnConfirmTemplateForm">保存</button>
+              <button class="btn-sm" id="btnCancelTemplateForm" aria-label="取消">取消</button>
+              <button class="btn-sm btn-primary-sm" id="btnConfirmTemplateForm" aria-label="保存模板">保存</button>
             </div>
             <input type="hidden" id="tplEditId">
           </div>
@@ -165,8 +165,9 @@
             id="userInput"
             placeholder="输入你的问题... (Enter 发送, Shift+Enter 换行)"
             rows="1"
+            aria-label="输入你的问题"
           ></textarea>
-          <button class="btn-send" id="btnSend" title="发送">
+          <button class="btn-send" id="btnSend" title="发送" aria-label="发送消息">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
             </svg>
@@ -180,26 +181,26 @@
     </div>
 
     <!-- 知识库面板 -->
-    <div class="panel" id="panelKnowledge">
+    <div class="panel" id="panelKnowledge" role="tabpanel" aria-label="知识库面板">
     <div class="knowledge-toolbar">
       <div class="knowledge-tabs">
-        <button class="knowledge-subtab active" data-subtab="entries">📚 知识条目</button>
-        <button class="knowledge-subtab" data-subtab="highlights">📌 高亮标注</button>
-        <button class="knowledge-subtab" data-subtab="graph">🕸️ 图谱</button>
-        <button class="knowledge-subtab" data-subtab="learning-path">🗺️ 学习路径</button>
+        <button class="knowledge-subtab active" data-subtab="entries" role="tab" aria-selected="true">📚 知识条目</button>
+        <button class="knowledge-subtab" data-subtab="highlights" role="tab" aria-selected="false">📌 高亮标注</button>
+        <button class="knowledge-subtab" data-subtab="graph" role="tab" aria-selected="false">🕸️ 图谱</button>
+        <button class="knowledge-subtab" data-subtab="learning-path" role="tab" aria-selected="false">🗺️ 学习路径</button>
       </div>
       <div class="search-box">
-          <input type="text" id="searchInput" placeholder="搜索知识库...">
+          <input type="text" id="searchInput" placeholder="搜索知识库..." aria-label="搜索知识库">
           <div class="search-mode-toggle" id="searchModeToggle">
-            <button class="search-mode-btn active" data-mode="keyword" title="关键词搜索">🔤</button>
-            <button class="search-mode-btn" data-mode="semantic" title="语义搜索">🧠</button>
+            <button class="search-mode-btn active" data-mode="keyword" title="关键词搜索" aria-label="关键词搜索">🔤</button>
+            <button class="search-mode-btn" data-mode="semantic" title="语义搜索" aria-label="语义搜索">🧠</button>
           </div>
         </div>
         <div class="knowledge-actions">
-          <button class="btn-sm" id="btnSelectMode">☑️ 选择模式</button>
-          <button class="btn-sm btn-primary-sm" id="btnImport">导入</button>
-          <button class="btn-sm" id="btnExportMd">导出 MD</button>
-          <button class="btn-sm" id="btnExportJson">导出 JSON</button>
+          <button class="btn-sm" id="btnSelectMode" aria-label="进入选择模式">☑️ 选择模式</button>
+          <button class="btn-sm btn-primary-sm" id="btnImport" aria-label="导入知识条目">导入</button>
+          <button class="btn-sm" id="btnExportMd" aria-label="导出为 Markdown">导出 MD</button>
+          <button class="btn-sm" id="btnExportJson" aria-label="导出为 JSON">导出 JSON</button>
           <input type="file" id="fileImport" accept=".json,.md,.markdown,.txt" multiple style="display:none">
         </div>
       </div>
@@ -211,9 +212,9 @@
         </label>
         <span class="batch-count" id="batchCount">已选 0 条</span>
         <div class="batch-actions">
-          <button class="btn-sm btn-batch" id="btnBatchTag" title="批量打标签">🏷️ 批量打标签</button>
-          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDelete" title="批量删除">🗑️ 批量删除</button>
-          <button class="btn-sm btn-batch" id="btnBatchExport" title="批量导出">📤 批量导出</button>
+          <button class="btn-sm btn-batch" id="btnBatchTag" title="批量打标签" aria-label="批量打标签">🏷️ 批量打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDelete" title="批量删除" aria-label="批量删除">🗑️ 批量删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExport" title="批量导出" aria-label="批量导出">📤 批量导出</button>
         </div>
       </div>
 
@@ -231,20 +232,20 @@
       <div class="batch-floating-bar hidden" id="batchFloatingBar">
         <span class="batch-floating-count" id="batchFloatingCount">已选 0 条</span>
         <div class="batch-floating-actions">
-          <button class="btn-sm btn-batch" id="btnBatchTagFloat">🏷️ 打标签</button>
-          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDeleteFloat">🗑️ 删除</button>
-          <button class="btn-sm btn-batch" id="btnBatchExportFloat">📤 导出</button>
+          <button class="btn-sm btn-batch" id="btnBatchTagFloat" aria-label="批量打标签">🏷️ 打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDeleteFloat" aria-label="批量删除">🗑️ 删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExportFloat" aria-label="批量导出">📤 导出</button>
         </div>
-        <button class="btn-sm" id="btnBatchExit">退出选择</button>
+        <button class="btn-sm" id="btnBatchExit" aria-label="退出选择模式">退出选择</button>
       </div>
 
     <!-- 知识条目详情 -->
     <div class="knowledge-detail hidden" id="knowledgeDetail">
       <div class="detail-header">
-        <button class="btn-back" id="btnBack">← 返回列表</button>
+        <button class="btn-back" id="btnBack" aria-label="返回知识库列表">← 返回列表</button>
         <div class="detail-actions">
-          <button class="btn-sm" id="btnEdit">编辑</button>
-          <button class="btn-sm btn-danger" id="btnDelete">删除</button>
+          <button class="btn-sm" id="btnEdit" aria-label="编辑知识条目">编辑</button>
+          <button class="btn-sm btn-danger" id="btnDelete" aria-label="删除知识条目">删除</button>
         </div>
       </div>
       <div class="detail-content" id="detailContent"></div>
@@ -258,7 +259,7 @@
       <div class="highlights-panel hidden" id="highlightsPanel">
         <div class="highlights-toolbar">
           <span class="highlights-count" id="highlightsCount">0 条高亮</span>
-          <button class="btn-sm btn-danger" id="btnClearHighlights">清空全部</button>
+          <button class="btn-sm btn-danger" id="btnClearHighlights" aria-label="清空全部高亮">清空全部</button>
         </div>
         <div class="highlights-list" id="highlightsList">
           <div class="empty-state" id="emptyHighlights">
@@ -273,7 +274,7 @@
       <div class="knowledge-graph-panel hidden" id="knowledgeGraphPanel">
         <div class="graph-toolbar">
           <span class="graph-info" id="graphInfo">加载中...</span>
-          <button class="btn-sm" id="btnRefreshGraph">🔄 刷新图谱</button>
+          <button class="btn-sm" id="btnRefreshGraph" aria-label="刷新知识图谱">🔄 刷新图谱</button>
         </div>
         <canvas id="knowledgeGraphCanvas" class="graph-canvas"></canvas>
         <div class="graph-tooltip hidden" id="graphTooltip"></div>
@@ -282,7 +283,7 @@
       <!-- 学习路径面板 -->
       <div class="learning-path-panel hidden" id="learningPathPanel">
         <div class="lp-toolbar">
-          <button class="btn-sm btn-primary-sm" id="btnGenerateLearningPath">🤖 生成学习路径</button>
+          <button class="btn-sm btn-primary-sm" id="btnGenerateLearningPath" aria-label="生成学习路径">🤖 生成学习路径</button>
           <span class="lp-status" id="learningPathStatus"></span>
         </div>
         <div class="lp-content" id="learningPathContent">
@@ -295,17 +296,17 @@
     </div>
 
     <!-- 技能面板 -->
-    <div class="panel" id="panelSkills">
+    <div class="panel" id="panelSkills" role="tabpanel" aria-label="技能面板">
       <div class="skills-header">
         <div class="skills-summary" id="skillsSummary">加载中...</div>
         <div class="skills-filter">
-          <button class="tag-chip active" data-category="all">全部</button>
-          <button class="tag-chip" data-category="code">代码</button>
-          <button class="tag-chip" data-category="debug">调试</button>
-          <button class="tag-chip" data-category="doc">文档</button>
-          <button class="tag-chip" data-category="learning">学习</button>
-          <button class="tag-chip" data-category="export">导出</button>
-          <button class="tag-chip" data-category="custom">自定义</button>
+          <button class="tag-chip active" data-category="all" aria-label="全部技能">全部</button>
+          <button class="tag-chip" data-category="code" aria-label="代码技能">代码</button>
+          <button class="tag-chip" data-category="debug" aria-label="调试技能">调试</button>
+          <button class="tag-chip" data-category="doc" aria-label="文档技能">文档</button>
+          <button class="tag-chip" data-category="learning" aria-label="学习技能">学习</button>
+          <button class="tag-chip" data-category="export" aria-label="导出技能">导出</button>
+          <button class="tag-chip" data-category="custom" aria-label="自定义技能">自定义</button>
         </div>
       </div>
 
@@ -313,21 +314,21 @@
       <div class="skill-editor hidden" id="skillEditor">
         <div class="skill-editor-header">
           <h3 id="skillEditorTitle">创建自定义技能</h3>
-          <button class="btn-icon" id="btnCloseSkillEditor">&times;</button>
+          <button class="btn-icon" id="btnCloseSkillEditor" aria-label="关闭技能编辑器">&times;</button>
         </div>
         <div class="skill-editor-body">
           <input type="hidden" id="skillEditorId">
           <div class="form-group">
             <label for="skillEditorName">技能名称</label>
-            <input type="text" id="skillEditorName" placeholder="例如：代码翻译">
+            <input type="text" id="skillEditorName" placeholder="例如：代码翻译" aria-label="技能名称">
           </div>
           <div class="form-group">
             <label for="skillEditorDesc">描述</label>
-            <input type="text" id="skillEditorDesc" placeholder="简要描述技能的功能">
+            <input type="text" id="skillEditorDesc" placeholder="简要描述技能的功能" aria-label="技能描述">
           </div>
           <div class="form-group">
             <label for="skillEditorCategory">分类</label>
-            <select id="skillEditorCategory">
+            <select id="skillEditorCategory" aria-label="技能分类">
               <option value="code">代码 (code)</option>
               <option value="debug">调试 (debug)</option>
               <option value="doc">文档 (doc)</option>
@@ -337,26 +338,26 @@
           </div>
           <div class="form-group">
             <label for="skillEditorPrompt">Prompt 模板</label>
-            <textarea id="skillEditorPrompt" rows="6" placeholder="使用 {{变量名}} 作为变量占位符，例如：&#10;请将以下代码翻译为 {{targetLanguage}}：&#10;&#10;{{code}}"></textarea>
+            <textarea id="skillEditorPrompt" rows="6" placeholder="使用 {{变量名}} 作为变量占位符，例如：&#10;请将以下代码翻译为 {{targetLanguage}}：&#10;&#10;{{code}}" aria-label="Prompt 模板"></textarea>
             <small>使用 <code>{{变量名}}</code> 语法定义可替换变量</small>
           </div>
           <div class="form-group">
             <label for="skillEditorTrigger">触发方式</label>
-            <select id="skillEditorTrigger">
+            <select id="skillEditorTrigger" aria-label="触发方式">
               <option value="manual">手动触发</option>
               <option value="auto">自动触发</option>
             </select>
           </div>
           <div class="skill-editor-actions">
-            <button class="btn-sm" id="btnCancelSkillEditor">取消</button>
-            <button class="btn-sm btn-primary-sm" id="btnSaveSkillEditor">保存</button>
+            <button class="btn-sm" id="btnCancelSkillEditor" aria-label="取消编辑">取消</button>
+            <button class="btn-sm btn-primary-sm" id="btnSaveSkillEditor" aria-label="保存技能">保存</button>
           </div>
         </div>
       </div>
 
       <!-- 创建技能按钮 -->
       <div class="skills-create-bar">
-        <button class="btn-create-skill" id="btnCreateSkill">➕ 创建技能</button>
+        <button class="btn-create-skill" id="btnCreateSkill" aria-label="创建自定义技能">➕ 创建技能</button>
         <span class="skills-custom-count" id="skillsCustomCount"></span>
       </div>
 
@@ -368,13 +369,13 @@
     </div>
 
     <!-- 页面内容预览面板 -->
-    <div class="panel" id="panelPage">
+    <div class="panel" id="panelPage" role="tabpanel" aria-label="页面内容面板">
       <div class="page-preview">
         <div class="page-preview-header">
           <h3 id="previewTitle">-</h3>
           <div class="page-preview-meta" id="previewMeta"></div>
           <div class="page-preview-actions">
-            <button class="btn-multi-tab" id="btnMultiTab">📑 分析所有标签页</button>
+            <button class="btn-multi-tab" id="btnMultiTab" aria-label="分析所有标签页">📑 分析所有标签页</button>
           </div>
         </div>
         <div class="page-preview-content" id="previewContent">
@@ -389,7 +390,7 @@
     </div>
 
     <!-- 设置面板 -->
-    <div class="panel" id="panelSettings">
+    <div class="panel" id="panelSettings" role="tabpanel" aria-label="设置面板">
       <div class="settings-form">
 
         <!-- API 配置区域 -->
@@ -409,20 +410,20 @@
             <select id="profileSelect">
               <option value="default">默认配置</option>
             </select>
-            <button class="btn-sm" id="btnSaveProfile">保存</button>
-            <button class="btn-sm btn-danger" id="btnDeleteProfile">删除</button>
+            <button class="btn-sm" id="btnSaveProfile" aria-label="保存配置">保存</button>
+            <button class="btn-sm btn-danger" id="btnDeleteProfile" aria-label="删除配置">删除</button>
           </div>
 
           <!-- API 地址 -->
           <div class="form-group">
             <label for="apiBaseUrl">API 地址</label>
-            <input type="text" id="apiBaseUrl">
+            <input type="text" id="apiBaseUrl" aria-label="API 地址">
           </div>
 
           <!-- API Key -->
           <div class="form-group">
             <label for="apiKey">API Key</label>
-            <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...">
+            <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-..." aria-label="API Key">
             <small>数据仅存储在本地，不会上传到任何服务器</small>
           </div>
 
@@ -433,20 +434,20 @@
               <select id="modelSelect" class="hidden">
                 <option value="">选择模型...</option>
               </select>
-              <input type="text" id="model" placeholder="或手动输入模型名称">
-              <button class="btn-sm" id="btnFetchModels">获取模型</button>
+              <input type="text" id="model" placeholder="或手动输入模型名称" aria-label="模型名称">
+              <button class="btn-sm" id="btnFetchModels" aria-label="获取模型列表">获取模型</button>
             </div>
           </div>
 
           <div class="test-row">
-            <button class="btn-test" id="btnTestConnection">测试连接</button>
+            <button class="btn-test" id="btnTestConnection" aria-label="测试 API 连接">测试连接</button>
             <span id="testResult" class="test-result hidden"></span>
           </div>
         </div>
 
         <div class="form-group">
           <label for="maxTokens">最大输出长度</label>
-          <input type="number" id="maxTokens" value="4096" min="256" max="16384" step="256">
+          <input type="number" id="maxTokens" value="4096" min="256" max="16384" step="256" aria-label="最大输出长度">
         </div>
 
         <div class="form-group">
@@ -465,14 +466,14 @@
           </select>
         </div>
 
-        <button class="btn-primary" id="btnSaveSettings">保存设置</button>
+        <button class="btn-primary" id="btnSaveSettings" aria-label="保存设置">保存设置</button>
         <div id="settingsStatus" class="settings-status hidden">已保存 ✓</div>
 
         <div class="evolution-section">
           <h3 class="section-title">助手进化状态</h3>
           <div class="evolution-stats" id="evolutionStats">加载中...</div>
           <div class="evolution-log" id="evolutionLog"></div>
-          <button class="btn-sm btn-danger" id="btnResetEvolution" style="margin-top:10px">重置进化数据</button>
+          <button class="btn-sm btn-danger" id="btnResetEvolution" style="margin-top:10px" aria-label="重置进化数据">重置进化数据</button>
         </div>
 
         <div class="stats-section">
@@ -486,13 +487,13 @@
             <h4 class="stats-subtitle">📈 最近 7 天趋势</h4>
             <div class="stats-trend-chart" id="statsTrendChart">暂无数据</div>
           </div>
-          <button class="btn-sm btn-danger" id="btnResetStats" style="margin-top:10px">重置统计数据</button>
+          <button class="btn-sm btn-danger" id="btnResetStats" style="margin-top:10px" aria-label="重置统计数据">重置统计数据</button>
         </div>
 
         <div class="onboarding-section">
           <h3 class="section-title">🚀 新手引导</h3>
           <p class="text-muted" style="font-size:12px;margin-bottom:8px">如果你想重新查看首次使用引导，点击下方按钮。</p>
-          <button class="btn-sm" id="btnRetriggerOnboarding">重新触发引导</button>
+          <button class="btn-sm" id="btnRetriggerOnboarding" aria-label="重新触发新手引导">重新触发引导</button>
         </div>
       </div>
     </div>
@@ -515,8 +516,8 @@
           <!-- JS 动态生成步骤指示器 -->
         </div>
         <div class="onboarding-actions">
-          <button class="onboarding-btn onboarding-btn-skip" id="onboardingSkip">跳过</button>
-          <button class="onboarding-btn onboarding-btn-next" id="onboardingNext">下一步</button>
+          <button class="onboarding-btn onboarding-btn-skip" id="onboardingSkip" aria-label="跳过引导">跳过</button>
+          <button class="onboarding-btn onboarding-btn-next" id="onboardingNext" aria-label="下一步">下一步</button>
         </div>
       </div>
     </div>
@@ -530,7 +531,7 @@
     <div class="tab-selector-dialog">
       <div class="tab-selector-header">
         <h3>📑 选择要分析的标签页</h3>
-        <button class="tab-selector-close" id="tabSelectorClose">&times;</button>
+        <button class="tab-selector-close" id="tabSelectorClose" aria-label="关闭标签页选择器">&times;</button>
       </div>
       <div class="tab-selector-hint">最多同时分析 5 个标签页，内容将合并后交给 AI 联合分析</div>
       <div class="tab-selector-body" id="tabSelectorBody">
@@ -538,8 +539,8 @@
       </div>
       <div class="tab-selector-footer">
         <span class="tab-selector-count" id="tabSelectorCount">已选 0 个</span>
-        <button class="btn-sm" id="tabSelectorCancel">取消</button>
-        <button class="btn-sm btn-primary-sm" id="tabSelectorConfirm">确认分析</button>
+        <button class="btn-sm" id="tabSelectorCancel" aria-label="取消">取消</button>
+        <button class="btn-sm btn-primary-sm" id="tabSelectorConfirm" aria-label="确认分析">确认分析</button>
       </div>
     </div>
   </div>
