@@ -2,7 +2,7 @@
  * Sidebar - 侧边栏主逻辑（集成智能系统）
  */
 
-import { AIClient } from '../lib/ai-client.js';
+import { AIClient, estimateMessagesTokens } from '../lib/ai-client.js';
 import { SkillEngine } from '../lib/skill-engine.js';
 import { PageSense } from '../lib/page-sense.js';
 import { MemorySystem } from '../lib/memory.js';
@@ -92,6 +92,7 @@ class SidebarApp {
     this.renderProviderCards();
     await this.loadProfileList();
     this.checkDueReviews();
+    this.updateTokenDisplay();
 
     // 清理超过 30 天的旧对话
     try {
@@ -275,6 +276,9 @@ class SidebarApp {
     this.branchBar = document.getElementById('branchBar');
     this.branchBarText = document.getElementById('branchBarText');
     this.btnReturnMain = document.getElementById('btnReturnMain');
+
+    // Token 用量显示
+    this.tokenDisplay = document.getElementById('tokenDisplay');
   }
 
   bindEvents() {
@@ -1114,6 +1118,7 @@ class SidebarApp {
       this.chatArea.innerHTML = '';
       this.addSystemMessage('对话已清除');
       this.userInput.value = '';
+      this.updateTokenDisplay();
       return;
     }
 
@@ -1235,6 +1240,8 @@ class SidebarApp {
       // 持久化对话到 session storage
       await saveConversation(this.conversationHistory, this.currentTabUrl);
 
+      this.updateTokenDisplay();
+
       // 持久化到 IndexedDB（按 URL 关联）
       try {
         await saveConversationIDB(
@@ -1263,6 +1270,27 @@ class SidebarApp {
     } catch (error) {
       loadingEl.remove();
       this.addSystemMessage(`出错了：${error.message}`);
+    }
+  }
+
+  /**
+   * 更新 Token 用量显示
+   */
+  updateTokenDisplay() {
+    if (!this.tokenDisplay) return;
+
+    const TOKEN_WARNING_THRESHOLD = 8000;
+    const total = estimateMessagesTokens(this.conversationHistory);
+    const formatted = total.toLocaleString();
+
+    if (total >= TOKEN_WARNING_THRESHOLD) {
+      this.tokenDisplay.textContent = `⚠️ ~${formatted} tokens`;
+      this.tokenDisplay.className = 'token-display token-warning';
+      this.tokenDisplay.title = '上下文较长，可能影响回答质量';
+    } else {
+      this.tokenDisplay.textContent = `📊 ~${formatted} tokens`;
+      this.tokenDisplay.className = 'token-display';
+      this.tokenDisplay.title = '';
     }
   }
 

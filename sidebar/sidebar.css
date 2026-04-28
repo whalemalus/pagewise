@@ -513,6 +513,21 @@ body {
   margin-top: 4px;
   font-size: 11px;
   color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.token-display {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.token-display.token-warning {
+  color: #d97706;
+  font-weight: 500;
 }
 
 .hidden {
