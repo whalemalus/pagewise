@@ -49,6 +49,9 @@ class SidebarApp {
     this.memory = new MemorySystem();
     this.evolution = new EvolutionEngine();
 
+    // 搜索模式
+    this.searchMode = 'keyword'; // 'keyword' | 'semantic'
+
     // 复习系统状态
     this.reviewCards = [];
     this.reviewIndex = 0;
@@ -98,6 +101,7 @@ class SidebarApp {
     this.btnSummarize = document.getElementById('btnSummarize');
     this.btnExplain = document.getElementById('btnExplain');
     this.searchInput = document.getElementById('searchInput');
+    this.searchModeToggle = document.getElementById('searchModeToggle');
     this.tagFilter = document.getElementById('tagFilter');
     this.knowledgeList = document.getElementById('knowledgeList');
     this.emptyKnowledge = document.getElementById('emptyKnowledge');
@@ -237,6 +241,19 @@ class SidebarApp {
     this.btnSummarize.addEventListener('click', () => this.quickSummarize());
     this.btnExplain.addEventListener('click', () => this.quickExplain());
     this.searchInput.addEventListener('input', debounce(() => this.searchKnowledge(), 300));
+
+    // 搜索模式切换
+    if (this.searchModeToggle) {
+      this.searchModeToggle.querySelectorAll('.search-mode-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          this.searchModeToggle.querySelectorAll('.search-mode-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          this.searchMode = btn.dataset.mode;
+          // 重新执行搜索
+          this.searchKnowledge();
+        });
+      });
+    }
     this.btnBack.addEventListener('click', () => this.showKnowledgeList());
     this.btnDelete.addEventListener('click', () => this.deleteEntry());
     this.btnExportMd.addEventListener('click', () => this.exportMarkdown());
@@ -2054,8 +2071,112 @@ ${readme || '无法提取 README 内容'}
   async searchKnowledge() {
     const query = this.searchInput.value.trim();
     if (!query) { this.loadKnowledgeList(); return; }
-    const results = await this.memory.kb.search(query);
-    this.renderKnowledgeList(results);
+
+    if (this.searchMode === 'semantic') {
+      // 语义搜索 + 综合搜索
+      const results = await this.memory.kb.combinedSearch(query, 30);
+      if (results.length === 0) {
+        this.renderNoResults(query);
+      } else {
+        this.renderSemanticResults(results, query);
+      }
+    } else {
+      // 关键词搜索（原有逻辑）
+      const results = await this.memory.kb.search(query);
+      if (results.length === 0) {
+        this.renderNoResults(query);
+      } else {
+        this.renderKnowledgeList(results);
+      }
+    }
+  }
+
+  /**
+   * 渲染语义搜索结果（带匹配分数和高亮）
+   */
+  renderSemanticResults(results, query) {
+    const filtered = this.activeTag
+      ? results.filter(r => r.entry.tags?.includes(this.activeTag))
+      : results;
+
+    this.knowledgeList.innerHTML = filtered.map(result => {
+      const entry = result.entry;
+      const percent = Math.round(result.score * 100);
+      const matchType = result.matchType || 'semantic';
+
+      // 高亮标题
+      const titleHtml = this.highlightText(entry.title || '', query);
+      const summaryText = entry.summary || entry.question || '';
+      const summaryHtml = this.highlightText(summaryText, query);
+
+      return `
+        <div class="knowledge-item" data-id="${entry.id}">
+          <div class="knowledge-item-header">
+            <div class="knowledge-item-title">${titleHtml}</div>
+            <div class="search-score-badge ${matchType}">${percent}%</div>
+          </div>
+          <div class="knowledge-item-summary">${summaryHtml}</div>
+          <div class="knowledge-item-meta">
+            <span>${formatTime(entry.createdAt)}</span>
+            <span class="search-match-type">${matchType === 'keyword' ? '🔤 关键词' : '🧠 语义'}</span>
+            <div class="knowledge-item-tags">
+              ${(entry.tags || []).map(t => `<span class="knowledge-item-tag">${this.escapeHtml(t)}</span>`).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.knowledgeList.querySelectorAll('.knowledge-item').forEach(item => {
+      item.addEventListener('click', () => this.showKnowledgeDetail(parseInt(item.dataset.id)));
+    });
+  }
+
+  /**
+   * 高亮文本中匹配 query 的部分
+   */
+  highlightText(text, query) {
+    if (!text || !query) return this.escapeHtml(text || '');
+    const escaped = this.escapeHtml(text);
+    const escapedQuery = this.escapeHtml(query);
+    // 不区分大小写的替换
+    const regex = new RegExp(escapedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+    return escaped.replace(regex, '<mark class="search-highlight">$&</mark>');
+  }
+
+  /**
+   * 渲染无结果页面（显示推荐搜索词）
+   */
+  async renderNoResults(query) {
+    const KB = this.memory.kb.constructor;
+    const allEntries = await this.memory.kb.getAllEntries(500);
+    const suggestions = KB.getSearchSuggestions(query, allEntries, 3);
+
+    let html = `
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div>
+        <p>未找到匹配「${this.escapeHtml(query)}」的知识条目</p>
+    `;
+
+    if (suggestions.length > 0) {
+      html += `<p class="search-suggestions-label">你是否想搜：</p>`;
+      html += `<div class="search-suggestions">`;
+      for (const suggestion of suggestions) {
+        html += `<button class="search-suggestion-btn" data-query="${this.escapeHtml(suggestion)}">${this.escapeHtml(suggestion)}</button>`;
+      }
+      html += `</div>`;
+    }
+
+    html += `</div>`;
+    this.knowledgeList.innerHTML = html;
+
+    // 绑定推荐按钮事件
+    this.knowledgeList.querySelectorAll('.search-suggestion-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.searchInput.value = btn.dataset.query;
+        this.searchKnowledge();
+      });
+    });
   }
 
   async deleteEntry() {

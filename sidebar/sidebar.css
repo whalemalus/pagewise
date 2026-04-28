@@ -894,7 +894,8 @@ body {
 }
 
 .search-box input {
-  width: 100%;
+  width: 0;
+  flex: 1;
   padding: 8px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
@@ -1032,6 +1033,137 @@ body {
   background: var(--bg-tertiary);
   border-radius: 4px;
   font-size: 10px;
+}
+
+/* ==================== Search Mode Toggle & Semantic Search ==================== */
+
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.search-box input {
+  flex: 1;
+}
+
+.search-mode-toggle {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.search-mode-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+  padding: 0;
+}
+
+.search-mode-btn:hover {
+  border-color: var(--accent);
+}
+
+.search-mode-btn.active {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+.knowledge-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.knowledge-item-header .knowledge-item-title {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.search-score-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.search-score-badge.keyword {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.search-score-badge.semantic {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.search-match-type {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+mark.search-highlight {
+  background: #fef08a;
+  color: #1a1a1a;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.search-suggestions-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 12px 0 8px;
+}
+
+.search-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.search-suggestion-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  background: var(--accent-light);
+  color: var(--accent);
+  border-radius: 16px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.search-suggestion-btn:hover {
+  background: var(--accent);
+  color: white;
+}
+
+/* Dark mode overrides for search */
+[data-theme="dark"] .search-score-badge.keyword {
+  background: #166534;
+  color: #bbf7d0;
+}
+
+[data-theme="dark"] .search-score-badge.semantic {
+  background: #3730a3;
+  color: #c7d2fe;
+}
+
+[data-theme="dark"] mark.search-highlight {
+  background: #854d0e;
+  color: #fef3c7;
 }
 
 /* ==================== Knowledge Sub-tabs ==================== */
@@ -2009,6 +2141,36 @@ body {
 
   :root:not([data-theme="light"]) .knowledge-detail {
     background: var(--bg-primary);
+  }
+
+  :root:not([data-theme="light"]) .search-mode-btn {
+    background: var(--bg-tertiary);
+    border-color: var(--border-color);
+  }
+
+  :root:not([data-theme="light"]) .search-mode-btn.active {
+    background: var(--accent);
+    color: white;
+  }
+
+  :root:not([data-theme="light"]) .search-score-badge.keyword {
+    background: #166534;
+    color: #bbf7d0;
+  }
+
+  :root:not([data-theme="light"]) .search-score-badge.semantic {
+    background: #3730a3;
+    color: #c7d2fe;
+  }
+
+  :root:not([data-theme="light"]) mark.search-highlight {
+    background: #854d0e;
+    color: #fef3c7;
+  }
+
+  :root:not([data-theme="light"]) .search-suggestion-btn {
+    background: var(--accent);
+    color: white;
   }
 
   :root:not([data-theme="light"]) .skill-card {
