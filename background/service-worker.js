@@ -3,6 +3,8 @@
  * 处理扩展的后台逻辑：右键菜单、消息路由、Side Panel 管理
  */
 
+import { logInfo, logError, logWarn } from '../lib/log-store.js';
+
 // ==================== 初始化 ====================
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -17,40 +19,75 @@ chrome.runtime.onInstalled.addListener(() => {
     title: '用 AI 总结此页面',
     contexts: ['page']
   });
+
+  logInfo('service-worker', '扩展已安装/更新');
 });
 
 // ==================== 右键菜单 ====================
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   const action = info.menuItemId === 'askAI' ? 'contextMenuAsk' : 'contextMenuSummarize';
+  const selection = info.selectionText || '';
+  
+  logInfo('context-menu', `右键菜单触发: ${action}`, { 
+    selection: selection.slice(0, 100), 
+    tabId: tab.id, 
+    url: tab.url 
+  });
+
   const data = {
     action,
-    selection: info.selectionText || '',
+    selection,
     tabId: tab.id,
     tabUrl: tab.url,
-    tabTitle: tab.title
+    tabTitle: tab.title,
+    timestamp: Date.now()
   };
 
-  // 方式1：写入 session storage（侧边栏初始化时会读取）
-  await chrome.storage.session.set({ pendingAction: data });
+  try {
+    // 方式1：写入 session storage
+    await chrome.storage.session.set({ pendingAction: data });
+    logInfo('context-menu', 'pendingAction 已写入 session storage');
+  } catch (e) {
+    logError('context-menu', '写入 session storage 失败', { error: e.message });
+  }
 
-  // 打开侧边栏
-  await chrome.sidePanel.open({ tabId: tab.id });
+  try {
+    // 打开侧边栏
+    await chrome.sidePanel.open({ tabId: tab.id });
+    logInfo('context-menu', '侧边栏已打开');
+  } catch (e) {
+    logError('context-menu', '打开侧边栏失败', { error: e.message });
+  }
 
-  // 方式2：带重试的消息发送（侧边栏已打开时兜底）
-  sendMessageWithRetry(data, 5, 400);
+  // 方式2：带重试的消息发送
+  sendMessageWithRetry(data, 8, 300);
 });
 
 /**
- * 带重试的消息发送
- * 侧边栏可能还没加载完 listener，需要重试几次
+ * 带重试 + 日志的消息发送
  */
 function sendMessageWithRetry(data, maxRetries, interval) {
   let attempts = 0;
-  const timer = setInterval(() => {
+  const timer = setInterval(async () => {
     attempts++;
-    chrome.runtime.sendMessage(data).catch(() => {});
-    if (attempts >= maxRetries) clearInterval(timer);
+    try {
+      await chrome.runtime.sendMessage(data);
+      logInfo('context-menu', `消息发送成功 (第 ${attempts} 次)`);
+      clearInterval(timer);
+    } catch (e) {
+      const msg = e.message || '';
+      if (attempts >= maxRetries) {
+        logError('context-menu', `消息发送失败，已重试 ${maxRetries} 次`, { 
+          error: msg,
+          action: data.action,
+          selection: data.selection?.slice(0, 50)
+        });
+        clearInterval(timer);
+      } else {
+        logWarn('context-menu', `消息发送失败 (第 ${attempts}/${maxRetries} 次)，${interval}ms 后重试`, { error: msg });
+      }
+    }
   }, interval);
 }
 
@@ -64,26 +101,24 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => 
 
 // ==================== 快捷键 ====================
 
-/**
- * 跟踪侧边栏开关状态（按 tabId）
- * @type {Set<number>}
- */
 const openSidePanels = new Set();
 
 chrome.commands.onCommand.addListener(async (command) => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
 
+  logInfo('shortcut', `快捷键触发: ${command}`, { tabId: tab.id });
+
   switch (command) {
     case 'summarize-page': {
-      // 打开侧边栏并发送总结指令
       await chrome.sidePanel.open({ tabId: tab.id });
       openSidePanels.add(tab.id);
       const data = {
         action: 'shortcutSummarize',
         tabId: tab.id,
         tabUrl: tab.url,
-        tabTitle: tab.title
+        tabTitle: tab.title,
+        timestamp: Date.now()
       };
       sendMessageWithRetry(data, 5, 400);
       break;
@@ -93,9 +128,7 @@ chrome.commands.onCommand.addListener(async (command) => {
       if (openSidePanels.has(tab.id)) {
         try {
           await chrome.sidePanel.close({ tabId: tab.id });
-        } catch (e) {
-          // close 可能不可用，静默处理
-        }
+        } catch (e) {}
         openSidePanels.delete(tab.id);
       } else {
         await chrome.sidePanel.open({ tabId: tab.id });
@@ -113,13 +146,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'extractFromTab':
       chrome.tabs.sendMessage(request.tabId, { action: 'extractContent' })
         .then(sendResponse)
-        .catch(err => sendResponse({ error: err.message }));
+        .catch(err => {
+          logError('message-router', 'extractFromTab 失败', { tabId: request.tabId, error: err.message });
+          sendResponse({ error: err.message });
+        });
       return true;
 
     case 'getCurrentTab':
       chrome.tabs.query({ active: true, currentWindow: true })
         .then(([tab]) => sendResponse(tab))
-        .catch(err => sendResponse({ error: err.message }));
+        .catch(err => {
+          logError('message-router', 'getCurrentTab 失败', { error: err.message });
+          sendResponse({ error: err.message });
+        });
       return true;
 
     case 'collectAllTabs':
@@ -133,7 +172,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
           }));
           sendResponse(tabInfos);
         })
-        .catch(err => sendResponse({ error: err.message }));
+        .catch(err => {
+          logError('message-router', 'collectAllTabs 失败', { error: err.message });
+          sendResponse({ error: err.message });
+        });
       return true;
 
     case 'collectTabContent': {
@@ -142,13 +184,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse([]);
         return false;
       }
-      // 最多同时分析 5 个标签页
       const limitedIds = tabIds.slice(0, 5);
       const promises = limitedIds.map(async (tabId) => {
         try {
           const response = await chrome.tabs.sendMessage(tabId, { action: 'extractContent' });
           if (response && response.content) {
-            // 截取前 3000 字符，避免 token 超限
             return {
               tabId,
               title: response.title || '未知页面',

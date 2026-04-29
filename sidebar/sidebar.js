@@ -22,6 +22,7 @@ import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopS
 import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
+import { logInfo, logWarn, logError, logDebug } from '../lib/log-store.js';
 
 // ==================== 提供商预设 ====================
 
@@ -702,11 +703,13 @@ class SidebarApp {
   // ==================== 消息监听 ====================
 
   async listenMessages() {
+    logInfo('sidebar', 'listenMessages 初始化');
     await this.checkPendingAction();
     chrome.storage.session.onChanged.addListener((changes) => {
       if (changes.pendingAction) {
         const action = changes.pendingAction.newValue;
         if (action) {
+          logInfo('sidebar', '收到 storage.onChanged pendingAction', { action: action.action });
           chrome.storage.session.remove('pendingAction');
           this.handlePendingAction(action);
         }
@@ -714,11 +717,12 @@ class SidebarApp {
     });
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       if (request.action === 'contextMenuAsk' || request.action === 'contextMenuSummarize') {
+        logInfo('sidebar', '收到 runtime.onMessage 右键动作', { action: request.action });
         this.handlePendingAction(request);
       } else if (request.action === 'switchToKnowledge') {
         this.switchTab('knowledge');
       } else if (request.action === 'shortcutSummarize') {
-        // 快捷键 Ctrl+Shift+S 触发自动总结
+        logInfo('sidebar', '收到快捷键总结');
         this.quickSummarize();
       }
       sendResponse({ received: true });
@@ -736,23 +740,56 @@ class SidebarApp {
   }
 
   handlePendingAction(data) {
-    if (!data || !data.action) return;
+    if (!data || !data.action) {
+      logWarn('sidebar', 'handlePendingAction 收到无效数据', data);
+      return;
+    }
     const key = `${data.action}:${data.selection || ''}`;
     const now = Date.now();
-    if (this._lastPendingAction === key && now - this._lastPendingTime < 1000) return;
+    if (this._lastPendingAction === key && now - this._lastPendingTime < 2000) {
+      logDebug('sidebar', 'handlePendingAction 去重跳过', { key });
+      return;
+    }
     this._lastPendingAction = key;
     this._lastPendingTime = now;
+
+    logInfo('sidebar', `处理右键/快捷键动作: ${data.action}`, {
+      selection: data.selection?.slice(0, 80),
+      hasAiClient: !!this.aiClient
+    });
 
     this.switchTab('chat');
 
     if (data.action === 'contextMenuAsk' || data.action === 'askAI') {
       if (data.selection) {
         this.userInput.value = `请解释以下内容：\n"${data.selection}"`;
-        setTimeout(() => this.sendMessage(), 500);
+        logInfo('sidebar', '准备发送右键提问', { question: data.selection.slice(0, 50) });
+        setTimeout(async () => {
+          try {
+            await this.sendMessage();
+            logInfo('sidebar', '右键提问发送成功');
+          } catch (e) {
+            logError('sidebar', '右键提问发送失败', { error: e.message });
+            this.addSystemMessage(`⚠️ 提问发送失败: ${e.message}。请检查 API 配置或重试。`);
+          }
+        }, 300);
+      } else {
+        logWarn('sidebar', '右键提问但选中文本为空');
+        this.addSystemMessage('⚠️ 未检测到选中文本，请重新选中内容后重试。');
       }
     } else if (data.action === 'contextMenuSummarize' || data.action === 'summarizePage') {
       this.userInput.value = '请总结当前页面的核心内容，提炼出关键知识点';
-      setTimeout(() => this.sendMessage(), 500);
+      setTimeout(async () => {
+        try {
+          await this.sendMessage();
+          logInfo('sidebar', '页面总结发送成功');
+        } catch (e) {
+          logError('sidebar', '页面总结发送失败', { error: e.message });
+          this.addSystemMessage(`⚠️ 总结请求失败: ${e.message}。请检查 API 配置或重试。`);
+        }
+      }, 300);
+    } else if (data.action === 'shortcutSummarize') {
+      this.quickSummarize();
     }
   }
 
