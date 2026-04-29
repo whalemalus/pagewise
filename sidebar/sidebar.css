@@ -2670,433 +2670,7 @@ mark.search-highlight {
   color: var(--text-primary);
 }
 
-/* ==================== Dark Mode ==================== */
-
-[data-theme="dark"] {
-  --bg-primary: #1a1a2e;
-  --bg-secondary: #16213e;
-  --bg-tertiary: #0f3460;
-  --text-primary: #e4e6eb;
-  --text-secondary: #b0b3b8;
-  --text-muted: #8a8d91;
-  --border-color: #3a3b3c;
-  --accent: #818cf8;
-  --accent-hover: #6366f1;
-  --accent-light: #1e1b4b;
-  --success: #34d399;
-  --danger: #f87171;
-}
-
-/* --- Dark Mode: Input styles --- */
-[data-theme="dark"] input[type="text"],
-[data-theme="dark"] input[type="password"],
-[data-theme="dark"] input[type="number"],
-[data-theme="dark"] textarea,
-[data-theme="dark"] select {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] input:focus,
-[data-theme="dark"] textarea:focus,
-[data-theme="dark"] select:focus {
-  border-color: var(--accent);
-}
-
-/* --- Dark Mode: Button styles --- */
-[data-theme="dark"] .btn-primary {
-  background: var(--accent);
-}
-
-[data-theme="dark"] .btn-primary:hover {
-  background: var(--accent-hover);
-}
-
-[data-theme="dark"] .btn-sm {
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .btn-send {
-  background: var(--accent);
-}
-
-[data-theme="dark"] .btn-quick {
-  background: var(--bg-tertiary);
-}
-
-[data-theme="dark"] .btn-quick:hover {
-  background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .btn-test {
-  background: var(--bg-tertiary);
-}
-
-/* --- Dark Mode: Layout styles --- */
-[data-theme="dark"] .header {
-  background: var(--bg-secondary);
-  border-bottom-color: var(--border-color);
-}
-
-[data-theme="dark"] .tab {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .tab.active {
-  color: var(--accent);
-}
-
-[data-theme="dark"] .page-context {
-  background: var(--bg-secondary);
-}
-
-[data-theme="dark"] .chat-area {
-  background: var(--bg-primary);
-}
-
-[data-theme="dark"] .input-area {
-  background: var(--bg-secondary);
-  border-top-color: var(--border-color);
-}
-
-[data-theme="dark"] .input-wrapper:focus-within {
-  background: var(--bg-secondary);
-}
-
-/* --- Dark Mode: Message styles --- */
-[data-theme="dark"] .message-user .message-bubble {
-  background: var(--accent-light);
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .message-ai .message-bubble {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .message-ai .message-avatar {
-  background: var(--bg-tertiary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .message-ai .message-bubble pre {
-  background: #09090b;
-}
-
-[data-theme="dark"] .message-bubble a {
-  color: var(--accent);
-}
-
-/* --- Dark Mode: Other components --- */
-[data-theme="dark"] .welcome-message {
-  background: var(--bg-primary);
-}
-
-[data-theme="dark"] .tag-chip {
-  background: var(--bg-tertiary);
-}
-
-[data-theme="dark"] .tag-chip:hover,
-[data-theme="dark"] .tag-chip.active {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-[data-theme="dark"] .knowledge-detail {
-  background: var(--bg-primary);
-}
-
-[data-theme="dark"] .skill-card {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .settings-form {
-  background: var(--bg-primary);
-}
-
-[data-theme="dark"] .profile-bar select {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .provider-card {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .provider-card.active {
-  background: var(--accent-light);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-[data-theme="dark"] .toast {
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
-}
-
-[data-theme="dark"] .btn-danger:hover {
-  background: #2a1010;
-}
-
-[data-theme="dark"] .knowledge-item:hover {
-  background: #16213e;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg-primary: #1a1a2e;
-    --bg-secondary: #16213e;
-    --bg-tertiary: #0f3460;
-    --text-primary: #e4e6eb;
-    --text-secondary: #b0b3b8;
-    --text-muted: #8a8d91;
-    --border-color: #3a3b3c;
-    --accent: #818cf8;
-    --accent-hover: #6366f1;
-    --accent-light: #1e1b4b;
-    --success: #34d399;
-    --danger: #f87171;
-  }
-
-  /* --- Dark Mode: Input styles --- */
-  :root:not([data-theme="light"]) input[type="text"],
-  :root:not([data-theme="light"]) input[type="password"],
-  :root:not([data-theme="light"]) input[type="number"],
-  :root:not([data-theme="light"]) textarea,
-  :root:not([data-theme="light"]) select {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) input:focus,
-  :root:not([data-theme="light"]) textarea:focus,
-  :root:not([data-theme="light"]) select:focus {
-    border-color: var(--accent);
-  }
-
-  /* --- Dark Mode: Button styles --- */
-  :root:not([data-theme="light"]) .btn-primary {
-    background: var(--accent);
-  }
-
-  :root:not([data-theme="light"]) .btn-primary:hover {
-    background: var(--accent-hover);
-  }
-
-  :root:not([data-theme="light"]) .btn-sm {
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-  }
-
-  :root:not([data-theme="light"]) .btn-send {
-    background: var(--accent);
-  }
-
-  :root:not([data-theme="light"]) .btn-quick {
-    background: var(--bg-tertiary);
-  }
-
-  :root:not([data-theme="light"]) .btn-quick:hover {
-    background: var(--bg-secondary);
-  }
-
-  /* --- Dark Mode: Branch Bar --- */
-  :root:not([data-theme="light"]) .branch-bar {
-    background: linear-gradient(135deg, #1e1b4b 0%, #1e1b4b 100%);
-    border-bottom-color: #312e81;
-  }
-
-  :root:not([data-theme="light"]) .branch-bar-text {
-    color: #a5b4fc;
-  }
-
-  :root:not([data-theme="light"]) .btn-branch-return {
-    background: var(--bg-tertiary);
-    color: #a5b4fc;
-    border-color: #4338ca;
-  }
-
-  :root:not([data-theme="light"]) .btn-branch-return:hover {
-    background: #4338ca;
-    color: #fff;
-  }
-
-  :root:not([data-theme="light"]) .msg-action-btn[data-action="branch"] {
-    color: #a5b4fc;
-    border-color: #4338ca;
-    background: #1e1b4b;
-  }
-
-  :root:not([data-theme="light"]) .btn-test {
-    background: var(--bg-tertiary);
-  }
-
-  /* --- Dark Mode: Layout styles --- */
-  :root:not([data-theme="light"]) .header {
-    background: var(--bg-secondary);
-    border-bottom-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .tab {
-    color: var(--text-secondary);
-  }
-
-  :root:not([data-theme="light"]) .tab.active {
-    color: var(--accent);
-  }
-
-  :root:not([data-theme="light"]) .page-context {
-    background: var(--bg-secondary);
-  }
-
-  :root:not([data-theme="light"]) .chat-area {
-    background: var(--bg-primary);
-  }
-
-  :root:not([data-theme="light"]) .input-area {
-    background: var(--bg-secondary);
-    border-top-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .input-wrapper:focus-within {
-    background: var(--bg-secondary);
-  }
-
-  /* --- Dark Mode: Message styles --- */
-  :root:not([data-theme="light"]) .message-user .message-bubble {
-    background: var(--accent-light);
-    color: var(--text-primary);
-  }
-
-  :root:not([data-theme="light"]) .message-ai .message-bubble {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .message-ai .message-avatar {
-    background: var(--bg-tertiary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .message-ai .message-bubble pre {
-    background: #09090b;
-  }
-
-  :root:not([data-theme="light"]) .message-bubble a {
-    color: var(--accent);
-  }
-
-  /* --- Dark Mode: Other components --- */
-  :root:not([data-theme="light"]) .welcome-message {
-    background: var(--bg-primary);
-  }
-
-  :root:not([data-theme="light"]) .tag-chip {
-    background: var(--bg-tertiary);
-  }
-
-  :root:not([data-theme="light"]) .tag-chip:hover,
-  :root:not([data-theme="light"]) .tag-chip.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-  }
-
-  :root:not([data-theme="light"]) .knowledge-detail {
-    background: var(--bg-primary);
-  }
-
-  :root:not([data-theme="light"]) .search-mode-btn {
-    background: var(--bg-tertiary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .search-mode-btn.active {
-    background: var(--accent);
-    color: white;
-  }
-
-  :root:not([data-theme="light"]) .search-score-badge.keyword {
-    background: #166534;
-    color: #bbf7d0;
-  }
-
-  :root:not([data-theme="light"]) .search-score-badge.semantic {
-    background: #3730a3;
-    color: #c7d2fe;
-  }
-
-  :root:not([data-theme="light"]) mark.search-highlight {
-    background: #854d0e;
-    color: #fef3c7;
-  }
-
-  :root:not([data-theme="light"]) .search-suggestion-btn {
-    background: var(--accent);
-    color: white;
-  }
-
-  :root:not([data-theme="light"]) .skill-card {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .settings-form {
-    background: var(--bg-primary);
-  }
-
-  :root:not([data-theme="light"]) .profile-bar select {
-    background: var(--bg-tertiary);
-    color: var(--text-primary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .provider-card {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .provider-card.active {
-    background: var(--accent-light);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  :root:not([data-theme="light"]) .toast {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .btn-danger:hover {
-    background: #2a1010;
-  }
-
-  :root:not([data-theme="light"]) .knowledge-item:hover {
-    background: #16213e;
-  }
-
-  /* --- Dark Mode: History --- */
-  :root:not([data-theme="light"]) .history-panel {
-    background: var(--bg-primary);
-  }
-
-  :root:not([data-theme="light"]) .history-item {
-    background: var(--bg-secondary);
-    border-color: var(--border-color);
-  }
-
-  :root:not([data-theme="light"]) .history-item:hover {
-    border-color: var(--accent);
-    background: var(--accent-light);
-  }
-}
+/* (Dark mode moved to end of file — complete system) */
 
 /* ==================== History Panel ==================== */
 
@@ -5066,5 +4640,132 @@ body.dark .log-entry-log_warn { background: #3b2f11; }
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==================== 暗色模式（完整） ==================== */
+
+[data-theme="dark"],
+body.dark {
+  --bg-primary: #0f0f11;
+  --bg-secondary: #18181b;
+  --bg-tertiary: #27272a;
+  --bg-elevated: #1e1e22;
+  --bg-hover: rgba(99, 102, 241, 0.08);
+  --bg-active: rgba(99, 102, 241, 0.12);
+
+  --text-primary: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-inverse: #18181b;
+
+  --border-color: #2e2e33;
+  --border-subtle: #222226;
+
+  --accent: #818cf8;
+  --accent-hover: #6366f1;
+  --accent-light: rgba(99, 102, 241, 0.12);
+  --accent-gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
+  --accent-glow: 0 0 20px rgba(129, 140, 248, 0.12);
+
+  --success: #4ade80;
+  --success-light: rgba(34, 197, 94, 0.1);
+  --danger: #f87171;
+  --danger-light: rgba(239, 68, 68, 0.1);
+  --warning: #fbbf24;
+  --warning-light: rgba(245, 158, 11, 0.1);
+  --info: #60a5fa;
+  --info-light: rgba(59, 130, 246, 0.1);
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+}
+
+/* 暗色模式特殊组件覆盖 */
+[data-theme="dark"] .message-user .message-bubble,
+body.dark .message-user .message-bubble {
+  background: var(--accent-gradient);
+}
+
+[data-theme="dark"] .message-ai .message-bubble,
+body.dark .message-ai .message-bubble {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .skill-card,
+body.dark .skill-card {
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .knowledge-card,
+body.dark .knowledge-card {
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .settings-item,
+body.dark .settings-item {
+  background: var(--bg-elevated);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .log-entry-log_error,
+body.dark .log-entry-log_error {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+[data-theme="dark"] .log-entry-log_warn,
+body.dark .log-entry-log_warn {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+[data-theme="dark"] .input-wrapper,
+body.dark .input-wrapper {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .input-wrapper:focus-within,
+body.dark .input-wrapper:focus-within {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+}
+
+[data-theme="dark"] .welcome-icon,
+body.dark .welcome-icon {
+  box-shadow: var(--accent-glow);
+}
+
+[data-theme="dark"] .brand-icon,
+body.dark .brand-icon {
+  box-shadow: var(--accent-glow);
+}
+
+[data-theme="dark"] ::selection,
+body.dark ::selection {
+  background: rgba(129, 140, 248, 0.25);
+}
+
+/* 系统偏好暗色模式 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg-primary: #0f0f11;
+    --bg-secondary: #18181b;
+    --bg-tertiary: #27272a;
+    --bg-elevated: #1e1e22;
+    --text-primary: #fafafa;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
+    --border-color: #2e2e33;
+    --border-subtle: #222226;
+    --accent: #818cf8;
+    --accent-hover: #6366f1;
+    --accent-light: rgba(99, 102, 241, 0.12);
+    --accent-gradient: linear-gradient(135deg, #818cf8 0%, #a78bfa 100%);
   }
 }
