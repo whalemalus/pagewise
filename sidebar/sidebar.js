@@ -690,6 +690,14 @@ class SidebarApp {
 
   async loadSettings() {
     this.settings = await getSettings();
+    console.log('[PageWise] loadSettings:', {
+      hasApiKey: !!this.settings.apiKey,
+      apiKeyLength: this.settings.apiKey?.length || 0,
+      baseUrl: this.settings.apiBaseUrl,
+      model: this.settings.model,
+      protocol: this.settings.apiProtocol,
+      provider: this.settings.apiProvider
+    });
     if (this.settings.apiKey) {
       this.aiClient = new AIClient({
         apiKey: this.settings.apiKey,
@@ -698,6 +706,13 @@ class SidebarApp {
         maxTokens: this.settings.maxTokens,
         protocol: this.settings.apiProtocol
       });
+      console.log('[PageWise] AIClient created:', {
+        model: this.aiClient.model,
+        baseUrl: this.aiClient.baseUrl,
+        protocol: this.aiClient.protocol
+      });
+    } else {
+      console.warn('[PageWise] No API key found, aiClient not created');
     }
   }
 
@@ -1862,6 +1877,12 @@ class SidebarApp {
     }
 
     if (!this.aiClient) {
+      console.error('[PageWise] sendMessage failed: aiClient is null. Settings:', {
+        hasApiKey: !!this.settings.apiKey,
+        apiKeyLength: this.settings.apiKey?.length || 0,
+        baseUrl: this.settings.apiBaseUrl,
+        model: this.settings.model
+      });
       this.addSystemMessage('请先在设置中配置 API Key');
       this.switchTab('settings');
       return;
@@ -2073,6 +2094,7 @@ class SidebarApp {
       this.abortController = null;
 
     } catch (error) {
+      console.error('[PageWise] sendMessage error:', error);
       loadingEl.remove();
       // 恢复按钮状态
       this.btnStop.classList.add('hidden');

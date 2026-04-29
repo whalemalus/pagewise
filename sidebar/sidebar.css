@@ -1543,6 +1543,7 @@ body {
 
 .knowledge-toolbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
@@ -1588,6 +1589,7 @@ body {
 .knowledge-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .btn-sm {
@@ -1880,6 +1882,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  overflow: hidden;
 }
 
 .search-box input {
@@ -2351,6 +2354,66 @@ mark.search-highlight {
   overflow-y: auto;
 }
 
+.settings-form {
+  padding: var(--space-4);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.settings-form .section-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.settings-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.settings-form .form-group label {
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.settings-form .form-group input[type="text"],
+.settings-form .form-group input[type="password"],
+.settings-form .form-group input[type="number"],
+.settings-form .form-group select,
+.settings-form .form-group textarea {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.settings-form .form-group input:focus,
+.settings-form .form-group select:focus,
+.settings-form .form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  background: var(--bg-primary);
+}
+
+.settings-form .form-group small {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
 .settings-group {
   margin-bottom: var(--space-5);
 }
@@ -2405,7 +2468,7 @@ mark.search-highlight {
   color: var(--text-primary);
   transition: all var(--transition);
   outline: none;
-  max-width: 200px;
+  width: 100%;
 }
 
 .settings-input:focus {
@@ -2425,12 +2488,52 @@ mark.search-highlight {
   cursor: pointer;
   transition: all var(--transition);
   outline: none;
-  max-width: 200px;
+  width: 100%;
 }
 
 .settings-select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+/* API Config — Model Row */
+.model-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.model-row input,
+.model-row select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Provider Cards */
+.provider-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: var(--space-2);
+}
+
+/* Profile Bar */
+.profile-bar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.profile-bar select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Test Row */
+.test-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
 }
 
 /* Toggle 开关 */
