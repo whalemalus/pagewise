@@ -3916,6 +3916,7 @@ ${sendContent}
     this.knowledgeDetail.classList.add('hidden');
     this.knowledgeList.classList.remove('hidden');
     this.selectedEntryId = null;
+    this.loadKnowledgeList();
   }
 
   // ==================== 批量操作 ====================
@@ -4276,7 +4277,7 @@ ${sendContent}
     if (!confirm('确定删除这条知识？')) return;
     await this.memory.deleteEntry(this.selectedEntryId);
     this.addSystemMessage('已删除');
-    this.showKnowledgeList();
+    this.loadKnowledgeList();
     this.loadKnowledgeTags();
   }
 
@@ -4318,9 +4319,9 @@ ${sendContent}
 
       this.showLearningPathStatus('AI 正在分析你的知识库...');
 
-      // 设置 60 秒超时（学习路径分析需要更多时间）
+      // 设置 120 秒超时（学习路径分析 + JSON 生成需要更多时间）
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('生成超时，知识库内容较多时需要更长时间，请稍后重试')), 60000);
+        setTimeout(() => reject(new Error('生成超时（120秒），请检查 API 连通性后重试')), 120000);
       });
 
       const responsePromise = this.aiClient.chat([{
