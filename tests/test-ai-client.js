@@ -74,6 +74,26 @@ describe('AIClient 构造函数', () => {
     const client = new AIClient({ baseUrl: 'https://api.openai.com/' });
     assert.equal(client.baseUrl, 'https://api.openai.com');
   });
+
+  it('baseUrl 末尾 /v1 被去除，避免双 /v1', () => {
+    const client = new AIClient({ baseUrl: 'https://api.example.com/v1' });
+    assert.equal(client.baseUrl, 'https://api.example.com');
+  });
+
+  it('baseUrl 末尾 /v1/（带斜杠）被去除', () => {
+    const client = new AIClient({ baseUrl: 'https://api.example.com/v1/' });
+    assert.equal(client.baseUrl, 'https://api.example.com');
+  });
+
+  it('baseUrl 不含 /v1 时保持不变', () => {
+    const client = new AIClient({ baseUrl: 'https://api.example.com' });
+    assert.equal(client.baseUrl, 'https://api.example.com');
+  });
+
+  it('baseUrl 含非末尾 /v1 时保留（如 /api/v1 部分路径）', () => {
+    const client = new AIClient({ baseUrl: 'https://proxy.example.com/api/v1' });
+    assert.equal(client.baseUrl, 'https://proxy.example.com/api');
+  });
 });
 
 describe('AIClient vision 消息格式', () => {
@@ -143,6 +163,22 @@ describe('AIClient vision 消息格式', () => {
       systemPrompt: 'test', model: 'gpt-4o', maxTokens: 100, stream: false
     });
     assert.equal(body.messages[1].content, '普通文本');
+  });
+
+  it('OpenAI URL 不会出现双 /v1（baseUrl 已含 /v1）', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'openai', baseUrl: 'https://api.example.com/v1' });
+    const { url } = client.buildOpenAIRequest([{ role: 'user', content: 'hi' }], {
+      systemPrompt: 'test', model: 'gpt-4o', maxTokens: 100, stream: false
+    });
+    assert.equal(url, 'https://api.example.com/v1/chat/completions');
+  });
+
+  it('Claude URL 不会出现双 /v1（baseUrl 已含 /v1）', () => {
+    const client = new AIClient({ apiKey: 'test', protocol: 'claude', baseUrl: 'https://api.anthropic.com/v1' });
+    const { url } = client.buildClaudeRequest([{ role: 'user', content: 'hi' }], {
+      systemPrompt: 'test', model: 'claude-sonnet-4-6', maxTokens: 100, stream: false
+    });
+    assert.equal(url, 'https://api.anthropic.com/v1/messages');
   });
 
   it('Claude 请求：image 类型直接透传', () => {
