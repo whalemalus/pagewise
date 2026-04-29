@@ -406,7 +406,16 @@ class SidebarApp {
       });
       tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
     });
-    this.btnSend.addEventListener('click', () => this.sendMessage());
+    this.btnSend.addEventListener('click', () => {
+      console.log('[PageWise] btnSend clicked!');
+      this.sendMessage();
+    });
+    console.log('[PageWise] bindEvents:', {
+      hasBtnSend: !!this.btnSend,
+      hasUserInput: !!this.userInput,
+      userInputTagName: this.userInput?.tagName,
+      btnSendTagName: this.btnSend?.tagName
+    });
     this.btnStop.addEventListener('click', () => this.stopGeneration());
     this.userInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
@@ -1860,7 +1869,11 @@ class SidebarApp {
 
   async sendMessage() {
     const text = this.userInput.value.trim();
-    if (!text) return;
+    console.log('[PageWise] 🚀 sendMessage called:', { text: text.slice(0, 50), hasAiClient: !!this.aiClient });
+    if (!text) {
+      console.log('[PageWise] sendMessage: empty text, returning');
+      return;
+    }
     // /clear 命令：清除对话
     if (text === '/clear') {
       this.conversationHistory = [];
@@ -2315,7 +2328,14 @@ class SidebarApp {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'message message-ai';
     loadingDiv.innerHTML = `
-      <div class="thinking-indicator">🤔 正在思考...</div>
+      <div class="thinking-indicator">
+        <div class="thinking-dots">
+          <span class="thinking-dot"></span>
+          <span class="thinking-dot"></span>
+          <span class="thinking-dot"></span>
+        </div>
+        <span class="thinking-text">正在思考...</span>
+      </div>
     `;
     this.chatArea.appendChild(loadingDiv);
     this.scrollToBottom();

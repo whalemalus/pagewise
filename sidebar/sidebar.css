@@ -525,12 +525,14 @@ body {
   display: flex;
   gap: 6px;
   margin-top: 8px;
-  padding-left: 2px;
+  padding: 6px 0;
+  flex-wrap: wrap;
   opacity: 0;
-  transition: opacity 0.15s;
+  transition: opacity 0.2s ease;
 }
 
-.message-ai:hover .message-actions {
+.message-ai:hover .message-actions,
+.message-actions:focus-within {
   opacity: 1;
 }
 
@@ -639,10 +641,12 @@ body {
 .thinking-indicator {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   font-size: var(--text-sm);
+  font-style: italic;
+  opacity: 0.7;
 }
 
 .thinking-dots {
@@ -664,6 +668,11 @@ body {
 @keyframes dotPulse {
   0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
   40% { opacity: 1; transform: scale(1); }
+}
+
+.thinking-text {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
 }
 
 /* ==================== 输入区域 ==================== */
@@ -2412,6 +2421,40 @@ mark.search-highlight {
 .settings-form .form-group small {
   font-size: var(--text-xs);
   color: var(--text-muted);
+}
+
+.settings-form .btn-primary {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.settings-form .btn-primary:hover {
+  background: var(--accent-hover);
+  box-shadow: var(--shadow-sm);
+}
+
+.settings-form .btn-test {
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  color: var(--text-primary);
+}
+
+.settings-form .btn-test:hover {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .settings-group {
