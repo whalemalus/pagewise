@@ -966,13 +966,32 @@ class SidebarApp {
     }
   }
 
+  async _sendMessageWithRetry(tabId, message, maxRetries = 3) {
+    const delays = [0, 500, 1000];
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      if (delays[attempt] > 0) {
+        await new Promise(resolve => setTimeout(resolve, delays[attempt]));
+      }
+      try {
+        return await chrome.tabs.sendMessage(tabId, message);
+      } catch (e) {
+        const isLastAttempt = attempt === maxRetries - 1;
+        if (!isLastAttempt) {
+          console.debug(`[PageWise] sendMessage 第 ${attempt + 1} 次失败，${delays[attempt + 1]}ms 后重试...`);
+        } else {
+          throw e;
+        }
+      }
+    }
+  }
+
   async extractContent() {
     if (!this.currentTabId) {
       this.showToast('无法获取当前标签页', 'error');
       return false;
     }
     try {
-      const response = await chrome.tabs.sendMessage(this.currentTabId, { action: 'extractContent' });
+      const response = await this._sendMessageWithRetry(this.currentTabId, { action: 'extractContent' });
       if (response && response.content) {
         this.currentPageContent = response;
         this.addSystemMessage(`已提取页面内容：${response.content.length} 字，${response.codeBlocks?.length || 0} 个代码块`);
@@ -2284,13 +2303,15 @@ class SidebarApp {
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message message-ai';
     messageDiv.innerHTML = `
-      <div class="message-bubble">${renderMarkdown(content)}</div>
-      <div class="message-actions">
-        <button class="msg-action-btn" data-action="copy">复制</button>
-        <button class="msg-action-btn" data-action="save">💾 保存</button>
-        <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
-        <button class="msg-action-btn" data-action="branch">🔀 分支</button>
-        ${hasRunnableCode ? '<button class="msg-action-btn msg-action-run" data-action="run">▶️ 运行</button>' : ''}
+      <div class="message-content">
+        <div class="message-bubble">${renderMarkdown(content)}</div>
+        <div class="message-actions">
+          <button class="msg-action-btn" data-action="copy">复制</button>
+          <button class="msg-action-btn" data-action="save">💾 保存</button>
+          <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
+          <button class="msg-action-btn" data-action="branch">🔀 分支</button>
+          ${hasRunnableCode ? '<button class="msg-action-btn msg-action-run" data-action="run">▶️ 运行</button>' : ''}
+        </div>
       </div>
     `;
     messageDiv.querySelectorAll('.msg-action-btn').forEach(btn => {
@@ -4297,9 +4318,9 @@ ${sendContent}
 
       this.showLearningPathStatus('AI 正在分析你的知识库...');
 
-      // 设置 30 秒超时
+      // 设置 60 秒超时（学习路径分析需要更多时间）
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('请求超时（30秒）')), 30000);
+        setTimeout(() => reject(new Error('生成超时，知识库内容较多时需要更长时间，请稍后重试')), 60000);
       });
 
       const responsePromise = this.aiClient.chat([{
