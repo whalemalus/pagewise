@@ -4113,7 +4113,7 @@ ${sendContent}
       const { summary, tags } = await this.aiClient.generateSummaryAndTags(
         `问题：${this.conversationHistory[this.conversationHistory.length - 2]?.content || ''}\n回答：${answerText}`
       );
-      await this.memory.kb.saveEntry({
+      const result = await this.memory.kb.saveEntry({
         title: this.currentPageContent?.title || '未命名',
         content: content.slice(0, 5000),
         summary,
@@ -4124,8 +4124,12 @@ ${sendContent}
         question: this.conversationHistory[this.conversationHistory.length - 2]?.content || '',
         answer: answerText
       });
-      this.addSystemMessage(`已保存到知识库 ✓ 标签：${tags.join(', ')}`);
-      incrementCounter('totalKnowledgeEntries');
+      if (result && result.duplicate) {
+        this.addSystemMessage(`⚠️ 知识库中已存在类似条目「${result.existing.title}」，未重复添加`);
+      } else {
+        this.addSystemMessage(`已保存到知识库 ✓ 标签：${tags.join(', ')}`);
+        incrementCounter('totalKnowledgeEntries');
+      }
       this.loadKnowledgeTags();
     } catch (error) {
       this.addSystemMessage(`保存失败：${error.message}`);
