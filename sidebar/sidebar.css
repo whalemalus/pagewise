@@ -825,7 +825,35 @@ body {
   color: white;
 }
 
-/* ==================== Skills Panel ==================== */
+/* ==================== 技能面板 ==================== */
+
+.skills-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.skills-search {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition);
+  outline: none;
+}
+
+.skills-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  background: var(--bg-primary);
+}
 
 .skills-header {
   padding: 12px 16px;
@@ -840,25 +868,35 @@ body {
 
 .skills-filter {
   display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
+
+.skills-filter::-webkit-scrollbar { display: none; }
 
 .skills-filter .tag-chip {
-  padding: 3px 10px;
-  background: var(--bg-tertiary);
-  border-radius: 12px;
-  font-size: 11px;
-  cursor: pointer;
+  padding: 4px 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
-  border: 1px solid transparent;
-  transition: all 0.15s;
+  font-size: var(--text-xs);
+  font-family: var(--font-sans);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
 }
 
-.skills-filter .tag-chip:hover,
-.skills-filter .tag-chip.active {
-  background: var(--accent-light);
+.skills-filter .tag-chip:hover {
+  border-color: var(--accent);
   color: var(--accent);
+}
+
+.skills-filter .tag-chip.active {
+  background: var(--accent);
+  color: white;
   border-color: var(--accent);
 }
 
@@ -905,21 +943,25 @@ body {
 .skills-list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 .skill-card {
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  margin-bottom: 10px;
+  border-radius: var(--radius);
   transition: all var(--transition);
-  box-shadow: var(--shadow-xs);
+  cursor: pointer;
 }
 
 .skill-card:hover {
   border-color: var(--accent);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
 }
 
 .skill-card.disabled {
@@ -930,11 +972,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 
 .skill-card-name {
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-primary);
   display: flex;
@@ -943,18 +985,18 @@ body {
 }
 
 .skill-card-category {
-  font-size: 10px;
-  padding: 1px 8px;
-  background: var(--bg-tertiary);
-  border-radius: 10px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
+  background: var(--bg-secondary);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
 }
 
 .skill-card-desc {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  margin-bottom: 10px;
   line-height: 1.5;
+  margin-bottom: var(--space-2);
 }
 
 .skill-card-footer {
@@ -964,44 +1006,45 @@ body {
 }
 
 .skill-card-trigger {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
 .skill-card-actions {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  gap: var(--space-1);
 }
 
 .skill-toggle {
-  position: relative;
   width: 36px;
   height: 20px;
+  border-radius: var(--radius-full);
   background: var(--bg-tertiary);
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.2s;
   border: none;
-  padding: 0;
-}
-
-.skill-toggle.on {
-  background: var(--accent);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--transition);
 }
 
 .skill-toggle::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
   width: 16px;
   height: 16px;
-  background: white;
   border-radius: 50%;
-  transition: transform 0.2s;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-xs);
 }
 
+.skill-toggle.active,
+.skill-toggle.on {
+  background: var(--accent);
+}
+
+.skill-toggle.active::after,
 .skill-toggle.on::after {
   transform: translateX(16px);
 }
@@ -1499,11 +1542,31 @@ body {
 }
 
 .knowledge-toolbar {
-  padding: 12px 16px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+
+.knowledge-search {
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-family: var(--font-sans);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: all var(--transition);
+  outline: none;
+}
+
+.knowledge-search:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+  background: var(--bg-primary);
 }
 
 .search-box input {
@@ -1594,34 +1657,76 @@ body {
 .knowledge-list {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
-.knowledge-item {
-  padding: var(--space-4);
+.knowledge-card {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
   border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  margin-bottom: 8px;
+  border-radius: var(--radius);
+  transition: all var(--transition);
+}
+
+.knowledge-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-sm);
+}
+
+.knowledge-card-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.knowledge-card-snippet {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.knowledge-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* Legacy knowledge-item aliases for backward compatibility */
+.knowledge-item {
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all var(--transition);
-  box-shadow: var(--shadow-xs);
 }
 
 .knowledge-item:hover {
   border-color: var(--accent);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-sm);
 }
 
 .knowledge-item-title {
   font-weight: 600;
-  font-size: 13px;
-  margin-bottom: 4px;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-1);
 }
 
 .knowledge-item-summary {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--text-secondary);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1631,8 +1736,8 @@ body {
 .knowledge-item-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
   color: var(--text-muted);
 }
 
@@ -2080,15 +2185,33 @@ mark.search-highlight {
   border-color: var(--danger);
 }
 
+/* ==================== 空状态 ==================== */
+
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--space-4);
   text-align: center;
-  padding: 40px 20px;
-  color: var(--text-muted);
+  animation: fadeIn var(--transition-slow);
 }
 
 .empty-icon {
   font-size: 40px;
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
+  opacity: 0.6;
+}
+
+.empty-state p {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-bottom: var(--space-1);
+}
+
+.empty-state .text-muted {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
 }
 
 /* ==================== Knowledge Detail ==================== */
