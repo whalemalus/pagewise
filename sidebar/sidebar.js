@@ -22,7 +22,7 @@ import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopS
 import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
-import { logInfo, logWarn, logError, logDebug } from '../lib/log-store.js';
+import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs } from '../lib/log-store.js';
 
 // ==================== 提供商预设 ====================
 
@@ -124,6 +124,7 @@ class SidebarApp {
 
     this.bindElements();
     this.bindEvents();
+    this.initLogsPanel();
     this.loadPageContext();
     this.loadKnowledgeTags();
     this.listenMessages();
@@ -793,6 +794,84 @@ class SidebarApp {
     }
   }
 
+  // ==================== 日志面板 ====================
+
+  initLogsPanel() {
+    // 刷新按钮
+    document.getElementById('btnRefreshLogs')?.addEventListener('click', () => this.loadLogsList());
+    // 清除按钮
+    document.getElementById('btnClearLogs')?.addEventListener('click', () => {
+      clearLogStore();
+      this.loadLogsList();
+      this.showToast('日志已清除', 'success');
+    });
+    // 导出按钮
+    document.getElementById('btnExportLogs')?.addEventListener('click', () => this.exportLogsFile());
+    // 筛选器
+    document.getElementById('logLevelFilter')?.addEventListener('change', () => this.loadLogsList());
+    document.getElementById('logModuleFilter')?.addEventListener('change', () => this.loadLogsList());
+  }
+
+  loadLogsList() {
+    const list = document.getElementById('logsList');
+    if (!list) return;
+
+    const levelFilter = document.getElementById('logLevelFilter')?.value || 'all';
+    const moduleFilter = document.getElementById('logModuleFilter')?.value || 'all';
+
+    let logs = getLogs();
+
+    // 更新模块筛选器选项
+    const modules = [...new Set(logs.map(l => l.module))].sort();
+    const moduleSelect = document.getElementById('logModuleFilter');
+    if (moduleSelect) {
+      const currentVal = moduleSelect.value;
+      moduleSelect.innerHTML = '<option value="all">全部模块</option>' +
+        modules.map(m => `<option value="${m}" ${m === currentVal ? 'selected' : ''}>${m}</option>`).join('');
+    }
+
+    // 应用筛选
+    if (levelFilter !== 'all') logs = logs.filter(l => l.level === levelFilter);
+    if (moduleFilter !== 'all') logs = logs.filter(l => l.module === moduleFilter);
+
+    // 倒序（最新在上）
+    logs = logs.reverse();
+
+    if (logs.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><p>暂无日志记录</p><p class="text-muted">操作插件后日志会自动出现</p></div>';
+      return;
+    }
+
+    const levelIcons = { error: '❌', warn: '⚠️', info: 'ℹ️', debug: '🔍' };
+
+    list.innerHTML = logs.map(log => {
+      const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+      const data = log.data ? `<span class="log-data">${this.escapeHtml(log.data)}</span>` : '';
+      return `<div class="log-entry log-${log.level}">
+        <span class="log-time">${time}</span>
+        <span class="log-level log-level-${log.level}">${levelIcons[log.level] || ''} ${log.level}</span>
+        <span class="log-module">[${this.escapeHtml(log.module)}]</span>
+        <span class="log-message">${this.escapeHtml(log.message)}${data}</span>
+      </div>`;
+    }).join('');
+  }
+
+  exportLogsFile() {
+    const text = exportLogs();
+    if (!text) {
+      this.showToast('没有日志可导出', 'info');
+      return;
+    }
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `pagewise-logs-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('日志已导出', 'success');
+  }
+
   // ==================== Tab 切换 ====================
 
   switchTab(tabName) {
@@ -818,6 +897,7 @@ class SidebarApp {
       }
     }
     else if (tabName === 'page') this.loadPagePreview();
+    else if (tabName === 'logs') this.loadLogsList();
   }
 
   // ==================== 页面上下文 ====================

@@ -19,6 +19,7 @@
         <button class="tab" data-tab="knowledge" role="tab" aria-selected="false" aria-controls="panelKnowledge">知识库</button>
         <button class="tab" data-tab="page" role="tab" aria-selected="false" aria-controls="panelPage">页面</button>
         <button class="tab" data-tab="settings" role="tab" aria-selected="false" aria-controls="panelSettings">设置</button>
+        <button class="tab" data-tab="logs" role="tab" aria-selected="false" aria-controls="panelLogs">日志</button>
       </nav>
     </header>
 
@@ -391,6 +392,32 @@
         </div>
         <div class="page-preview-images" id="previewImages"></div>
         <div class="page-preview-code" id="previewCode"></div>
+      </div>
+    </div>
+
+    <!-- 日志面板 -->
+    <div class="panel" id="panelLogs" role="tabpanel" aria-label="日志面板">
+      <div class="logs-toolbar">
+        <div class="logs-filters">
+          <select id="logLevelFilter" class="log-select">
+            <option value="all">全部级别</option>
+            <option value="error">❌ Error</option>
+            <option value="warn">⚠️ Warn</option>
+            <option value="info">ℹ️ Info</option>
+            <option value="debug">🔍 Debug</option>
+          </select>
+          <select id="logModuleFilter" class="log-select">
+            <option value="all">全部模块</option>
+          </select>
+        </div>
+        <div class="logs-actions">
+          <button class="btn-icon" id="btnRefreshLogs" title="刷新日志">🔄</button>
+          <button class="btn-icon" id="btnClearLogs" title="清除日志">🗑️</button>
+          <button class="btn-icon" id="btnExportLogs" title="导出日志">📤</button>
+        </div>
+      </div>
+      <div class="logs-list" id="logsList">
+        <div class="empty-state"><p>暂无日志记录</p></div>
       </div>
     </div>
 
