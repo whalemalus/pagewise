@@ -1,20 +1,80 @@
 /* ==================== 基础样式 ==================== */
 
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --bg-tertiary: #f1f3f5;
-  --text-primary: #1a1a1a;
-  --text-secondary: #6b7280;
-  --text-muted: #9ca3af;
-  --border-color: #e5e7eb;
+  /* 色彩系统 — 现代紫色调 */
+  --bg-primary: #fafafa;
+  --bg-secondary: #f4f4f5;
+  --bg-tertiary: #e4e4e7;
+  --bg-elevated: #ffffff;
+  --bg-hover: rgba(99, 102, 241, 0.06);
+  --bg-active: rgba(99, 102, 241, 0.1);
+
+  --text-primary: #18181b;
+  --text-secondary: #71717a;
+  --text-muted: #a1a1aa;
+  --text-inverse: #ffffff;
+
+  --border-color: #e4e4e7;
+  --border-subtle: #f4f4f5;
+
+  /* 主色 — Indigo 渐变 */
   --accent: #6366f1;
   --accent-hover: #4f46e5;
   --accent-light: #eef2ff;
-  --success: #10b981;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  --accent-glow: 0 0 20px rgba(99, 102, 241, 0.15);
+
+  /* 语义色 */
+  --success: #22c55e;
+  --success-light: #f0fdf4;
   --danger: #ef4444;
-  --radius: 8px;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --danger-light: #fef2f2;
+  --warning: #f59e0b;
+  --warning-light: #fffbeb;
+  --info: #3b82f6;
+  --info-light: #eff6ff;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* 阴影 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+  /* 间距 */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* 过渡 */
+  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* 字体 */
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', 'Noto Sans SC', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+
+  /* 字号 */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
 }
 
 * {
@@ -24,8 +84,8 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
-  font-size: 14px;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
   line-height: 1.6;
   color: var(--text-primary);
   background: var(--bg-primary);
@@ -33,6 +93,9 @@ body {
   min-width: 300px;
   height: 100vh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 #app {
@@ -64,14 +127,14 @@ body {
 }
 
 .tab {
-  padding: 4px 12px;
+  padding: 6px 14px;
   border: none;
   background: none;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--text-base);
   cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.15s;
+  border-radius: var(--radius-full);
+  transition: all var(--transition);
 }
 
 .tab:hover {
@@ -123,12 +186,12 @@ body {
   border: none;
   background: none;
   cursor: pointer;
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  transition: background 0.15s;
+  transition: all var(--transition);
 }
 
 .btn-icon:hover {
@@ -185,14 +248,14 @@ body {
 }
 
 .btn-quick {
-  padding: 10px 16px;
-  border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  padding: 12px 16px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
   color: var(--text-primary);
   border-radius: var(--radius);
   cursor: pointer;
-  font-size: 13px;
-  transition: all 0.15s;
+  font-size: var(--text-base);
+  transition: all var(--transition);
   text-align: left;
 }
 
@@ -489,15 +552,15 @@ body {
   width: 32px;
   height: 32px;
   border: none;
-  background: var(--accent);
-  color: white;
-  border-radius: 6px;
+  background: var(--accent-gradient);
+  color: var(--text-inverse);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: all var(--transition);
 }
 
 .btn-send:hover {
@@ -513,15 +576,15 @@ body {
   width: 32px;
   height: 32px;
   border: none;
-  background: #ef4444;
-  color: white;
-  border-radius: 6px;
+  background: var(--danger);
+  color: var(--text-inverse);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  transition: background 0.15s;
+  transition: all var(--transition);
   font-size: 14px;
 }
 
@@ -678,11 +741,12 @@ body {
 }
 
 .skill-card {
-  padding: 14px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   margin-bottom: 10px;
-  transition: all 0.15s;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-xs);
 }
 
 .skill-card:hover {
@@ -1082,10 +1146,11 @@ body {
 }
 
 .evo-stat {
-  padding: 10px;
+  padding: var(--space-3);
   background: var(--bg-secondary);
   border-radius: var(--radius);
-  border: 1px solid var(--border-color);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-xs);
 }
 
 .evo-stat-value {
@@ -1295,14 +1360,14 @@ body {
 }
 
 .btn-sm {
-  padding: 4px 10px;
+  padding: 5px 12px;
   border: 1px solid var(--border-color);
-  background: var(--bg-primary);
+  background: var(--bg-elevated);
   color: var(--text-secondary);
-  border-radius: 6px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition);
 }
 
 .btn-sm:hover {
@@ -1365,12 +1430,13 @@ body {
 }
 
 .knowledge-item {
-  padding: 12px;
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
+  padding: var(--space-4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
   margin-bottom: 8px;
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-xs);
 }
 
 .knowledge-item:hover {
@@ -2154,14 +2220,14 @@ mark.search-highlight {
 
 .btn-primary {
   width: 100%;
-  padding: 10px;
-  background: var(--accent);
-  color: white;
+  padding: 12px;
+  background: var(--accent-gradient);
+  color: var(--text-inverse);
   border: none;
   border-radius: var(--radius);
-  font-size: 14px;
+  font-size: var(--text-md);
   cursor: pointer;
-  transition: background 0.15s;
+  transition: all var(--transition);
 }
 
 .btn-primary:hover {
@@ -2185,12 +2251,12 @@ mark.search-highlight {
 .btn-test {
   padding: 6px 16px;
   border: 1px solid var(--accent);
-  background: var(--bg-primary);
+  background: var(--bg-elevated);
   color: var(--accent);
-  border-radius: 6px;
-  font-size: 13px;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all var(--transition);
   white-space: nowrap;
 }
 
@@ -2216,10 +2282,11 @@ mark.search-highlight {
   color: var(--danger);
 }
 
-/* ==================== Scrollbar ==================== */
+/* ==================== 现代滚动条 ==================== */
 
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -2228,7 +2295,7 @@ mark.search-highlight {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
-  border-radius: 3px;
+  border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
