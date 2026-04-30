@@ -77,6 +77,10 @@ class SidebarApp {
     // 停止回答
     this.abortController = null;
 
+    // 重试：缓存最后一次提问
+    this._lastUserText = '';
+    this._lastContentWithSelection = null;
+
     // 性能优化：分页加载状态
     this._pageSize = 20;
     this._currentPage = 0;
@@ -719,6 +723,33 @@ class SidebarApp {
 
     // 键盘导航：Escape 关闭弹窗
     document.addEventListener('keydown', (e) => {
+      // --- 全局快捷键 ---
+
+      // Ctrl+Enter → 发送消息
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        this.sendMessage();
+        return;
+      }
+
+      // Ctrl+K → 聚焦搜索框
+      if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        if (this.searchInput) {
+          this.searchInput.focus();
+          this.searchInput.select();
+        }
+        return;
+      }
+
+      // Ctrl+N → 清空对话
+      if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        this.clearChat();
+        return;
+      }
+
+      // Escape → 依次关闭弹窗，最后清空输入框
       if (e.key === 'Escape') {
         // 关闭模板弹窗
         if (this.templatePopup && !this.templatePopup.classList.contains('hidden')) {
@@ -747,6 +778,13 @@ class SidebarApp {
         // 关闭技能编辑器
         if (this.skillEditor && !this.skillEditor.classList.contains('hidden')) {
           this.closeSkillEditor();
+          e.stopPropagation();
+          return;
+        }
+        // 清空输入框
+        if (this.userInput && this.userInput.value.trim()) {
+          this.userInput.value = '';
+          this.userInput.style.height = 'auto';
           e.stopPropagation();
           return;
         }
