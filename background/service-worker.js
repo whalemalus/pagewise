@@ -210,6 +210,32 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
     }
 
+    case 'extractPdfViaJs': {
+      const pdfUrl = request.url;
+      if (!pdfUrl) {
+        sendResponse({ success: false, error: '缺少 PDF URL' });
+        return false;
+      }
+      // 动态加载 pdf-extractor 模块
+      import('../lib/pdf-extractor.js')
+        .then(({ PdfExtractor }) => PdfExtractor.extractFromUrl(pdfUrl))
+        .then(result => {
+          logInfo('pdf-extractor', `PDF 提取成功: ${result.numPages} 页, ${result.text.length} 字`);
+          sendResponse({
+            success: true,
+            text: result.text,
+            numPages: result.numPages,
+            metadata: result.metadata,
+            pages: result.pages
+          });
+        })
+        .catch(err => {
+          logError('pdf-extractor', 'PDF 提取失败', { error: err.message, url: pdfUrl });
+          sendResponse({ success: false, error: err.message });
+        });
+      return true;
+    }
+
     case 'openSettings':
       chrome.runtime.openOptionsPage();
       break;

@@ -4,6 +4,24 @@
 
 ---
 
+## [Unreleased]
+
+### 新增
+- **PDF 提取引擎增强（迭代 #8）** — 引入 pdf.js 提升 PDF 文本提取可靠性
+  - `lib/pdf-extractor.js`: PDF 文本提取器模块（PdfExtractor 类）
+  - 使用 pdf.js v3.11.174 (ES Module) 进行可靠 PDF 解析
+  - `extractText(arrayBuffer)`: 从 ArrayBuffer 提取全文 + 元数据
+  - `extractFromUrl(url)`: 通过 URL 获取并提取
+  - background service worker 新增 `extractPdfViaJs` 消息处理
+  - content script 自动 fallback: DOM 提取失败时调用 pdf.js
+  - manifest.json 新增 `web_accessible_resources` 暴露 pdf.js 文件
+  - 9 个单元测试覆盖核心逻辑
+
+### 变更
+- `content/content.js` — extractPdfContent 消息处理增加 pdf.js fallback 路径
+- `sidebar/sidebar.js` — PDF 提取结果显示页数信息
+- `manifest.json` — 新增 web_accessible_resources 配置
+
 ## [1.3.0] - 2026-04-30
 
 ### 新增

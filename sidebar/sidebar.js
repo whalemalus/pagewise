@@ -3661,7 +3661,8 @@ ${readme || '无法提取 README 内容'}
       };
 
       const charCount = content.length;
-      this.addSystemMessage(`✅ 已提取 PDF 内容：${charCount} 字（提取方式：${method}）`);
+      const pageInfo = response.numPages ? ` (${response.numPages} 页)` : '';
+      this.addSystemMessage(`✅ 已提取 PDF 内容：${charCount} 字${pageInfo}（提取方式：${method}）`);
 
       // 页面感知
       const sense = this.pageSense.analyze(this.currentPageContent);

@@ -1436,7 +1436,32 @@
           sendResponse({ error: '不是 PDF 文档页面' });
           break;
         }
-        sendResponse(extractPdfContent());
+        const domResult = extractPdfContent();
+        if (!domResult.needsFallback) {
+          sendResponse(domResult);
+        } else {
+          // DOM 提取失败，通过 background service worker 使用 pdf.js 提取
+          chrome.runtime.sendMessage(
+            { action: 'extractPdfViaJs', url: pdfInfo.pdfUrl },
+            (pdfJsResult) => {
+              if (pdfJsResult?.success) {
+                sendResponse({
+                  content: pdfJsResult.text.slice(0, 50000),
+                  title: document.title?.replace(/\.pdf$/i, '').trim() || pdfJsResult.metadata?.title || 'PDF 文档',
+                  method: 'pdfjs',
+                  needsFallback: false,
+                  pdfUrl: pdfInfo.pdfUrl,
+                  numPages: pdfJsResult.numPages,
+                  metadata: pdfJsResult.metadata,
+                  extractedAt: new Date().toISOString()
+                });
+              } else {
+                // pdf.js 也失败了，返回 DOM 结果（含 fallback 标记）
+                sendResponse(domResult);
+              }
+            }
+          );
+        }
         break;
       }
 

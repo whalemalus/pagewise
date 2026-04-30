@@ -49,6 +49,12 @@
     "128": "icons/icon128.png"
   },
   "options_page": "options/options.html",
+  "web_accessible_resources": [
+    {
+      "resources": ["lib/pdf.min.mjs", "lib/pdf.worker.min.mjs"],
+      "matches": ["<all_urls>"]
+    }
+  ],
   "commands": {
     "_execute_action": {
       "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
