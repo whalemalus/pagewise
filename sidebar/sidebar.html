@@ -628,6 +628,16 @@
           <p class="text-muted" style="font-size:12px;margin-bottom:8px">如果你想重新查看首次使用引导，点击下方按钮。</p>
           <button class="btn-sm" id="btnRetriggerOnboarding" aria-label="重新触发新手引导">重新触发引导</button>
         </div>
+
+        <div class="backup-section">
+          <h3 class="section-title">💾 数据备份</h3>
+          <p class="text-muted" style="font-size:12px;margin-bottom:8px">导出或导入所有设置和知识库数据，方便迁移或备份恢复。</p>
+          <div class="backup-actions" style="display:flex;gap:8px;">
+            <button class="btn-sm" id="btnExportBackup" aria-label="导出备份">📦 导出备份</button>
+            <button class="btn-sm" id="btnImportBackup" aria-label="导入备份">📥 导入备份</button>
+          </div>
+          <input type="file" id="backupFileInput" accept=".json" style="display:none">
+        </div>
       </div>
     </div>
   </div>

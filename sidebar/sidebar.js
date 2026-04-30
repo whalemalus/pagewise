@@ -414,6 +414,11 @@ class SidebarApp {
     this.btnOnboardingNext = document.getElementById('onboardingNext');
     this.btnOnboardingSkip = document.getElementById('onboardingSkip');
     this.btnRetriggerOnboarding = document.getElementById('btnRetriggerOnboarding');
+
+    // 备份导出/导入
+    this.btnExportBackup = document.getElementById('btnExportBackup');
+    this.btnImportBackup = document.getElementById('btnImportBackup');
+    this.backupFileInput = document.getElementById('backupFileInput');
   }
 
   _initMessageRenderer() {
