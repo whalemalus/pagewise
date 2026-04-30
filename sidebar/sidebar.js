@@ -26,6 +26,7 @@ import { onboarding } from '../lib/onboarding.js';
 import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs, recordMetric, getMetrics, getRecentMetrics, getPerformanceStats, clearMetrics } from '../lib/log-store.js';
 import { MessageRenderer } from '../lib/message-renderer.js';
 import { KnowledgePanel } from '../lib/knowledge-panel.js';
+import { getShortcuts, matchShortcut } from '../lib/shortcuts.js';
 
 // ==================== 提供商预设 ====================
 
@@ -109,6 +110,9 @@ class SidebarApp {
     this.reviewCorrect = 0;
     this.reviewTotal = 0;
 
+    // 自定义快捷键配置（R11）
+    this.shortcuts = null;
+
     this.init();
   }
 
@@ -136,6 +140,14 @@ class SidebarApp {
     this.bindElements();
     this._initMessageRenderer();
     this._initKnowledgePanel();
+
+    // R11: 加载自定义快捷键配置
+    try {
+      await this.loadShortcuts();
+    } catch (e) {
+      console.warn('加载快捷键配置失败，使用默认配置:', e);
+    }
+
     this.bindEvents();
     this.initLogsPanel();
     this.loadPageContext();
@@ -794,17 +806,18 @@ class SidebarApp {
 
     // 键盘导航：Escape 关闭弹窗
     document.addEventListener('keydown', (e) => {
-      // --- 全局快捷键 ---
+      // --- 侧边栏内快捷键（R11: 动态匹配自定义配置） ---
+      const sc = this.shortcuts;
 
-      // Ctrl+Enter → 发送消息
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+      // 发送消息
+      if (sc && matchShortcut(e, sc.sendMessage)) {
         e.preventDefault();
         this.sendMessage();
         return;
       }
 
-      // Ctrl+K → 聚焦搜索框
-      if (e.key === 'k' && (e.ctrlKey || e.metaKey)) {
+      // 聚焦搜索框
+      if (sc && matchShortcut(e, sc.focusSearch)) {
         e.preventDefault();
         if (this.searchInput) {
           this.searchInput.focus();
@@ -813,8 +826,8 @@ class SidebarApp {
         return;
       }
 
-      // Ctrl+N → 清空对话
-      if (e.key === 'n' && (e.ctrlKey || e.metaKey)) {
+      // 清空对话
+      if (sc && matchShortcut(e, sc.clearChat)) {
         e.preventDefault();
         this.clearChat();
         return;
@@ -889,6 +902,12 @@ class SidebarApp {
     } else {
       console.warn('[PageWise] No API key found, aiClient not created');
     }
+  }
+
+  /** R11: 加载自定义快捷键配置 */
+  async loadShortcuts() {
+    this.shortcuts = await getShortcuts();
+    console.log('[PageWise] loadShortcuts:', this.shortcuts);
   }
 
   // ==================== 消息监听 ====================
