@@ -258,6 +258,113 @@
     }
   }
 
+  // ==================== 临时高亮（AI 引用定位） ====================
+
+  /** @type {number|null} 当前临时高亮的自动消失定时器 */
+  let _flashTimeout = null;
+
+  /**
+   * 移除页面中所有临时高亮元素（pw-flash-highlight），取消正在运行的定时器
+   * @returns {void}
+   */
+  function clearFlashHighlights() {
+    // 取消自动消失定时器
+    if (_flashTimeout) {
+      clearTimeout(_flashTimeout);
+      _flashTimeout = null;
+    }
+
+    // 移除所有临时高亮元素
+    const flashElements = document.querySelectorAll('.pw-flash-highlight');
+    flashElements.forEach(el => {
+      const parent = el.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(el.textContent), el);
+        parent.normalize();
+      }
+    });
+  }
+
+  /**
+   * 在页面中查找文本，创建临时高亮，3 秒后自动消失并移除 DOM 元素
+   * @param {string} text - 要定位的文本片段
+   * @returns {{ success: boolean, error?: string }}
+   */
+  function flashHighlight(text) {
+    if (!text) {
+      return { success: false, error: '未在页面中找到该内容' };
+    }
+
+    // 1. 清除所有现有临时高亮
+    clearFlashHighlights();
+
+    // 2. 使用 TreeWalker 遍历 document.body 文本节点
+    const excludeTags = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT']);
+    const walker = document.createTreeWalker(
+      document.body,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName;
+          if (excludeTags.has(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.classList.contains('pagewise-highlight')) return NodeFilter.FILTER_REJECT;
+          if (parent.classList.contains('pw-flash-highlight')) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+
+    let node;
+    while ((node = walker.nextNode())) {
+      const idx = node.textContent.indexOf(text);
+      if (idx === -1) continue;
+
+      // 3. 创建 <span class="pw-flash-highlight"> 包裹
+      try {
+        const range = document.createRange();
+        range.setStart(node, idx);
+        range.setEnd(node, idx + text.length);
+
+        const span = document.createElement('span');
+        span.className = 'pw-flash-highlight';
+        range.surroundContents(span);
+
+        // 4. 滚动定位
+        span.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // 5. 3 秒后淡出 + DOM 移除
+        _flashTimeout = setTimeout(() => {
+          span.classList.add('pw-flash-highlight--fading');
+          span.addEventListener('transitionend', () => {
+            const parent = span.parentNode;
+            if (parent) {
+              parent.replaceChild(document.createTextNode(span.textContent), span);
+              parent.normalize();
+            }
+          }, { once: true });
+
+          // 兜底：如果 transitionend 未触发，1 秒后强制移除
+          setTimeout(() => {
+            if (span.parentNode) {
+              const parent = span.parentNode;
+              parent.replaceChild(document.createTextNode(span.textContent), span);
+              parent.normalize();
+            }
+          }, 1000);
+        }, 3000);
+
+        return { success: true };
+      } catch (e) {
+        // range.surroundContents 可能在跨节点选区时失败，继续查找下一个匹配
+        continue;
+      }
+    }
+
+    return { success: false, error: '未在页面中找到该内容' };
+  }
+
   // ==================== 页面语言检测 ====================
 
   /**
@@ -1330,6 +1437,12 @@
           break;
         }
         sendResponse(extractPdfContent());
+        break;
+      }
+
+      case 'locateAndHighlight': {
+        const result = flashHighlight(request.text);
+        sendResponse(result);
         break;
       }
 

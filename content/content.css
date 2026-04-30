@@ -45,6 +45,21 @@
   transform: scale(1.05);
 }
 
+/* AI 引用临时高亮 — 定位标记 */
+.pw-flash-highlight {
+  background: rgba(250, 204, 21, 0.4);
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 2px rgba(250, 204, 21, 0.2);
+  transition: opacity 0.5s ease;
+  outline: 1px dashed rgba(250, 204, 21, 0.6);
+}
+
+/* 淡出阶段 */
+.pw-flash-highlight--fading {
+  opacity: 0;
+}
+
 @keyframes pagewise-fade-in {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }

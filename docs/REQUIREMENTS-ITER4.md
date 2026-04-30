@@ -1,81 +1,147 @@
-# 迭代 #4 需求文档 — 用户体验增强
+# 迭代 #4 需求文档 — 知识库性能优化（索引、分页）
+
+> 最后更新: 2026-04-30
+> 需求来源: TODO.md「知识库性能优化（索引、分页）」+ 竞品分析 MARKET-ANALYSIS.md
+> 前序迭代: 飞轮 R1-R3（错误处理/JSDoc/ESLint）
+> 产品背景: PageWise 的核心差异化是「本地知识库 + AI 理解闭环」（MARKET-ANALYSIS §四），知识库性能直接决定这一护城河的可用性
+
+---
 
 ## 需求概览
 
 | ID | 需求 | 优先级 | 涉及文件 |
 |----|------|--------|----------|
-| R040 | 停止回答按钮 | P0 | sidebar.html, sidebar.js, sidebar.css |
-| R041 | 清空当前会话按钮 | P0 | sidebar.html, sidebar.js, sidebar.css |
-| R042 | 右键提问自动弹出侧边栏 | P0 | background/service-worker.js |
-| R043 | 显示 AI 思考过程 | P0 | sidebar.js, sidebar.css |
+| PERF-1 | 列表页按需分页加载（替代全量加载） | P0 | lib/knowledge-panel.js, sidebar/sidebar.js |
+| PERF-2 | 搜索路径优化（索引预热、缓存策略升级） | P0 | lib/knowledge-base.js |
+| PERF-3 | 内存管理 — 大数据集下内存不溢出 | P1 | lib/knowledge-base.js, lib/knowledge-panel.js |
+| PERF-4 | IDB 查询路径优化（批量按需读取、键游标分页） | P1 | lib/knowledge-base.js |
 
 ---
 
-## R040: 停止回答按钮
+## 1. 用户故事
 
-### 描述
-AI 正在流式回答时，在输入区域显示一个"停止"按钮。点击后中断 fetch 请求，保留已收到的部分回答。
+**S-1 (列表浏览)**: 作为一名积累了 500+ 条知识的技术人员，我希望打开知识库面板时页面立即显示前 10 条，滚动时无缝加载更多，而不是等待全部条目加载完毕后才看到内容。
 
-### 实现方案
-1. 在 `sendMessage()` 开始时创建 `AbortController`，将 `signal` 传递给 `chatStream()`
-2. `chatStream()` 中 fetch 使用 `{ signal }` 参数
-3. 在输入区域添加"停止"按钮（⏹️），AI 回答开始时显示，回答结束/中断时隐藏
-4. 点击停止按钮调用 `abortController.abort()`
-5. catch AbortError 时显示"（已停止）"而不是错误提示
+**S-2 (搜索)**: 作为一名在知识库中搜索关键词的用户，我希望搜索结果在 300ms 内呈现，并且输入过程中不会因重复查询而卡顿，让我能快速找到想要的知识条目。
 
-### UI 要求
-- 按钮位置：输入框右侧，发送按钮旁边
-- 显示时机：AI 开始回答后替换发送按钮
-- 隐藏时机：AI 回答完成或停止后恢复发送按钮
-- 样式：红色系，hover 加深
+**S-3 (内存)**: 作为一名长期使用 PageWise 的用户，我希望知识库增长到 1000+ 条时，侧边栏依然流畅不卡顿，不因为知识积累多而影响日常使用体验。
+
+**S-4 (标签筛选)**: 作为一名通过标签分类知识的用户，我希望点击某个标签时能快速过滤列表，且标签面板的统计数据随时与实际数据保持一致，不会出现已删除标签仍然显示的情况。
 
 ---
 
-## R041: 清空当前会话按钮
+## 2. 验收标准
 
-### 描述
-在对话区域 header（和 📥📤🔄 按钮同一行）添加一个"清空对话"按钮。
+### AC-1: 列表首屏加载 ≤ 200ms（500 条数据场景）
+- **Given** 知识库中有 500 条记录
+- **When** 用户切换到知识库标签页
+- **Then** 首屏 10 条条目在 200ms 内渲染完成，用户可立即浏览；后续条目按需加载（每滚动到底部加载下一批），整体无明显白屏等待
 
-### 实现方案
-1. 在 sidebar.html 的 action-buttons 区域（line 32-34 附近）添加按钮
-2. 点击执行：清空 conversationHistory、清空 chatArea innerHTML、清空 session storage
-3. 复用已有的 `/clear` 命令逻辑
+### AC-2: 搜索响应 ≤ 300ms（1000 条数据场景）
+- **Given** 知识库中有 1000 条记录，倒排索引已预热
+- **When** 用户在搜索框输入关键词并触发搜索（debounce 后）
+- **Then** 搜索结果在 300ms 内返回并渲染；重复搜索同一关键词命中 LRU 缓存，响应 ≤ 50ms
 
-### UI 要求
-- 位置：📤 按钮后面
-- 图标：🗑️
-- 需要确认弹窗（confirm）
+### AC-3: 内存占用可控 — 索引不全量持有条目副本
+- **Given** 知识库中有 1000+ 条记录
+- **When** 倒排索引和 N-gram 索引完成构建
+- **Then** 索引仅存储 `entry_id → Set<word>` 映射，不持有完整条目对象副本；按需通过 ID 从 IndexedDB 检索条目内容；标签/分类/语言统计缓存在数据变更时正确失效并重建
 
----
+### AC-4: 虚拟滚动 + 分页协同 — DOM 节点数量恒定
+- **Given** 知识库中有 1000 条记录
+- **When** 用户滚动知识列表
+- **Then** DOM 中 `.knowledge-item` 节点数量始终 ≤ 可视区域 + 缓冲区（约 15-20 个），不因数据量增长而增加；滚动帧率 ≥ 30fps
 
-## R042: 右键提问自动弹出侧边栏
-
-### 描述
-用户右键选择"向智阅提问"后，侧边栏应自动弹出，不需要手动点击插件图标。
-
-### 实现方案
-检查 `background/service-worker.js` 中的 `contextMenus.onClicked` listener。当前代码（line 38）已经有 `await chrome.sidePanel.open({ tabId: tab.id })`。如果这不起作用，可能是因为：
-1. 需要在 manifest.json 中添加 `sidePanel` 的 `default_path` 配置
-2. 或者 `chrome.sidePanel.open()` 需要在用户手势（user gesture）上下文中调用
-
-**修复方案**：确保 `contextMenus.onClicked` 回调中正确调用 `chrome.sidePanel.open()`。如果 MV3 限制导致无法在 contextMenu 回调中打开 sidePanel，改用消息传递：service-worker 发消息给 content script，content script 调用 `chrome.runtime.sendMessage` 触发打开。
+### AC-5: 去重与关联查询不退化
+- **Given** 知识库中有 500 条记录
+- **When** 保存新条目触发 `findDuplicate()` 或查看条目详情触发 `findRelatedEntries()`
+- **Then** 去重查重性能不低于当前水平（当前全量扫描 500 条 < 50ms）；关联查询在 500 条内 ≤ 100ms；1000 条内 ≤ 200ms
 
 ---
 
-## R043: 显示 AI 思考过程
+## 3. 技术约束
 
-### 描述
-当前 AI 回答时只显示 3 个跳动的点（typing indicator），用户不知道 AI 是否在工作。需要改进为：
-1. 显示"正在思考..."文字（代替 3 个点）
-2. 收到第一个 chunk 后立即开始显示内容（即使只有 1-2 个字）
-3. 如果超过 5 秒没有收到 chunk，显示"仍在等待响应..."
+### 3.1 现有代码基础 — 需要优化的瓶颈点
 
-### 实现方案
-1. 修改 `showLoading()` 方法，返回的 loadingEl 中包含文字"正在思考..."而非 3 个点
-2. 在 `sendMessage()` 的 for await 循环中，第一个 chunk 到达时立即创建 messageEl 并显示
-3. 添加一个 5 秒定时器，如果还没收到 chunk，更新 loading 文字为"仍在等待响应..."
+通过代码审查（2026-04-30），识别出以下具体性能瓶颈：
 
-### UI 要求
-- 思考中：显示 "🤔 正在思考..." 带脉冲动画
-- 等待中：显示 "⏳ 仍在等待响应..." 带脉冲动画
-- 收到响应：立即切换为流式文字显示
+| 瓶颈 | 位置 | 问题 |
+|------|------|------|
+| **全量加载（UI 层）** | `KnowledgePanel.loadKnowledgeList()` knowledge-panel.js L124 | 调用 `getAllEntries(10000)` 一次性将所有条目加载到内存，再客户端做标签/语言过滤；已有 `getEntriesPaged()` 和 `getEntriesPagedByKey()` 但 UI 层未使用 |
+| **搜索后全量切片** | `KnowledgeBase.searchPaged()` knowledge-base.js L873 | 先执行 `search()` 获取全部结果，再 `slice()` 分页，搜索阶段未利用分页 |
+| **去重全量扫描** | `KnowledgeBase.findDuplicate()` knowledge-base.js L139 | 索引未构建时回退 `getAllEntries(10000)` 全量扫描；索引构建后利用索引缩小范围，但候选集仍需从 IDB 逐 cursor 遍历 |
+| **关联全量扫描** | `KnowledgeBase.findRelatedEntries()` knowledge-base.js L1203 | 索引未构建时全量扫描；索引构建后虽缩小候选范围，但仍对所有候选条目逐条计算 bigram 余弦相似度 |
+| **`_getEntriesByIds()` 低效扫描** | knowledge-base.js L555 | 使用 `openCursor()` 遍历整个对象存储来查找指定 ID 的条目，应改为对每个 ID 调用 `store.get(id)` 或使用 IDBKeyRange 批量查询 |
+| **`getAggregations()` 未使用缓存** | knowledge-base.js L611 | 每次调用都重新从 IDB 加载全量条目并遍历聚合，不像 `getAllTags()`/`getAllCategories()`/`getAllLanguages()` 有独立缓存 |
+
+### 3.2 现有可复用的基础
+
+| 已有能力 | 位置 | 说明 |
+|---------|------|------|
+| `getEntriesPaged()` | knowledge-base.js L374 | 已实现基于 cursor + offset 的分页查询，返回 `{ entries, total, page, totalPages }`，但 UI 层未使用 |
+| `getEntriesPagedByKey()` | knowledge-base.js L658 | 已实现高效键游标分页（避免 O(offset) 跳过），使用 `lastCreatedAt` + `lastId` 作为游标键，但 UI 层未使用 |
+| `getTotalCount()` | knowledge-base.js L349 | 已实现 `IDBObjectStore.count()` + 缓存，可复用 |
+| LRU 搜索缓存 | knowledge-base.js `_searchCache` | Map, 最大 10 条，已实现 LRU 淘汰策略，可复用并扩展 |
+| 倒排索引 + N-gram 索引 | knowledge-base.js L473 | 已惰性构建；`_addToIndex()` L488 已实现 ID-only 存储（`_indexWordsById` 持有 `Set<word>`，不持有完整条目），可直接复用 |
+| 虚拟滚动 | knowledge-panel.js L182 | `_initVirtualScroll()` 已实现 IntersectionObserver + spacer 元素机制，但依赖 `_allFilteredEntries`（全量数据在内存） |
+| 索引增量维护 | knowledge-base.js L221, L257, L281 | `saveEntry`/`updateEntry`/`deleteEntry` 均已实现 `_addToIndex()`/`_removeFromIndex()`，无需重新构建 |
+
+### 3.3 性能指标
+
+| 指标 | 当前（估测） | 目标 |
+|------|-------------|------|
+| 500 条首屏渲染 | ~800ms（全量加载 10000 条上限） | ≤ 200ms |
+| 1000 条搜索 | ~500ms（含全量切片开销） | ≤ 300ms |
+| 索引内存（1000 条） | 索引本身 ~8MB（ID-only）；UI 层全量加载 ~7MB | 索引 ≤ 8MB；UI 峰值 ≤ 2MB（仅可视区域） |
+| 滚动帧率（1000 条） | ~20fps（虚拟滚动依赖全量数据） | ≥ 30fps |
+| 索引首次构建（1000 条） | ~1s | ≤ 800ms |
+| 标签筛选切换 | ~300ms（全量加载 + 客户端过滤） | ≤ 100ms |
+
+### 3.4 约束条件
+
+- **不引入外部依赖**: 不引入 Dexie.js、Lunr.js 等第三方库
+- **IndexedDB 版本不变**: `dbVersion` 保持为 1，不触发 `onupgradeneeded`（现有索引 `sourceUrl`/`createdAt`/`tags`/`category` 已满足需求）
+- **API 向后兼容**: `KnowledgeBase` 的公开方法签名（`search`, `getAllEntries`, `saveEntry`, `deleteEntry`, `getEntriesPaged`, `searchPaged` 等）不改变返回类型，内部实现优化
+- **不引入构建工具**: 保持 Chrome 直接加载 ES Modules 的方式
+- **Service Worker 生命周期**: 索引构建需考虑 Service Worker 可能被终止后重建的场景；索引预热不应阻塞其他功能的初始化
+
+---
+
+## 4. 依赖关系
+
+| 依赖项 | 类型 | 说明 |
+|--------|------|------|
+| `lib/knowledge-base.js` | **强依赖** | 核心优化对象：索引构建路径、IDB 查询优化、缓存策略 |
+| `lib/knowledge-panel.js` | **强依赖** | UI 层改造：虚拟滚动对接按需分页 API，替代全量加载 |
+| `sidebar/sidebar.js` | **弱依赖** | 知识库 tab 切换时调用 `loadKnowledgeList()`，需适配新 API |
+| `lib/utils.js` | **弱依赖** | `debounce`/`throttle` 已有实现，搜索优化可直接使用 |
+| 飞轮 R1 (错误处理) | 前置 ✅ | 已完成，确保错误处理模式一致 |
+| 飞轮 R2 (JSDoc) | 前置 ✅ | 已完成，新增/修改函数需补充 JSDoc |
+| 飞轮 R3 (ESLint) | 前置 ✅ | 已完成，代码风格基线已建立 |
+| R003: 知识库存储 | 参考 | 数据模型定义（entries 表结构）不变 |
+| R004: 知识检索 | 参考 | 搜索功能接口不变，内部优化 |
+| R008: 记忆系统 | 参考 | `MemorySystem` 代理 `KnowledgeBase`，`memory.getAllEntries()` 调用链需审查 |
+| R012: 页面高亮关联 | 无关 | 不影响本次优化 |
+
+---
+
+## 5. 术语表
+
+| 术语 | 定义 |
+|------|------|
+| 倒排索引 (Inverted Index) | `Map<word, Set<entry_id>>` 结构，通过词快速定位包含该词的条目 ID |
+| N-gram 索引 | `Map<ngram, Set<entry_id>>` 结构，支持子串匹配的补充索引 |
+| 索引预热 (Index Warm-up) | 在知识库初始化时主动构建索引，而非等到首次搜索时惰性构建 |
+| LRU 缓存 | Least Recently Used 缓存策略，淘汰最久未使用的条目 |
+| 虚拟滚动 | 只渲染可视区域内的 DOM 节点，通过 spacer 元素模拟完整滚动高度 |
+| Cursor-based 分页 | IndexedDB 使用 IDBCursor 逐条遍历，跳过 offset 条后取 pageSize 条 |
+| 键游标分页 (Key Cursor Paging) | 使用 `IDBKeyRange` 跳转到上次最后条目的 key 位置，避免 O(offset) 跳过开销 |
+
+---
+
+## 6. 变更记录
+
+| 日期 | 变更内容 |
+|------|----------|
+| 2026-04-30 | 初始化知识库性能优化需求文档 |
+| 2026-04-30 | 补充 PERF-4（IDB 查询路径优化）；修正瓶颈位置行号；新增 S-4（标签筛选用户故事）；补充可复用基础细节；补充术语「键游标分页」 |

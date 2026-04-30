@@ -4,6 +4,26 @@
 
 ---
 
+## [1.3.0] - 2026-04-30
+
+### 新增
+- **R012: 页面高亮关联** — AI 回答中的引用文本（行内代码、引用块）可点击跳转，在页面中高亮并定位到原文位置
+  - `_injectQuoteAttributes()`: 渲染后扫描 `<code>`（行内）和 `<blockquote>` 元素，注入 `data-quote` 属性和可点击样式
+  - `flashHighlight()`: 在页面中查找文本并创建临时高亮，3 秒后自动淡出并移除 DOM 元素
+  - `clearFlashHighlights()`: 清除所有临时高亮，确保同一时刻最多只有一个临时高亮存活
+  - `locateAndHighlight` 消息协议: content script 新增 action，支持引用跳转定位
+  - CSS 类 `pw-flash-highlight`（临时高亮样式，含淡出动画）和 `pw-quote-link`（可点击引用样式）
+  - 引用文本截取策略: 行内代码完整匹配，blockquote 截取前 200 字符
+  - 34 个单元测试覆盖全部核心逻辑
+
+### 变更
+- `content/content.css` — 新增 `.pw-flash-highlight` 和 `.pw-flash-highlight--fading` 样式
+- `sidebar/sidebar.css` — 新增 `.pw-quote-link` 可点击引用样式
+- `content/content.js` — 新增 `flashHighlight()`、`clearFlashHighlights()` 函数和 `locateAndHighlight` action
+- `lib/message-renderer.js` — 新增 `_injectQuoteAttributes()` 和 `_sendLocateAndHighlight()` 方法
+
+---
+
 ## [1.1.1] - 2026-04-28
 
 ### 修复

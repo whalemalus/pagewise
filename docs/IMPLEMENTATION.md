@@ -1,13 +1,55 @@
-# IMPLEMENTATION.md — 迭代 #3 实施记录
+# IMPLEMENTATION.md — 实施记录
+
+---
+
+## 迭代 #4: R012 页面高亮关联
+
+> **迭代日期**: 2026-04-30
+> **迭代目标**: 页面高亮关联（AI 引用跳转定位）
+> **执行者**: Claude Code (Sub Agent)
+
+### 文件变更统计
+
+| 文件 | 变更类型 | 增/删 |
+|------|----------|-------|
+| `content/content.js` | 修改 | +103 行 |
+| `content/content.css` | 修改 | +19 行 |
+| `lib/message-renderer.js` | 修改 | +52 行 |
+| `sidebar/sidebar.css` | 修改 | +12 行 |
+| `tests/test-highlight-link.js` | 新建 | +340 行 |
+| `docs/CHANGELOG.md` | 修改 | +17 行 |
+| `docs/TODO.md` | 修改 | +1/-1 行 |
+| `docs/DESIGN-ITER4.md` | 已有 | — |
+
+### 功能实现详情
+
+#### 1. 临时高亮（content/content.js） ✅
+- `flashHighlight(text)` — TreeWalker 文本搜索 → `range.surroundContents()` → `scrollIntoView()` → 3s 定时器 → CSS `opacity` 渐隐 → DOM 移除
+- `clearFlashHighlights()` — 清除所有 `.pw-flash-highlight` 元素，取消 `_flashTimeout` 定时器
+- 模块级变量 `_flashTimeout` 确保同一时刻最多只有一个临时高亮
+- `locateAndHighlight` 消息 action 分支，返回 `{ success: true/false }`
+
+#### 2. 引用标记注入（lib/message-renderer.js） ✅
+- `_injectQuoteAttributes(messageDiv)` — 扫描行内 `<code>`（排除 `pre code`）和 `<blockquote>`，注入 `data-quote` 属性和 `pw-quote-link` 类
+- `_sendLocateAndHighlight(text)` — 发送 `locateAndHighlight` 消息到 content script，失败时显示系统消息
+- 在 `_buildAIElement()` 尾部 DOM 构建完成后调用
+
+#### 3. CSS 样式 ✅
+- `content/content.css`: `.pw-flash-highlight`（柔和黄色半透明 + 外发光 + 虚线边框）和 `.pw-flash-highlight--fading`（opacity: 0）
+- `sidebar/sidebar.css`: `.pw-quote-link`（虚线下划线 + hover 高亮背景）
+
+#### 4. 测试 ✅
+- `tests/test-highlight-link.js` — 34 个测试，9 个 suite
+- 覆盖：flashHighlight、clearFlashHighlights、_injectQuoteAttributes（行内代码、引用块、混合场景、pre>code 排除）、消息协议、CSS 类名、文本截取策略、向后兼容性
+
+---
+
+## 迭代 #3: AxonHub 风格 API 配置
 
 > **迭代日期**: 2026-04-26
 > **迭代目标**: AxonHub 风格 API 配置 + 划词提问 + 暗色主题
 > **执行者**: Claude Code (Sub Agent)
 > **管理者**: Plan Agent (Hermes)
-
----
-
-## 变更清单
 
 ### 文件变更统计
 

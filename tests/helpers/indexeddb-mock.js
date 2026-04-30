@@ -146,6 +146,15 @@ class MockIDBObjectStore {
     return req;
   }
 
+  count() {
+    const req = new MockIDBRequest();
+    Promise.resolve().then(() => {
+      req.result = this._records.size;
+      if (req.onsuccess) req.onsuccess({ target: req });
+    });
+    return req;
+  }
+
   openCursor(range, direction) {
     const req = new MockIDBRequest();
     const values = [...this._records.values()];
