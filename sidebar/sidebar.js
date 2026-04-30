@@ -23,6 +23,7 @@ import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
 import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs } from '../lib/log-store.js';
+import { MessageRenderer } from '../lib/message-renderer.js';
 
 // ==================== 提供商预设 ====================
 
@@ -123,6 +124,7 @@ class SidebarApp {
     }
 
     this.bindElements();
+    this._initMessageRenderer();
     this.bindEvents();
     this.initLogsPanel();
     this.loadPageContext();
@@ -379,6 +381,20 @@ class SidebarApp {
     this.btnOnboardingNext = document.getElementById('onboardingNext');
     this.btnOnboardingSkip = document.getElementById('onboardingSkip');
     this.btnRetriggerOnboarding = document.getElementById('btnRetriggerOnboarding');
+  }
+
+  _initMessageRenderer() {
+    this.messageRenderer = new MessageRenderer({
+      chatArea: this.chatArea,
+      escapeHtml: this.escapeHtml.bind(this),
+      scrollToBottom: this.scrollToBottom.bind(this),
+      evolution: this.evolution,
+      currentTabId: this.currentTabId,
+      saveToKnowledgeBase: (text) => this.saveToKnowledgeBase(text),
+      handleBranch: (messageEl) => this.handleBranch(messageEl),
+      runAllCodeBlocks: (messageEl) => this.runAllCodeBlocks(messageEl),
+      executeCodeSandbox: (code, lang, wrapper) => this.executeCodeSandbox(code, lang, wrapper)
+    });
   }
 
   bindEvents() {
@@ -2283,53 +2299,15 @@ class SidebarApp {
   }
 
   addUserMessage(text, selection = '') {
-    const welcome = this.chatArea.querySelector('.welcome-message');
-    if (welcome) welcome.remove();
-
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message message-user';
-    messageDiv.innerHTML = `
-      <div class="message-bubble">
-        ${selection ? `<div class="selection-quote" style="font-size:11px;opacity:0.8;margin-bottom:4px;padding:4px 8px;background:rgba(255,255,255,0.15);border-radius:4px;border-left:2px solid rgba(255,255,255,0.4);">"${this.escapeHtml(selection.slice(0, 200))}"</div>` : ''}
-        ${this.escapeHtml(text)}
-      </div>
-    `;
-    this.chatArea.appendChild(messageDiv);
-    this.scrollToBottom();
+    return this.messageRenderer.addUserMessage(text, selection);
   }
 
   addAIMessage(content) {
-    const hasRunnableCode = /```(?:html|javascript)\n[\s\S]*?```/i.test(content);
-    const messageDiv = document.createElement('div');
-    messageDiv.className = 'message message-ai';
-    messageDiv.innerHTML = `
-      <div class="message-content">
-        <div class="message-bubble">${renderMarkdown(content)}</div>
-        <div class="message-actions">
-          <button class="msg-action-btn" data-action="copy">复制</button>
-          <button class="msg-action-btn" data-action="save">💾 保存</button>
-          <button class="msg-action-btn" data-action="highlight">📌 高亮</button>
-          <button class="msg-action-btn" data-action="branch">🔀 分支</button>
-          ${hasRunnableCode ? '<button class="msg-action-btn msg-action-run" data-action="run">▶️ 运行</button>' : ''}
-        </div>
-      </div>
-    `;
-    messageDiv.querySelectorAll('.msg-action-btn').forEach(btn => {
-      btn.addEventListener('click', () => this.handleMessageAction(btn.dataset.action, messageDiv));
-    });
-    // 为可运行的代码块注入独立的运行按钮
-    if (hasRunnableCode) {
-      this.injectCodeBlockRunButtons(messageDiv, content);
-    }
-    this.chatArea.appendChild(messageDiv);
-    this.scrollToBottom();
-    return messageDiv;
+    return this.messageRenderer.addAIMessage(content);
   }
 
   updateAIMessage(messageEl, content) {
-    const bubble = messageEl.querySelector('.message-bubble');
-    bubble.innerHTML = renderMarkdown(content);
-    this.scrollToBottom();
+    return this.messageRenderer.updateAIMessage(messageEl, content);
   }
 
   addSystemMessage(text) {
