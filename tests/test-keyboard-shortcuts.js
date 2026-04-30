@@ -11,7 +11,7 @@ const html = readFileSync('sidebar/sidebar.html', 'utf-8');
 
 describe('键盘快捷键 — sidebar.js bindEvents()', () => {
   it('Ctrl+Enter 快捷键触发 sendMessage()', () => {
-    assert.ok(js.includes("e.key === 'Enter' && (e.ctrlKey || e.metaKey)"));
+    assert.ok(js.includes("matchShortcut(e, sc.sendMessage)"));
     assert.ok(js.includes('this.sendMessage()'));
   });
 
@@ -23,29 +23,27 @@ describe('键盘快捷键 — sidebar.js bindEvents()', () => {
   });
 
   it('Ctrl+K 聚焦 searchInput', () => {
-    assert.ok(js.includes("e.key === 'k' && (e.ctrlKey || e.metaKey)"));
+    assert.ok(js.includes("matchShortcut(e, sc.focusSearch)"));
     assert.ok(js.includes('this.searchInput.focus()'));
     assert.ok(js.includes('this.searchInput.select()'));
   });
 
   it('Ctrl+N 清空对话', () => {
-    assert.ok(js.includes("e.key === 'n' && (e.ctrlKey || e.metaKey)"));
+    assert.ok(js.includes("matchShortcut(e, sc.clearChat)"));
     assert.ok(js.includes('this.clearChat()'));
   });
 
   it('快捷键处理使用 preventDefault 阻止默认行为', () => {
-    // Ctrl+Enter, Ctrl+K, Ctrl+N 都应该调用 preventDefault
     const matches = js.match(/e\.preventDefault\(\);/g);
-    // 至少 4 次 preventDefault（Ctrl+Enter, Ctrl+K, Ctrl+N, 加上原有 tab 键盘导航）
     assert.ok(matches.length >= 4, `Expected at least 4 preventDefault calls, found ${matches.length}`);
   });
 
-  it('Ctrl+Enter 快捷键在 Escape 之前处理（优先级正确）', () => {
-    const ctrlEnterPos = js.indexOf("e.key === 'Enter' && (e.ctrlKey || e.metaKey)");
+  it('发送消息快捷键在 Escape 之前处理（优先级正确）', () => {
+    const sendMessagePos = js.indexOf("matchShortcut(e, sc.sendMessage)");
     const escapePos = js.indexOf("// Escape → 依次关闭弹窗");
-    assert.ok(ctrlEnterPos > 0, 'Ctrl+Enter handler found');
+    assert.ok(sendMessagePos > 0, 'sendMessage shortcut handler found');
     assert.ok(escapePos > 0, 'Escape handler found');
-    assert.ok(ctrlEnterPos < escapePos, 'Ctrl+Enter should be before Escape');
+    assert.ok(sendMessagePos < escapePos, 'sendMessage shortcut should be before Escape');
   });
 });
 

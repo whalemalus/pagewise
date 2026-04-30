@@ -143,7 +143,6 @@ describe('satisfiesVersion 版本范围', () => {
     assert.equal(satisfiesVersion('1.0.0', '^1.0.0'), true);
     assert.equal(satisfiesVersion('1.5.0', '^1.0.0'), true);
     assert.equal(satisfiesVersion('1.0.5', '^1.0.0'), true);
-    assert.equal(satisfiesVersion('2.0.0', '^1.0.0'), true);
   });
 
   it('caret ^ 不跨 major', () => {

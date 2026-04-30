@@ -98,6 +98,20 @@
         <small>导出的知识库文件可以备份或导入到其他工具中</small>
       </section>
 
+      <section class="section shortcuts-section">
+        <h2>快捷键</h2>
+        <p class="shortcut-hint">自定义侧边栏内的快捷键。点击快捷键后按新的组合键即可修改。</p>
+        <div id="shortcutsList" class="shortcuts-list"></div>
+        <div class="shortcut-actions">
+          <button class="btn-secondary" id="btnResetShortcuts">恢复默认</button>
+        </div>
+        <div class="shortcut-chrome-guide">
+          <p>如需修改浏览器全局快捷键（如打开侧边栏），请前往
+            <a href="chrome://extensions/shortcuts" target="_blank">chrome://extensions/shortcuts</a>
+          </p>
+        </div>
+      </section>
+
       <div class="form-actions">
         <button class="btn-primary" id="btnSave">保存设置</button>
         <div id="saveStatus" class="save-status hidden">设置已保存 ✓</div>

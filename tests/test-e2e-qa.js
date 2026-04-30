@@ -222,8 +222,8 @@ describe('E2E Q&A 链路', () => {
   describe('5. 设置读写一致性', () => {
     it('saveSettings 保存的 key 应与 getSettings 读取的 key 一致', async () => {
       storedData = {};
-      chromeMock.storage.sync.get = mock.fn(() => Promise.resolve(storedData));
-      chromeMock.storage.sync.set = mock.fn((obj) => { Object.assign(storedData, obj); return Promise.resolve(); });
+      chromeMock.storage.sync.get = mock.fn((defaults, cb) => { cb(storedData); });
+      chromeMock.storage.sync.set = mock.fn((obj, cb) => { Object.assign(storedData, obj); if (cb) cb(); });
       
       const { getSettings, saveSettings } = await import('../lib/utils.js');
       

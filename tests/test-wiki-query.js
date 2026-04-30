@@ -203,8 +203,8 @@ describe('selectRelevantPages', () => {
   });
 
   it('should return pages when question has no matching keywords', () => {
-    // All keywords are stop words
-    const result = selectRelevantPages(samplePages, '是什么 是什么');
+    // Pure English stop words — no valid keywords after filtering
+    const result = selectRelevantPages(samplePages, 'the is are');
     // When all keywords are stop words, extractKeywords returns empty → returns first N pages
     assert.ok(result.length > 0);
   });
