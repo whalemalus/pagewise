@@ -22,7 +22,7 @@ import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopS
 import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
-import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs } from '../lib/log-store.js';
+import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs, recordMetric, getMetrics, getRecentMetrics, getPerformanceStats, clearMetrics } from '../lib/log-store.js';
 import { MessageRenderer } from '../lib/message-renderer.js';
 import { KnowledgePanel } from '../lib/knowledge-panel.js';
 
@@ -67,6 +67,9 @@ class SidebarApp {
     // 图片问答状态
     this.selectedImageUrl = null;
     this.pageImages = [];
+
+    // 截图问答状态
+    this.screenshotDataUrl = null;
 
     // 对话分支状态
     this.branches = [];
@@ -200,6 +203,10 @@ class SidebarApp {
     this.pageTitle = document.getElementById('pageTitle');
     this.btnExtract = document.getElementById('btnExtract');
     this.btnRefresh = document.getElementById('btnRefresh');
+    this.btnScreenshot = document.getElementById('btnScreenshot');
+    this.screenshotPreview = document.getElementById('screenshotPreview');
+    this.screenshotThumb = document.getElementById('screenshotThumb');
+    this.btnRemoveScreenshot = document.getElementById('btnRemoveScreenshot');
     this.btnSummarize = document.getElementById('btnSummarize');
     this.btnExplain = document.getElementById('btnExplain');
     this.searchInput = document.getElementById('searchInput');
@@ -525,6 +532,12 @@ class SidebarApp {
     });
     this.btnExtract.addEventListener('click', () => this.extractContent());
     this.btnRefresh.addEventListener('click', () => this.loadPageContext());
+    if (this.btnScreenshot) {
+      this.btnScreenshot.addEventListener('click', () => this.captureScreenshot());
+    }
+    if (this.btnRemoveScreenshot) {
+      this.btnRemoveScreenshot.addEventListener('click', () => this.clearScreenshot());
+    }
     this.btnSummarize.addEventListener('click', () => this.quickSummarize());
     this.btnExplain.addEventListener('click', () => this.quickExplain());
     this.searchInput.addEventListener('input', debounce(() => this.searchKnowledge(), 300));
@@ -1124,6 +1137,7 @@ class SidebarApp {
       this.showToast('无法获取当前标签页', 'error');
       return false;
     }
+    const _extractStart = performance.now();
     try {
       const response = await this._sendMessageWithRetry(this.currentTabId, { action: 'extractContent' });
       if (response && response.content) {
@@ -1327,6 +1341,58 @@ class SidebarApp {
     // 已知支持 vision 的模型关键词
     const visionKeywords = ['gpt-4o', 'gpt-4-turbo', 'gpt-4-vision', 'claude-sonnet', 'claude-opus', 'claude-haiku'];
     return visionKeywords.some(kw => model.includes(kw));
+  }
+
+  /**
+   * 截取当前可见标签页的截图并显示预览
+   */
+  async captureScreenshot() {
+    if (!this.supportsVision()) {
+      this.showToast('⚠️ 当前模型不支持图片理解，请切换到支持 vision 的模型', 'warn');
+      return;
+    }
+
+    try {
+      // 获取当前窗口 ID
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab) {
+        this.showToast('无法获取当前标签页', 'error');
+        return;
+      }
+
+      // 使用 captureVisibleTab 捕获截图
+      const dataUrl = await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' });
+      if (!dataUrl) {
+        this.showToast('截图失败', 'error');
+        return;
+      }
+
+      this.screenshotDataUrl = dataUrl;
+
+      // 显示预览
+      if (this.screenshotPreview && this.screenshotThumb) {
+        this.screenshotThumb.src = dataUrl;
+        this.screenshotPreview.classList.remove('hidden');
+      }
+
+      this.showToast('📸 截图已捕获，输入问题后发送即可', 'success');
+    } catch (e) {
+      console.error('[PageWise] captureScreenshot failed:', e);
+      this.showToast(`截图失败: ${e.message}`, 'error');
+    }
+  }
+
+  /**
+   * 清除截图预览和数据
+   */
+  clearScreenshot() {
+    this.screenshotDataUrl = null;
+    if (this.screenshotPreview) {
+      this.screenshotPreview.classList.add('hidden');
+    }
+    if (this.screenshotThumb) {
+      this.screenshotThumb.src = '';
+    }
   }
 
   showSkillSuggestions(suggestions) {
@@ -6139,16 +6205,20 @@ ${sendContent}
     try {
       const shouldShow = await onboarding.shouldShowOnboarding();
       if (shouldShow) {
-        this.showOnboarding();
+        await this.showOnboarding();
       }
     } catch (e) {
       // 静默处理
     }
   }
 
-  /** 显示引导覆盖层 */
-  showOnboarding() {
-    this.onboardingSteps = onboarding.getStepConfig();
+  /** 显示引导覆盖层（自动检测 API 配置并跳过配置步骤） */
+  async showOnboarding() {
+    try {
+      this.onboardingSteps = await onboarding.getRecommendedSteps();
+    } catch (e) {
+      this.onboardingSteps = onboarding.getStepConfig();
+    }
     this.onboardingStep = 0;
     this.onboardingActive = true;
     this.renderOnboardingStep();
@@ -6171,7 +6241,7 @@ ${sendContent}
     this.onboardingTitle.textContent = step.title;
     this.onboardingDescription.textContent = step.description;
 
-    // 更新步骤指示器
+    // 进度指示器：显示 "步骤 X/Y"
     this.onboardingStepsContainer.innerHTML = '';
     this.onboardingSteps.forEach((_, idx) => {
       const dot = document.createElement('div');
@@ -6181,12 +6251,55 @@ ${sendContent}
       this.onboardingStepsContainer.appendChild(dot);
     });
 
-    // 高亮区域提示
-    if (step.highlight) {
+    // 添加进度文字
+    const progressText = document.createElement('span');
+    progressText.className = 'onboarding-progress-text';
+    progressText.textContent = `${this.onboardingStep + 1} / ${this.onboardingSteps.length}`;
+    progressText.style.cssText = 'font-size:12px;color:var(--text-muted,#888);margin-left:8px;vertical-align:middle;';
+    this.onboardingStepsContainer.appendChild(progressText);
+
+    // 高亮区域提示和测试连接步骤
+    if (step.id === 'test-connection') {
+      this.onboardingHighlight.innerHTML = `
+        <div style="text-align:center;padding:8px">
+          <button id="onboardingTestBtn" style="padding:8px 16px;border:none;border-radius:6px;background:var(--accent-color,#4A90D9);color:#fff;cursor:pointer;font-size:13px">
+            🔗 测试 API 连接
+          </button>
+          <p id="onboardingTestResult" style="margin-top:8px;font-size:12px;color:var(--text-muted,#888)"></p>
+        </div>`;
+      // Bind test button
+      const testBtn = document.getElementById('onboardingTestBtn');
+      if (testBtn) {
+        testBtn.addEventListener('click', () => this._testAPIConnection());
+      }
+    } else if (step.id === 'first-question') {
+      // 显示示例问题
+      const sampleQ = onboarding.getSampleQuestion();
+      this.onboardingHighlight.innerHTML = `
+        <div style="text-align:center;padding:8px">
+          <p style="font-size:12px;color:var(--text-muted,#888);margin:0 0 8px 0">试试这个问题：</p>
+          <button class="onboarding-sample-btn" style="padding:8px 12px;border:1px solid var(--border-color,#ddd);border-radius:8px;background:var(--bg-secondary,#f5f5f5);cursor:pointer;font-size:13px;color:var(--text-primary,#333);max-width:100%;text-align:left;line-height:1.4">
+            ${this._escapeHtml ? this._escapeHtml(sampleQ) : sampleQ}
+          </button>
+        </div>`;
+      // Bind sample question button
+      const sampleBtn = this.onboardingHighlight.querySelector('.onboarding-sample-btn');
+      if (sampleBtn) {
+        sampleBtn.addEventListener('click', () => {
+          this.onboardingComplete();
+          // Insert sample question into input if available
+          const chatInput = document.getElementById('chatInput') || document.getElementById('messageInput');
+          if (chatInput) {
+            chatInput.value = sampleQ;
+            chatInput.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        });
+      }
+    } else if (step.highlight) {
       const targetPanel = document.getElementById(step.highlight);
       if (targetPanel) {
         const panelName = step.highlight === 'panelSettings' ? '⚙️ 设置面板' : '💬 问答面板';
-        this.onboardingHighlight.innerHTML = `<p style="text-align:center;font-size:12px;color:var(--text-muted);margin:0">引导你前往: <strong>${panelName}</strong></p>`;
+        this.onboardingHighlight.innerHTML = `<p style="text-align:center;font-size:12px;color:var(--text-muted,#888);margin:0">引导你前往: <strong>${panelName}</strong></p>`;
       } else {
         this.onboardingHighlight.innerHTML = '';
       }
@@ -6194,9 +6307,45 @@ ${sendContent}
       this.onboardingHighlight.innerHTML = '';
     }
 
-    // 更新按钮文本
+    // 更新按钮文本和跳过按钮可见性
     const isLast = this.onboardingStep === this.onboardingSteps.length - 1;
     this.btnOnboardingNext.textContent = isLast ? '开始使用' : '下一步';
+
+    // 根据步骤配置显示/隐藏跳过按钮
+    if (step.canSkip === false) {
+      this.btnOnboardingSkip.style.display = 'none';
+    } else {
+      this.btnOnboardingSkip.style.display = '';
+    }
+  }
+
+  /** 测试 API 连接（在 onboarding 中） */
+  async _testAPIConnection() {
+    const resultEl = document.getElementById('onboardingTestResult');
+    const testBtn = document.getElementById('onboardingTestBtn');
+    if (!resultEl) return;
+
+    resultEl.textContent = '测试中...';
+    resultEl.style.color = 'var(--text-muted,#888)';
+    if (testBtn) testBtn.disabled = true;
+
+    try {
+      // Try to get settings and make a test call
+      const { getSettings } = await import('../lib/utils.js');
+      const settings = await getSettings();
+      if (!settings.apiKey) {
+        resultEl.textContent = '❌ 未检测到 API Key，请先在设置中配置';
+        resultEl.style.color = '#e74c3c';
+        return;
+      }
+      resultEl.textContent = '✅ API Key 已配置，连接设置看起来正常！';
+      resultEl.style.color = '#27ae60';
+    } catch (e) {
+      resultEl.textContent = '⚠️ 无法验证连接，请确认设置页中的配置';
+      resultEl.style.color = '#f39c12';
+    } finally {
+      if (testBtn) testBtn.disabled = false;
+    }
   }
 
   /** 引导 - 下一步 */

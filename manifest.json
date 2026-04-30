@@ -8,7 +8,8 @@
     "storage",
     "sidePanel",
     "contextMenus",
-    "tabs"
+    "tabs",
+    "activeTab"
   ],
   "host_permissions": [
     "https://api.anthropic.com/*",

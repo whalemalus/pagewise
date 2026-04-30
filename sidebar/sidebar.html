@@ -55,6 +55,7 @@
         <span class="page-title" id="pageTitle">加载中...</span>
       </div>
       <div class="page-actions">
+        <button class="btn-icon" id="btnScreenshot" title="截图提问" aria-label="截图提问">📸</button>
         <button class="btn-icon" id="btnExtract" title="提取页面内容" aria-label="提取页面内容">📥</button>
         <button class="btn-icon" id="btnRefresh" title="刷新" aria-label="刷新页面">🔄</button>
         <button class="btn-icon" id="btnHistoryHeader" title="历史对话" aria-label="历史对话">🕐</button>
@@ -177,6 +178,13 @@
 
       <!-- 输入区域 -->
       <div class="input-area">
+        <!-- 截图预览 -->
+        <div class="screenshot-preview hidden" id="screenshotPreview">
+          <img class="screenshot-thumb" id="screenshotThumb" alt="截图预览" />
+          <span class="screenshot-label">📸 截图已附加</span>
+          <button class="btn-icon screenshot-remove" id="btnRemoveScreenshot" title="移除截图" aria-label="移除截图">&times;</button>
+        </div>
+
         <!-- 模板工具栏 -->
         <div class="template-toolbar">
           <button class="btn-template" id="btnTemplate" title="Prompt 模板" aria-label="打开 Prompt 模板">📋 模板</button>
