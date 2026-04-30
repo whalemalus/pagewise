@@ -190,6 +190,21 @@ class MockIDBObjectStore {
     });
     return req;
   }
+
+  /**
+   * 清除 store 中所有记录
+   * @returns {MockIDBRequest}
+   */
+  clear() {
+    const req = new MockIDBRequest();
+    this._records.clear();
+    this._nextId = 1;
+    Promise.resolve().then(() => {
+      req.result = undefined;
+      if (req.onsuccess) req.onsuccess({ target: req });
+    });
+    return req;
+  }
 }
 
 /** 简易 IDBIndex */

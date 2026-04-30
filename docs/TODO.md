@@ -113,7 +113,7 @@
 
 ### Level 2 — 知识编译引擎（中等，需要迭代）
 
-- [ ] **L2.1 Q&A 自动分类** — 每次 AI 回答后，自动识别并标记涉及的实体/概念
+- [x] **L2.1 Q&A 自动分类** — 每次 AI 回答后，自动识别并标记涉及的实体/概念
   - 在现有 tags 基础上，增加 entity 和 concept 维度
   - IndexedDB schema 扩展: 新增 `entities` 和 `concepts` objectStore
   - 分类结果在知识面板中可视化显示
