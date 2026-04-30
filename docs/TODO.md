@@ -141,7 +141,7 @@
 
 ### Level 3 — LLM Wiki 浏览器（完整，需要架构升级）
 
-- [ ] **L3.1 Wiki 浏览模式** — 在 PageWise 侧边栏新增「Wiki」标签页
+- [x] **L3.1 Wiki 浏览模式** — 在 PageWise 侧边栏新增「Wiki」标签页
   - 浏览 wiki 页面（实体/概念/对比/Q&A）
   - 支持 `[[wikilinks]]` 点击跳转
   - 页面内搜索
