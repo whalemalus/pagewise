@@ -972,8 +972,9 @@ class SidebarApp {
     // 清除按钮
     document.getElementById('btnClearLogs')?.addEventListener('click', () => {
       clearLogStore();
+      clearMetrics();
       this.loadLogsList();
-      this.showToast('日志已清除', 'success');
+      this.showToast('日志和性能指标已清除', 'success');
     });
     // 导出按钮
     document.getElementById('btnExportLogs')?.addEventListener('click', () => this.exportLogsFile());
@@ -1156,6 +1157,12 @@ class SidebarApp {
         if (suggestions.length > 0) {
           this.showSkillSuggestions(suggestions);
         }
+
+        // 记录内容提取耗时
+        recordMetric('extraction', performance.now() - _extractStart, {
+          contentLength: response.content.length,
+          codeBlocks: response.codeBlocks?.length || 0
+        });
 
         return true;
       }
@@ -2227,23 +2234,31 @@ class SidebarApp {
       // 构建用户消息（支持 vision 图片附加）
       const promptText = this.aiClient.buildPageQuestionPrompt(contentWithSelection, text);
       let userMessage;
-      if (this.selectedImageUrl) {
+
+      // 收集需要附加的图片（页面图片 或 截图）
+      const imageUrl = this.selectedImageUrl || this.screenshotDataUrl;
+      if (imageUrl) {
         if (!this.supportsVision()) {
           this.addSystemMessage('⚠️ 当前模型不支持图片理解，请切换到支持 vision 的模型（如 GPT-4o、Claude Sonnet 等）');
           this.selectedImageUrl = null;
+          this.clearScreenshot();
           return;
         }
         userMessage = {
           role: 'user',
           content: [
             { type: 'text', text: promptText },
-            { type: 'image_url', image_url: { url: this.selectedImageUrl } }
+            { type: 'image_url', image_url: { url: imageUrl } }
           ]
         };
         this.selectedImageUrl = null; // 用完后清除
+        this.clearScreenshot(); // 清除截图预览
       } else {
         userMessage = { role: 'user', content: promptText };
       }
+
+      // 记录 API 调用开始时间
+      const _apiStart = performance.now();
 
       for await (const chunk of this.aiClient.chatStream(
         [
@@ -2252,13 +2267,36 @@ class SidebarApp {
         ],
         { systemPrompt: enhancedSystemPrompt, signal: this.abortController.signal }
       )) {
-        fullResponse += chunk;
         if (!messageEl) {
+          // 记录首个 chunk 到达的时间（Time to First Token）
+          recordMetric('api', performance.now() - _apiStart, {
+            type: 'ttft',
+            model: this.settings.model
+          });
           loadingEl.remove();
+          const _renderStart = performance.now();
           messageEl = this.addAIMessage('');
+          // 记录首次渲染耗时
+          recordMetric('rendering', performance.now() - _renderStart, { type: 'first' });
         }
+        fullResponse += chunk;
+        const _updateStart = performance.now();
         this.updateAIMessage(messageEl, fullResponse);
+        // 记录增量渲染耗时（仅当响应足够长时记录，避免过多指标）
+        if (fullResponse.length % 500 < chunk.length) {
+          recordMetric('rendering', performance.now() - _updateStart, {
+            type: 'update',
+            length: fullResponse.length
+          });
+        }
       }
+
+      // 记录完整 API 耗时
+      recordMetric('api', performance.now() - _apiStart, {
+        type: 'total',
+        model: this.settings.model,
+        responseLength: fullResponse.length
+      });
 
       // 检查是否有技能调用指令
       await this.handleSkillCalls(fullResponse, contentWithSelection);

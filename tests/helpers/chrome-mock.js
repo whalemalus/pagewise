@@ -89,6 +89,10 @@ export function createTabsMock() {
       if (callback) callback(tab);
       return Promise.resolve(tab);
     },
+    captureVisibleTab: (windowId, options) => {
+      // 返回一个假的 base64 PNG data URL
+      return Promise.resolve('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==');
+    },
     _tabs: tabs,
     _reset: () => { tabs.length = 0; nextTabId = 1; },
   };
