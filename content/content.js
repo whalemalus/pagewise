@@ -258,6 +258,42 @@
     }
   }
 
+  // ==================== 页面语言检测 ====================
+
+  /**
+   * 检测页面内容的语言（content script 内联版本）
+   * @param {string} text - 页面文本
+   * @returns {'zh' | 'en' | 'other'}
+   */
+  function detectPageLanguage(text) {
+    if (!text || typeof text !== 'string') return 'other';
+    const sample = text.slice(0, 2000);
+    let cjkCount = 0;
+    let latinCount = 0;
+    let totalLetters = 0;
+
+    for (const char of sample) {
+      const code = char.codePointAt(0);
+      if ((code >= 0x4E00 && code <= 0x9FFF) ||
+          (code >= 0x3400 && code <= 0x4DBF) ||
+          (code >= 0xF900 && code <= 0xFAFF)) {
+        cjkCount++;
+        totalLetters++;
+      } else if ((code >= 0x0041 && code <= 0x024F) ||
+                 (code >= 0x1E00 && code <= 0x1EFF)) {
+        latinCount++;
+        totalLetters++;
+      }
+    }
+
+    if (totalLetters === 0) return 'other';
+    const cjkRatio = cjkCount / totalLetters;
+    const latinRatio = latinCount / totalLetters;
+    if (cjkRatio >= 0.3) return 'zh';
+    if (latinRatio >= 0.5) return 'en';
+    return 'other';
+  }
+
   // ==================== 页面内容提取 ====================
 
   /**
@@ -295,12 +331,16 @@
     // 提取页面元信息
     const meta = extractMeta();
 
+    // 检测页面语言
+    const pageLanguage = detectPageLanguage(paragraphs.join('\n\n'));
+
     return {
       url,
       title,
       content: paragraphs.join('\n\n'),
       codeBlocks,
       meta,
+      language: pageLanguage,
       extractedAt: new Date().toISOString(),
       isYouTube: isYouTubeVideo()
     };

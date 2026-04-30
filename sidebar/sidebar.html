@@ -31,6 +31,7 @@
         <button class="tab" data-tab="knowledge" role="tab" aria-selected="false" aria-controls="panelKnowledge">
           <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
           <span>知识</span>
+          <span class="review-badge hidden" id="reviewBadge">0</span>
         </button>
         <button class="tab" data-tab="page" role="tab" aria-selected="false" aria-controls="panelPage">
           <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
@@ -107,15 +108,38 @@
 
           <!-- 复习卡片 -->
           <div class="review-card" id="reviewCard">
-            <div class="review-card-question" id="reviewQuestion"></div>
+            <div class="review-card-inner" id="reviewCardInner">
+              <div class="review-card-front">
+                <div class="review-card-question" id="reviewQuestion"></div>
+              </div>
+              <div class="review-card-back">
+                <div class="review-card-answer" id="reviewAnswer"></div>
+              </div>
+            </div>
             <button class="btn-show-answer" id="btnShowAnswer" aria-label="显示答案">显示答案</button>
-            <div class="review-card-answer hidden" id="reviewAnswer"></div>
             <div class="review-rating hidden" id="reviewRating">
-              <p class="rating-label">你记住了吗？</p>
+              <p class="rating-label">请选择你的掌握程度</p>
               <div class="rating-buttons">
-                <button class="btn-rate btn-rate-forgot" data-quality="1" aria-label="忘记">😰 忘记</button>
-                <button class="btn-rate btn-rate-fuzzy" data-quality="3" aria-label="模糊">🤔 模糊</button>
-                <button class="btn-rate btn-rate-remembered" data-quality="5" aria-label="记住">😊 记住</button>
+                <button class="btn-rate btn-rate-again" data-quality="1" data-difficulty="again" aria-label="重来">
+                  <span class="rate-emoji">😰</span>
+                  <span class="rate-label">重来</span>
+                  <span class="rate-hint">1天</span>
+                </button>
+                <button class="btn-rate btn-rate-hard" data-quality="2" data-difficulty="hard" aria-label="困难">
+                  <span class="rate-emoji">🤔</span>
+                  <span class="rate-label">困难</span>
+                  <span class="rate-hint">1天</span>
+                </button>
+                <button class="btn-rate btn-rate-good" data-quality="3" data-difficulty="good" aria-label="良好">
+                  <span class="rate-emoji">😊</span>
+                  <span class="rate-label">良好</span>
+                  <span class="rate-hint">按计划</span>
+                </button>
+                <button class="btn-rate btn-rate-easy" data-quality="5" data-difficulty="easy" aria-label="简单">
+                  <span class="rate-emoji">😄</span>
+                  <span class="rate-label">简单</span>
+                  <span class="rate-hint">加倍</span>
+                </button>
               </div>
             </div>
           </div>
@@ -125,6 +149,16 @@
             <div class="summary-icon">🎉</div>
             <h3>复习完成！</h3>
             <div class="summary-stats" id="summaryStats"></div>
+            <div class="streak-display hidden" id="streakDisplay">
+              <div class="streak-flame">🔥</div>
+              <div class="streak-info">
+                <span class="streak-count" id="streakCount">0</span>
+                <span class="streak-label">天连续复习</span>
+              </div>
+              <div class="streak-best hidden" id="streakBest">
+                最长：<span id="streakBestCount">0</span>天
+              </div>
+            </div>
             <button class="btn-review-done" id="btnReviewDone" aria-label="完成复习">完成</button>
           </div>
         </div>
@@ -544,13 +578,39 @@
         <div class="stats-section">
           <h3 class="section-title">📊 使用统计</h3>
           <div class="stats-grid" id="statsGrid">加载中...</div>
+          <div class="stats-streak" id="statsStreak" style="display:none">
+            <div class="stats-streak-badge">
+              <span class="stats-streak-icon">🔥</span>
+              <span class="stats-streak-count" id="statsStreakCount">0</span>
+              <span class="stats-streak-label">天连续学习</span>
+            </div>
+          </div>
+          <div class="stats-qa-count" id="statsQACount" style="display:none">
+            <div class="stats-qa-badge">
+              <span class="stats-qa-icon">💬</span>
+              <span class="stats-qa-number" id="statsQANumber">0</span>
+              <span class="stats-qa-label">条 Q&A 知识</span>
+            </div>
+          </div>
           <div class="stats-skills">
             <h4 class="stats-subtitle">🏆 常用技能 Top 5</h4>
             <div class="stats-skills-list" id="statsSkillsList">暂无数据</div>
           </div>
+          <div class="stats-tags">
+            <h4 class="stats-subtitle">🏷️ 热门标签 Top 5</h4>
+            <div class="stats-tags-chart" id="statsTagsChart">暂无数据</div>
+          </div>
+          <div class="stats-growth">
+            <h4 class="stats-subtitle">📈 知识增长趋势（按周）</h4>
+            <div class="stats-growth-chart" id="statsGrowthChart">暂无数据</div>
+          </div>
           <div class="stats-trend">
-            <h4 class="stats-subtitle">📈 最近 7 天趋势</h4>
+            <h4 class="stats-subtitle">📊 最近 7 天使用趋势</h4>
             <div class="stats-trend-chart" id="statsTrendChart">暂无数据</div>
+          </div>
+          <div class="stats-wordcloud">
+            <h4 class="stats-subtitle">☁️ 知识词云</h4>
+            <div class="stats-wordcloud-container" id="statsWordCloud">暂无数据</div>
           </div>
           <button class="btn-sm btn-danger" id="btnResetStats" style="margin-top:10px" aria-label="重置统计数据">重置统计数据</button>
         </div>

@@ -1550,6 +1550,202 @@ body {
   text-align: right;
 }
 
+/* Learning Streak Badge */
+.stats-streak {
+  margin-bottom: 12px;
+}
+
+.stats-streak-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #ff6b35, #f7c948);
+  border-radius: var(--radius);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3);
+}
+
+.stats-streak-icon {
+  font-size: 20px;
+}
+
+.stats-streak-count {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.stats-streak-label {
+  font-size: 13px;
+  opacity: 0.9;
+}
+
+/* Q&A Count Badge */
+.stats-qa-count {
+  margin-bottom: 12px;
+}
+
+.stats-qa-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.stats-qa-icon {
+  font-size: 18px;
+}
+
+.stats-qa-number {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--accent);
+}
+
+.stats-qa-label {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Tags Bar Chart */
+.stats-tags {
+  margin-bottom: 16px;
+}
+
+.stats-tags-chart {
+  font-size: 12px;
+}
+
+.stats-tag-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.stats-tag-name {
+  width: 70px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+
+.stats-tag-bar-wrap {
+  flex: 1;
+  height: 16px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.stats-tag-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #3498db);
+  border-radius: 3px;
+  min-width: 2px;
+  transition: width 0.3s ease;
+}
+
+.stats-tag-count {
+  width: 30px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Growth Chart (Vertical Bars) */
+.stats-growth {
+  margin-bottom: 16px;
+}
+
+.stats-growth-chart {
+  padding: 4px 0;
+}
+
+.stats-growth-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 80px;
+  padding: 0 2px;
+}
+
+.stats-growth-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  justify-content: flex-end;
+}
+
+.stats-growth-bar-val {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  font-weight: 600;
+}
+
+.stats-growth-bar {
+  width: 100%;
+  max-width: 28px;
+  background: linear-gradient(180deg, #2ecc71, #27ae60);
+  border-radius: 3px 3px 0 0;
+  min-height: 3px;
+  transition: height 0.3s ease;
+}
+
+.stats-growth-label {
+  font-size: 9px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Word Cloud */
+.stats-wordcloud {
+  margin-bottom: 12px;
+}
+
+.stats-wordcloud-container {
+  padding: 8px 4px;
+}
+
+.stats-wordcloud-words {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.6;
+}
+
+.stats-wordcloud-word {
+  display: inline-block;
+  font-weight: 500;
+  cursor: default;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+
+.stats-wordcloud-word:hover {
+  opacity: 1 !important;
+}
+
 .knowledge-toolbar {
   display: flex;
   flex-wrap: wrap;
@@ -3787,7 +3983,32 @@ mark.search-highlight {
 }
 
 /* ==================== Spaced Repetition / Review ==================== */
+/* Review Badge on Knowledge Tab */
+.review-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 10px;
+  margin-left: 4px;
+  line-height: 1;
+  animation: badgePulse 2s ease-in-out infinite;
+}
 
+.review-badge.hidden {
+  display: none !important;
+}
+
+@keyframes badgePulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
 .review-banner {
   display: flex;
   align-items: center;
@@ -3877,7 +4098,7 @@ mark.search-highlight {
   color: var(--text-muted);
 }
 
-/* Review Card */
+/* Review Card - Flip Animation */
 .review-card {
   flex: 1;
   display: flex;
@@ -3885,6 +4106,44 @@ mark.search-highlight {
   align-items: center;
   justify-content: center;
   padding: 24px 16px;
+  perspective: 1000px;
+}
+
+.review-card-inner {
+  position: relative;
+  width: 100%;
+  min-height: 180px;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-style: preserve-3d;
+}
+
+.review-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.review-card-front,
+.review-card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  width: 100%;
+}
+
+.review-card-front {
+  z-index: 2;
+}
+
+.review-card-back {
+  transform: rotateY(180deg);
+  display: none;
+}
+
+.review-card-inner.flipped .review-card-front {
+  display: none;
+}
+
+.review-card-inner.flipped .review-card-back {
+  display: block;
+  animation: fadeIn 0.3s ease 0.3s both;
 }
 
 .review-card-question {
@@ -3956,17 +4215,19 @@ mark.search-highlight {
 }
 
 .btn-rate {
-  padding: 12px 20px;
+  padding: 10px 12px;
   border: 2px solid var(--border-color);
   background: var(--bg-primary);
   border-radius: 10px;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
 }
 
 .btn-rate:hover {
@@ -3974,19 +4235,44 @@ mark.search-highlight {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.btn-rate-forgot:hover {
+.btn-rate:active {
+  transform: translateY(0);
+}
+
+.rate-emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.rate-label {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.rate-hint {
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+.btn-rate-again:hover {
   border-color: var(--danger);
   background: #fef2f2;
 }
 
-.btn-rate-fuzzy:hover {
+.btn-rate-hard:hover {
   border-color: #f59e0b;
   background: #fffbeb;
 }
 
-.btn-rate-remembered:hover {
+.btn-rate-good:hover {
   border-color: var(--success);
   background: #f0fdf4;
+}
+
+.btn-rate-easy:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
 }
 
 /* Review Summary */
@@ -4049,6 +4335,78 @@ mark.search-highlight {
   background: var(--accent-hover);
 }
 
+/* Streak Display */
+.streak-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 16px 0;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-radius: 12px;
+  border: 1px solid #f59e0b;
+}
+
+.streak-display.hidden {
+  display: none !important;
+}
+
+.streak-flame {
+  font-size: 36px;
+  animation: flameFlicker 1.5s ease-in-out infinite;
+}
+
+@keyframes flameFlicker {
+  0%, 100% { transform: scale(1) rotate(-3deg); }
+  50% { transform: scale(1.1) rotate(3deg); }
+}
+
+.streak-info {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.streak-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #b45309;
+}
+
+.streak-label {
+  font-size: 14px;
+  color: #92400e;
+  font-weight: 500;
+}
+
+.streak-best {
+  font-size: 12px;
+  color: #a16207;
+  opacity: 0.8;
+}
+
+.streak-best.hidden {
+  display: none;
+}
+
+[data-theme="dark"] .streak-display {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 100%);
+  border-color: #b45309;
+}
+
+[data-theme="dark"] .streak-count {
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .streak-label {
+  color: #fcd34d;
+}
+
+[data-theme="dark"] .streak-best {
+  color: #d97706;
+}
+
 /* Dark theme support */
 [data-theme="dark"] .review-banner {
   background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
@@ -4069,16 +4427,20 @@ mark.search-highlight {
   border-color: #374151;
 }
 
-[data-theme="dark"] .btn-rate-forgot:hover {
+[data-theme="dark"] .btn-rate-again:hover {
   background: #450a0a;
 }
 
-[data-theme="dark"] .btn-rate-fuzzy:hover {
+[data-theme="dark"] .btn-rate-hard:hover {
   background: #451a03;
 }
 
-[data-theme="dark"] .btn-rate-remembered:hover {
+[data-theme="dark"] .btn-rate-good:hover {
   background: #052e16;
+}
+
+[data-theme="dark"] .btn-rate-easy:hover {
+  background: #172554;
 }
 
 /* ==================== Learning Path ==================== */

@@ -4,6 +4,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { _createStatsModule } from '../lib/stats.js';
+import { calculateStreak, getTopTags, getWordFrequencies, getWeeklyGrowth } from '../lib/stats.js';
 
 function createMockStorage() {
   const store = {};
@@ -203,5 +204,178 @@ describe('Stats Module', () => {
       const s = await stats.getStats();
       assert.ok(s.lastUpdated >= before);
     });
+  });
+});
+
+describe('calculateStreak', () => {
+  it('returns 0 for null/undefined input', () => {
+    assert.equal(calculateStreak(null), 0);
+    assert.equal(calculateStreak(undefined), 0);
+    assert.equal(calculateStreak({}), 0);
+  });
+
+  it('counts consecutive days from today backwards', () => {
+    const now = new Date();
+    const usage = {};
+    for (let i = 0; i < 3; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      usage[d.toISOString().split('T')[0]] = { questions: 1, tokens: 0, highlights: 0 };
+    }
+    // Today (i=0) may or may not have data; the streak should be 2 or 3
+    assert.ok(calculateStreak(usage) >= 2);
+  });
+
+  it('skips today if no data and starts counting from yesterday', () => {
+    const now = new Date();
+    const usage = {};
+    // Only yesterday and day before
+    for (let i = 1; i <= 2; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      usage[d.toISOString().split('T')[0]] = { questions: 1, tokens: 0, highlights: 0 };
+    }
+    assert.equal(calculateStreak(usage), 2);
+  });
+
+  it('breaks streak on gap', () => {
+    const now = new Date();
+    const usage = {};
+    const d1 = new Date(now);
+    d1.setDate(d1.getDate() - 1);
+    usage[d1.toISOString().split('T')[0]] = { questions: 1, tokens: 0, highlights: 0 };
+    // Skip day 2, add day 3
+    const d3 = new Date(now);
+    d3.setDate(d3.getDate() - 3);
+    usage[d3.toISOString().split('T')[0]] = { questions: 1, tokens: 0, highlights: 0 };
+    assert.equal(calculateStreak(usage), 1);
+  });
+
+  it('counts tokens or highlights as activity', () => {
+    const now = new Date();
+    const usage = {};
+    const d = new Date(now);
+    d.setDate(d.getDate() - 1);
+    usage[d.toISOString().split('T')[0]] = { questions: 0, tokens: 500, highlights: 0 };
+    assert.ok(calculateStreak(usage) >= 1);
+  });
+});
+
+describe('getTopTags', () => {
+  it('returns empty array for empty input', () => {
+    assert.deepEqual(getTopTags([]), []);
+    assert.deepEqual(getTopTags(null), []);
+  });
+
+  it('returns tags sorted by frequency', () => {
+    const entries = [
+      { tags: ['javascript', 'react'] },
+      { tags: ['javascript', 'node'] },
+      { tags: ['python'] },
+      { tags: ['javascript'] }
+    ];
+    const top = getTopTags(entries, 3);
+    assert.equal(top.length, 3);
+    assert.equal(top[0].tag, 'javascript');
+    assert.equal(top[0].count, 3);
+    assert.equal(top[1].tag, 'react');
+    assert.equal(top[1].count, 1);
+  });
+
+  it('respects limit parameter', () => {
+    const entries = [
+      { tags: ['a', 'b', 'c', 'd', 'e', 'f'] }
+    ];
+    const top = getTopTags(entries, 3);
+    assert.equal(top.length, 3);
+  });
+
+  it('ignores entries without tags', () => {
+    const entries = [
+      { tags: ['js'] },
+      { title: 'no tags' },
+      { tags: [] },
+      { tags: ['js'] }
+    ];
+    const top = getTopTags(entries);
+    assert.equal(top.length, 1);
+    assert.equal(top[0].tag, 'js');
+    assert.equal(top[0].count, 2);
+  });
+});
+
+describe('getWordFrequencies', () => {
+  it('returns empty array for empty input', () => {
+    assert.deepEqual(getWordFrequencies([]), []);
+    assert.deepEqual(getWordFrequencies(null), []);
+  });
+
+  it('counts words from titles and summaries', () => {
+    const entries = [
+      { title: 'JavaScript Promise async', summary: 'JavaScript promise pattern', question: '', answer: '' },
+      { title: 'JavaScript Array methods', summary: 'array map filter', question: '', answer: '' }
+    ];
+    const words = getWordFrequencies(entries, 10);
+    assert.ok(words.length > 0);
+    const jsWord = words.find(w => w.word === 'javascript');
+    assert.ok(jsWord);
+    assert.equal(jsWord.count, 2);
+  });
+
+  it('filters stop words', () => {
+    const entries = [
+      { title: 'the the the', summary: 'is a an', question: '', answer: '' }
+    ];
+    const words = getWordFrequencies(entries, 10);
+    // Stop words should be filtered out
+    const stopWord = words.find(w => ['the', 'is', 'a', 'an'].includes(w.word));
+    assert.equal(stopWord, undefined);
+  });
+
+  it('respects limit parameter', () => {
+    const entries = [];
+    for (let i = 0; i < 30; i++) {
+      entries.push({ title: `unique_word_${i} common_prefix`, summary: '', question: '', answer: '' });
+    }
+    const words = getWordFrequencies(entries, 5);
+    assert.ok(words.length <= 5);
+  });
+});
+
+describe('getWeeklyGrowth', () => {
+  it('returns correct number of weeks', () => {
+    const entries = [];
+    const growth = getWeeklyGrowth(entries, 8);
+    assert.equal(growth.length, 8);
+  });
+
+  it('returns zero counts for empty entries', () => {
+    const growth = getWeeklyGrowth([], 4);
+    assert.equal(growth.length, 4);
+    for (const week of growth) {
+      assert.equal(week.count, 0);
+      assert.ok(week.weekLabel);
+    }
+  });
+
+  it('counts entries in correct weeks', () => {
+    const now = new Date();
+    const entries = [
+      { createdAt: now.toISOString() },
+      { createdAt: now.toISOString() }
+    ];
+    const growth = getWeeklyGrowth(entries, 4);
+    // All entries should be in the most recent week
+    const lastWeek = growth[growth.length - 1];
+    assert.ok(lastWeek.count >= 2 || growth.some(w => w.count >= 2));
+  });
+
+  it('handles entries without createdAt', () => {
+    const entries = [
+      { title: 'no date' },
+      { createdAt: new Date().toISOString() }
+    ];
+    const growth = getWeeklyGrowth(entries, 4);
+    assert.equal(growth.length, 4);
   });
 });

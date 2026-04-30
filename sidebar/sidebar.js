@@ -11,14 +11,14 @@ import { EvolutionEngine } from '../lib/evolution.js';
 import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
-import { calculateNextReview, getDueCards, formatReviewDate, initializeReviewData } from '../lib/spaced-repetition.js';
+import { calculateNextReview, getDueCards, getDueCardCount, formatReviewDate, initializeReviewData, getReviewStreak, recordReviewDay, DIFFICULTY_MAP } from '../lib/spaced-repetition.js';
 import { buildGraphData, forceDirectedLayout, TAG_COLORS } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, throttle, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
 import { buildTopicStats, buildLearningPathPrompt, parseLearningPathResponse, validateLearningPath, renderLearningPathHTML } from '../lib/learning-path.js';
 import { getAllTemplates, saveTemplate as savePromptTemplate, deleteTemplate as deletePromptTemplate, renderTemplate as renderPromptTemplate } from '../lib/prompt-templates.js';
-import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats } from '../lib/stats.js';
+import { getStats, incrementCounter, recordDailyUsage, recordSkillUsage, getTopSkills, getUsageTrend, resetStats, getLearningStreak, getTopTags, getWordFrequencies, getWeeklyGrowth } from '../lib/stats.js';
 import { SkillStore } from '../lib/skill-store.js';
 import { classifyAIError, classifyContentError, classifyStorageError, retryWithBackoff, installGlobalErrorHandler, ErrorType, CONTENT_ERROR_MESSAGES } from '../lib/error-handler.js';
 import { onboarding } from '../lib/onboarding.js';
@@ -381,6 +381,13 @@ class SidebarApp {
     this.statsGrid = document.getElementById('statsGrid');
     this.statsSkillsList = document.getElementById('statsSkillsList');
     this.statsTrendChart = document.getElementById('statsTrendChart');
+    this.statsStreak = document.getElementById('statsStreak');
+    this.statsStreakCount = document.getElementById('statsStreakCount');
+    this.statsQACount = document.getElementById('statsQACount');
+    this.statsQANumber = document.getElementById('statsQANumber');
+    this.statsTagsChart = document.getElementById('statsTagsChart');
+    this.statsGrowthChart = document.getElementById('statsGrowthChart');
+    this.statsWordCloud = document.getElementById('statsWordCloud');
     this.btnResetStats = document.getElementById('btnResetStats');
 
     // 新手引导
@@ -2061,6 +2068,7 @@ class SidebarApp {
       content: this.currentPageContent?.content || '',
       codeBlocks: this.currentPageContent?.codeBlocks || [],
       meta: this.currentPageContent?.meta || {},
+      language: this.currentPageContent?.language || 'other',
       selection
     };
 
@@ -2099,7 +2107,8 @@ class SidebarApp {
     }
 
     const enhancedSystemPrompt = this.aiClient.getSystemPrompt()
-      + memoryPrompt + sensePrompt + skillPrompt + evolutionPrompt;
+      + memoryPrompt + sensePrompt + skillPrompt + evolutionPrompt
+      + this._buildLanguagePrompt(contentWithSelection.language);
 
     // 记录交互
     let interactionId = null;
@@ -4498,6 +4507,14 @@ ${sendContent}
       const topSkills = await getTopSkills(5);
       const trend = await getUsageTrend(7);
 
+      // 获取知识条目用于高级统计
+      let entries = [];
+      try {
+        entries = await this.memory.kb.getAllEntries(10000);
+      } catch (e) {
+        // 静默处理
+      }
+
       // 统计卡片网格
       if (this.statsGrid) {
         const cards = [
@@ -4516,6 +4533,28 @@ ${sendContent}
         `).join('');
       }
 
+      // 学习连续天数
+      if (this.statsStreak && this.statsStreakCount) {
+        const streak = await getLearningStreak();
+        if (streak > 0) {
+          this.statsStreak.style.display = '';
+          this.statsStreakCount.textContent = streak;
+        } else {
+          this.statsStreak.style.display = 'none';
+        }
+      }
+
+      // Q&A 总数
+      if (this.statsQACount && this.statsQANumber) {
+        const qaCount = entries.filter(e => e.question || e.answer).length;
+        if (qaCount > 0) {
+          this.statsQACount.style.display = '';
+          this.statsQANumber.textContent = qaCount;
+        } else {
+          this.statsQACount.style.display = 'none';
+        }
+      }
+
       // Top 技能列表
       if (this.statsSkillsList) {
         if (topSkills.length === 0) {
@@ -4528,6 +4567,52 @@ ${sendContent}
               <span class="stats-skill-count">${s.count} 次</span>
             </div>
           `).join('');
+        }
+      }
+
+      // 热门标签 Top 5 柱状图
+      if (this.statsTagsChart) {
+        const topTags = getTopTags(entries, 5);
+        if (topTags.length === 0) {
+          this.statsTagsChart.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">暂无标签数据</div>';
+        } else {
+          const maxTagCount = Math.max(...topTags.map(t => t.count), 1);
+          this.statsTagsChart.innerHTML = topTags.map(t => {
+            const pct = Math.round((t.count / maxTagCount) * 100);
+            return `
+              <div class="stats-tag-row">
+                <span class="stats-tag-name">${t.tag}</span>
+                <div class="stats-tag-bar-wrap">
+                  <div class="stats-tag-bar" style="width:${pct}%"></div>
+                </div>
+                <span class="stats-tag-count">${t.count}</span>
+              </div>
+            `;
+          }).join('');
+        }
+      }
+
+      // 知识增长趋势（按周）
+      if (this.statsGrowthChart) {
+        const weeklyGrowth = getWeeklyGrowth(entries, 8);
+        const maxGrowth = Math.max(...weeklyGrowth.map(w => w.count), 1);
+        if (weeklyGrowth.every(w => w.count === 0)) {
+          this.statsGrowthChart.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">暂无增长数据</div>';
+        } else {
+          this.statsGrowthChart.innerHTML = `
+            <div class="stats-growth-bars">
+              ${weeklyGrowth.map(w => {
+                const pct = Math.round((w.count / maxGrowth) * 100);
+                return `
+                  <div class="stats-growth-col">
+                    <div class="stats-growth-bar-val">${w.count}</div>
+                    <div class="stats-growth-bar" style="height:${Math.max(pct, 4)}%"></div>
+                    <div class="stats-growth-label">${w.weekLabel}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
         }
       }
 
@@ -4551,6 +4636,32 @@ ${sendContent}
               </div>
             `;
           }).join('');
+        }
+      }
+
+      // 词云
+      if (this.statsWordCloud) {
+        const wordFreq = getWordFrequencies(entries, 25);
+        if (wordFreq.length === 0) {
+          this.statsWordCloud.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">暂无词云数据</div>';
+        } else {
+          const maxFreq = Math.max(...wordFreq.map(w => w.count), 1);
+          const minFreq = Math.min(...wordFreq.map(w => w.count), 1);
+          const colors = [
+            'var(--accent)', 'var(--text-primary)', '#e74c3c', '#2ecc71',
+            '#3498db', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22',
+            '#2c3e50', '#16a085', '#d35400', '#8e44ad', '#2980b9'
+          ];
+          this.statsWordCloud.innerHTML = `<div class="stats-wordcloud-words">
+            ${wordFreq.map((w, i) => {
+              // 对数缩放字号：最小 12px，最大 28px
+              const ratio = minFreq === maxFreq ? 0.5 : (Math.log(w.count) - Math.log(minFreq)) / (Math.log(maxFreq) - Math.log(minFreq));
+              const fontSize = Math.round(12 + ratio * 16);
+              const color = colors[i % colors.length];
+              const opacity = 0.6 + ratio * 0.4;
+              return `<span class="stats-wordcloud-word" style="font-size:${fontSize}px;color:${color};opacity:${opacity}">${w.word}</span>`;
+            }).join('')}
+          </div>`;
         }
       }
     } catch (e) {
