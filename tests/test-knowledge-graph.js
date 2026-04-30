@@ -25,8 +25,8 @@ describe('buildGraphData()', () => {
   ];
 
   it('空输入返回空图', () => {
-    assert.deepEqual(buildGraphData(null, null), { nodes: [], edges: [] });
-    assert.deepEqual(buildGraphData([], []), { nodes: [], edges: [] });
+    assert.deepEqual(buildGraphData(null, null), { nodes: [], edges: [], tagColorMap: {} });
+    assert.deepEqual(buildGraphData([], []), { nodes: [], edges: [], tagColorMap: {} });
   });
 
   it('构建节点数组', () => {
@@ -96,6 +96,14 @@ describe('buildGraphData()', () => {
     const entries = [{ id: 100, title: 'No Tags', category: '测试' }];
     const { nodes } = buildGraphData(entries, []);
     assert.equal(nodes[0].group, '测试');
+  });
+
+  it('返回 tagColorMap 映射', () => {
+    const { tagColorMap } = buildGraphData(sampleEntries, sampleRelations);
+    assert.ok(typeof tagColorMap === 'object');
+    assert.ok(tagColorMap['javascript']);
+    assert.ok(tagColorMap['python']);
+    assert.equal(typeof tagColorMap['javascript'], 'string');
   });
 });
 

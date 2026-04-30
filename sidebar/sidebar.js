@@ -12,7 +12,7 @@ import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { calculateNextReview, getDueCards, formatReviewDate, initializeReviewData } from '../lib/spaced-repetition.js';
-import { buildGraphData, forceDirectedLayout } from '../lib/knowledge-graph.js';
+import { buildGraphData, forceDirectedLayout, TAG_COLORS } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, throttle, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
@@ -304,6 +304,13 @@ class SidebarApp {
     this.graphInfo = document.getElementById('graphInfo');
     this.graphTooltip = document.getElementById('graphTooltip');
     this.btnRefreshGraph = document.getElementById('btnRefreshGraph');
+    this.graphSearchInput = document.getElementById('graphSearchInput');
+    this.graphLegend = document.getElementById('graphLegend');
+    this.graphDetailPopup = document.getElementById('graphDetailPopup');
+    this.graphPopupTitle = document.getElementById('graphPopupTitle');
+    this.graphPopupBody = document.getElementById('graphPopupBody');
+    this.graphPopupClose = document.getElementById('graphPopupClose');
+    this.graphPopupViewFull = document.getElementById('graphPopupViewFull');
 
     // Learning Path
     this.learningPathPanel = document.getElementById('learningPathPanel');
@@ -336,6 +343,7 @@ class SidebarApp {
     this.historyList = document.getElementById('historyList');
     this.historySearch = document.getElementById('historySearch');
     this.btnClearHistory = document.getElementById('btnClearHistory');
+    this.btnHistoryHeader = document.getElementById('btnHistoryHeader');
 
     // Multi-Tab Selector
     this.btnMultiTab = document.getElementById('btnMultiTab');
@@ -608,6 +616,9 @@ class SidebarApp {
     // 历史对话
     if (this.btnHistory) {
       this.btnHistory.addEventListener('click', () => this.toggleHistoryPanel());
+    }
+    if (this.btnHistoryHeader) {
+      this.btnHistoryHeader.addEventListener('click', () => this.toggleHistoryPanel());
     }
     if (this.historySearch) {
       this.historySearch.addEventListener('input', debounce(() => this.loadHistoryList(), 300));
@@ -5143,6 +5154,13 @@ ${sendContent}
 
       this.historyList.innerHTML = conversations.map(conv => {
         const msgCount = conv.messages ? conv.messages.length : 0;
+        // R10: Use first user question as title
+        const firstQuestion = conv.messages
+          ? (conv.messages.find(m => m.role === 'user')?.content || '')
+          : '';
+        const displayTitle = firstQuestion
+          ? firstQuestion.slice(0, 60) + (firstQuestion.length > 60 ? '...' : '')
+          : (conv.title || this.getDomain(conv.url));
         const preview = conv.messages && conv.messages.length > 0
           ? conv.messages[conv.messages.length - 1].content.slice(0, 80)
           : '';
@@ -5151,7 +5169,7 @@ ${sendContent}
         return `
           <div class="history-item" data-id="${conv.id}">
             <div class="history-item-header">
-              <span class="history-item-title">${this.escapeHtml(conv.title || domain)}</span>
+              <span class="history-item-title">${this.escapeHtml(displayTitle)}</span>
               <span class="history-item-count">${msgCount} 条</span>
             </div>
             <div class="history-item-preview">${this.escapeHtml(preview)}${preview.length >= 80 ? '...' : ''}</div>
@@ -5190,9 +5208,67 @@ ${sendContent}
           }
         });
       });
+
+      // R10: Swipe-to-delete for mobile
+      this._bindSwipeToDelete();
     } catch (e) {
       this.historyList.innerHTML = `<div class="empty-state"><p>加载失败</p></div>`;
     }
+  }
+
+  /**
+   * R10: Bind swipe-to-delete on history items (touch devices)
+   */
+  _bindSwipeToDelete() {
+    if (!this.historyList) return;
+    const items = this.historyList.querySelectorAll('.history-item');
+    items.forEach(item => {
+      let startX = 0;
+      let currentX = 0;
+      let swiping = false;
+
+      item.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        currentX = startX;
+        swiping = false;
+        item.style.transition = 'none';
+      }, { passive: true });
+
+      item.addEventListener('touchmove', (e) => {
+        currentX = e.touches[0].clientX;
+        const diff = currentX - startX;
+        if (Math.abs(diff) > 10) {
+          swiping = true;
+          // Only allow left swipe
+          const offset = Math.min(0, diff);
+          item.style.transform = `translateX(${offset}px)`;
+          item.style.transition = 'none';
+        }
+      }, { passive: true });
+
+      item.addEventListener('touchend', async () => {
+        const diff = currentX - startX;
+        item.style.transition = 'transform 0.25s ease';
+
+        if (diff < -80) {
+          // Swipe threshold reached — delete
+          const id = parseInt(item.dataset.id);
+          item.style.transform = 'translateX(-100%)';
+          item.style.opacity = '0';
+          try {
+            await deleteConversation(id);
+            setTimeout(() => this.loadHistoryList(), 250);
+            this.addSystemMessage('已删除历史对话');
+          } catch (e) {
+            item.style.transform = 'translateX(0)';
+            item.style.opacity = '1';
+            this.addSystemMessage(`删除失败：${e.message}`);
+          }
+        } else {
+          item.style.transform = 'translateX(0)';
+        }
+      });
+    });
   }
 
   /**

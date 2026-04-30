@@ -15,6 +15,7 @@ const {
   truncate,
   formatTime,
   renderMarkdown,
+  highlightCode,
   debounce,
   generateId,
   saveConversation,
@@ -103,7 +104,7 @@ describe('renderMarkdown()', () => {
     const md = '```js\nconsole.log("hi")\n```';
     const html = renderMarkdown(md);
     assert.ok(html.includes('<pre><code'));
-    assert.ok(html.includes('console.log'));
+    assert.ok(html.includes('console'));
   });
 
   it('行内代码', () => {
@@ -148,6 +149,81 @@ describe('renderMarkdown()', () => {
     const html = renderMarkdown(md);
     assert.ok(html.includes('code-block-wrapper'));
     assert.ok(html.includes('data-code-copy'));
+  });
+});
+
+// ==================== highlightCode ====================
+
+describe('highlightCode()', () => {
+  it('空代码返回空字符串', () => {
+    assert.equal(highlightCode('', 'js'), '');
+    assert.equal(highlightCode(null, 'js'), '');
+  });
+
+  it('JS 关键词高亮', () => {
+    const result = highlightCode('const x = 1', 'js');
+    assert.ok(result.includes('<span class="hl-keyword">const</span>'), '应高亮 const');
+  });
+
+  it('JS 字符串高亮', () => {
+    const result = highlightCode('"hello world"', 'js');
+    assert.ok(result.includes('<span class="hl-string">"hello world"</span>'), '应高亮字符串');
+  });
+
+  it('JS 单行注释高亮', () => {
+    const result = highlightCode('// comment', 'js');
+    assert.ok(result.includes('<span class="hl-comment">// comment</span>'), '应高亮注释');
+  });
+
+  it('JS 数字高亮', () => {
+    const result = highlightCode('let x = 42', 'js');
+    assert.ok(result.includes('<span class="hl-number">42</span>'), '应高亮数字');
+  });
+
+  it('函数调用高亮', () => {
+    const result = highlightCode('console.log("hi")', 'js');
+    assert.ok(result.includes('<span class="hl-function">log</span>'), '应高亮函数名 log');
+  });
+
+  it('Python 关键词高亮', () => {
+    const result = highlightCode('def foo():', 'python');
+    assert.ok(result.includes('<span class="hl-keyword">def</span>'), '应高亮 def');
+  });
+
+  it('Python 注释高亮', () => {
+    const result = highlightCode('# a comment', 'py');
+    assert.ok(result.includes('<span class="hl-comment"># a comment</span>'), '应高亮 # 注释');
+  });
+
+  it('Bash 关键词高亮', () => {
+    const result = highlightCode('if true; then echo hi; fi', 'bash');
+    assert.ok(result.includes('<span class="hl-keyword">if</span>'), '应高亮 if');
+    assert.ok(result.includes('<span class="hl-keyword">then</span>'), '应高亮 then');
+    assert.ok(result.includes('<span class="hl-keyword">fi</span>'), '应高亮 fi');
+  });
+
+  it('HTML 转义正确', () => {
+    const result = highlightCode('a < b && c > d', 'js');
+    assert.ok(result.includes('&lt;'), '应转义 <');
+    assert.ok(result.includes('&gt;'), '应转义 >');
+    assert.ok(result.includes('&amp;'), '应转义 &');
+  });
+
+  it('CSS 关键词高亮', () => {
+    const result = highlightCode('display: flex', 'css');
+    assert.ok(result.includes('<span class="hl-keyword">flex</span>'), '应高亮 flex');
+  });
+
+  it('TypeScript 关键词高亮', () => {
+    const result = highlightCode('interface Foo { bar: string }', 'ts');
+    assert.ok(result.includes('<span class="hl-keyword">interface</span>'), '应高亮 interface');
+    assert.ok(result.includes('<span class="hl-keyword">string</span>'), '应高亮 string');
+  });
+
+  it('renderMarkdown 集成 — 代码块含高亮 span', () => {
+    const md = '```js\nconst x = 1\n```';
+    const html = renderMarkdown(md);
+    assert.ok(html.includes('<span class="hl-keyword">const</span>'), '应通过 renderMarkdown 高亮关键词');
   });
 });
 

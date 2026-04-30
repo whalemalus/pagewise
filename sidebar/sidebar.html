@@ -56,6 +56,7 @@
       <div class="page-actions">
         <button class="btn-icon" id="btnExtract" title="提取页面内容" aria-label="提取页面内容">📥</button>
         <button class="btn-icon" id="btnRefresh" title="刷新" aria-label="刷新页面">🔄</button>
+        <button class="btn-icon" id="btnHistoryHeader" title="历史对话" aria-label="历史对话">🕐</button>
         <button class="btn-icon" id="btnExportConversation" title="导出对话为 Markdown" aria-label="导出对话为 Markdown">📤</button>
         <button class="btn-icon" id="btnClearChat" title="清空对话" aria-label="清空对话">🗑️</button>
       </div>
@@ -296,11 +297,23 @@
       <!-- 知识图谱面板 -->
       <div class="knowledge-graph-panel hidden" id="knowledgeGraphPanel">
         <div class="graph-toolbar">
+          <input type="text" class="graph-search" id="graphSearchInput" placeholder="🔍 搜索节点..." aria-label="搜索图谱节点" />
           <span class="graph-info" id="graphInfo">加载中...</span>
           <button class="btn-sm" id="btnRefreshGraph" aria-label="刷新知识图谱">🔄 刷新图谱</button>
         </div>
+        <div class="graph-legend" id="graphLegend"></div>
         <canvas id="knowledgeGraphCanvas" class="graph-canvas"></canvas>
         <div class="graph-tooltip hidden" id="graphTooltip"></div>
+        <div class="graph-detail-popup hidden" id="graphDetailPopup">
+          <div class="graph-popup-header">
+            <span class="graph-popup-title" id="graphPopupTitle"></span>
+            <button class="graph-popup-close" id="graphPopupClose" aria-label="关闭详情">&times;</button>
+          </div>
+          <div class="graph-popup-body" id="graphPopupBody"></div>
+          <div class="graph-popup-footer">
+            <button class="btn-sm btn-primary-sm" id="graphPopupViewFull" aria-label="查看完整详情">查看详情</button>
+          </div>
+        </div>
       </div>
 
       <!-- 学习路径面板 -->
