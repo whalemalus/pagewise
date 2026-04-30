@@ -3274,6 +3274,28 @@ mark.search-highlight {
   color: white;
 }
 
+/* R10: Swipe-to-delete styles */
+.history-item.swiping {
+  user-select: none;
+}
+
+.history-item-swipe-hint {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--danger);
+  color: white;
+  font-size: 12px;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ==================== Page Preview Panel ==================== */
 
 .page-preview {
