@@ -25,7 +25,6 @@ import { onboarding } from '../lib/onboarding.js';
 import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogStore, exportLogs } from '../lib/log-store.js';
 import { MessageRenderer } from '../lib/message-renderer.js';
 import { KnowledgePanel } from '../lib/knowledge-panel.js';
-import { KnowledgePanel } from '../lib/knowledge-panel.js';
 
 // ==================== 提供商预设 ====================
 
