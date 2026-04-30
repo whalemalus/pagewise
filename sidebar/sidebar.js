@@ -1015,16 +1015,89 @@ class SidebarApp {
 
     const levelIcons = { error: '❌', warn: '⚠️', info: 'ℹ️', debug: '🔍' };
 
-    list.innerHTML = logs.map(log => {
-      const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
-      const data = log.data ? `<span class="log-data">${this.escapeHtml(log.data)}</span>` : '';
-      return `<div class="log-entry log-${log.level}">
-        <span class="log-time">${time}</span>
-        <span class="log-level log-level-${log.level}">${levelIcons[log.level] || ''} ${log.level}</span>
-        <span class="log-module">[${this.escapeHtml(log.module)}]</span>
-        <span class="log-message">${this.escapeHtml(log.message)}${data}</span>
+    // 构建日志列表 HTML
+    const logsHtml = logs.length > 0
+      ? logs.map(log => {
+        const time = new Date(log.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+        const data = log.data ? `<span class="log-data">${this.escapeHtml(log.data)}</span>` : '';
+        return `<div class="log-entry log-${log.level}">
+          <span class="log-time">${time}</span>
+          <span class="log-level log-level-${log.level}">${levelIcons[log.level] || ''} ${log.level}</span>
+          <span class="log-module">[${this.escapeHtml(log.module)}]</span>
+          <span class="log-message">${this.escapeHtml(log.message)}${data}</span>
+        </div>`;
+      }).join('')
+      : '<div class="empty-state"><div class="empty-icon">📋</div><p>暂无日志记录</p></div>';
+
+    // 构建性能监控 HTML
+    const perfHtml = this._buildPerformanceSection();
+
+    // 组合：性能面板 + 日志列表
+    list.innerHTML = perfHtml + logsHtml;
+  }
+
+  /**
+   * 构建性能监控区域 HTML
+   * @returns {string}
+   */
+  _buildPerformanceSection() {
+    const categories = [
+      { key: 'api', label: 'API 响应', icon: '🚀', color: '#4CAF50' },
+      { key: 'extraction', label: '内容提取', icon: '📄', color: '#2196F3' },
+      { key: 'rendering', label: '消息渲染', icon: '🖼️', color: '#FF9800' }
+    ];
+
+    // 统计卡片
+    const statsCards = categories.map(cat => {
+      const stats = getPerformanceStats(cat.key);
+      return `<div class="perf-stat-card">
+        <div class="perf-stat-header">${cat.icon} ${cat.label}</div>
+        <div class="perf-stat-numbers">
+          <span class="perf-stat-item"><span class="perf-stat-label">平均</span><span class="perf-stat-value">${stats.avg ? stats.avg.toFixed(1) : '—'} ms</span></span>
+          <span class="perf-stat-item"><span class="perf-stat-label">P50</span><span class="perf-stat-value">${stats.p50 ? stats.p50.toFixed(1) : '—'} ms</span></span>
+          <span class="perf-stat-item"><span class="perf-stat-label">P95</span><span class="perf-stat-value">${stats.p95 ? stats.p95.toFixed(1) : '—'} ms</span></span>
+        </div>
+        <div class="perf-stat-footer">共 ${stats.count} 次 | 最小 ${stats.min ? stats.min.toFixed(1) : '—'} ms | 最大 ${stats.max ? stats.max.toFixed(1) : '—'} ms</div>
       </div>`;
     }).join('');
+
+    // 迷你柱状图（最近 20 条 API 请求）
+    const recentApi = getRecentMetrics(20, 'api').filter(m => {
+      try { return JSON.parse(m.data).type === 'total'; } catch { return false; }
+    });
+    let chartHtml = '';
+    if (recentApi.length > 0) {
+      const maxVal = Math.max(...recentApi.map(m => m.durationMs), 1);
+      const barWidth = Math.max(8, Math.min(20, Math.floor(240 / recentApi.length)));
+      const bars = recentApi.map(m => {
+        const pct = Math.round((m.durationMs / maxVal) * 100);
+        const h = Math.max(2, Math.round(pct * 0.6)); // 最大高度 60px
+        const time = new Date(m.timestamp).toLocaleTimeString('zh-CN', { hour12: false });
+        let model = '';
+        try { model = JSON.parse(m.data).model || ''; } catch {}
+        const color = pct > 80 ? '#f44336' : pct > 50 ? '#FF9800' : '#4CAF50';
+        return `<div class="perf-bar-wrapper" title="${time}\n${m.durationMs.toFixed(1)} ms\n${model}" style="width:${barWidth}px">
+          <div class="perf-bar" style="height:${h}px;background:${color}"></div>
+          <div class="perf-bar-value">${m.durationMs >= 1000 ? (m.durationMs / 1000).toFixed(1) + 's' : Math.round(m.durationMs)}</div>
+        </div>`;
+      }).join('');
+      chartHtml = `<div class="perf-chart-section">
+        <div class="perf-chart-title">📊 最近 ${recentApi.length} 次 API 请求耗时</div>
+        <div class="perf-chart">${bars}</div>
+        <div class="perf-chart-axis">
+          <span>0</span>
+          <span>${maxVal >= 1000 ? (maxVal / 1000).toFixed(1) + 's' : Math.round(maxVal) + 'ms'}</span>
+        </div>
+      </div>`;
+    }
+
+    return `<div class="performance-section">
+      <div class="perf-header">
+        <span class="perf-title">⚡ 性能监控</span>
+      </div>
+      <div class="perf-stats-grid">${statsCards}</div>
+      ${chartHtml}
+    </div>`;
   }
 
   exportLogsFile() {

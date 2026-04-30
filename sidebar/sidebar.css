@@ -5327,6 +5327,161 @@ select:focus-visible,
 body.dark .log-entry-log_error { background: #3b1111; }
 body.dark .log-entry-log_warn { background: #3b2f11; }
 
+/* ==================== 性能监控 ==================== */
+
+.performance-section {
+  margin-bottom: 12px;
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.perf-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-tertiary, #e2e8f0);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+}
+
+.perf-title {
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-primary, #1e293b);
+}
+
+.perf-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.perf-stat-card {
+  background: var(--bg-primary, #fff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+
+.perf-stat-header {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-primary, #1e293b);
+}
+
+.perf-stat-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perf-stat-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+}
+
+.perf-stat-label {
+  color: var(--text-muted, #94a3b8);
+}
+
+.perf-stat-value {
+  font-weight: 600;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-primary, #1e293b);
+}
+
+.perf-stat-footer {
+  font-size: 9px;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.perf-chart-section {
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+.perf-chart-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary, #1e293b);
+  margin-bottom: 8px;
+}
+
+.perf-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 70px;
+  padding-bottom: 14px;
+  position: relative;
+}
+
+.perf-bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  cursor: pointer;
+}
+
+.perf-bar {
+  width: 100%;
+  min-height: 2px;
+  border-radius: 2px 2px 0 0;
+  transition: opacity 0.15s;
+}
+
+.perf-bar-wrapper:hover .perf-bar {
+  opacity: 0.8;
+}
+
+.perf-bar-value {
+  font-size: 8px;
+  color: var(--text-muted, #94a3b8);
+  position: absolute;
+  bottom: -12px;
+  white-space: nowrap;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.perf-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: var(--text-muted, #94a3b8);
+  margin-top: 4px;
+}
+
+/* 暗色模式下的性能监控 */
+body.dark .performance-section {
+  border-color: #334155;
+  background: #1e293b;
+}
+
+body.dark .perf-stat-card {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+body.dark .perf-header {
+  background: #334155;
+  border-color: #475569;
+}
+
+body.dark .perf-chart-section {
+  border-color: #334155;
+}
+
 /* ==================== 动画系统 ==================== */
 
 /* 页面切换过渡 */
