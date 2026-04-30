@@ -13,7 +13,7 @@ import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { calculateNextReview, getDueCards, getDueCardCount, formatReviewDate, initializeReviewData, getReviewStreak, recordReviewDay, DIFFICULTY_MAP } from '../lib/spaced-repetition.js';
-import { buildGraphData, forceDirectedLayout, TAG_COLORS, applyZoomTransform, screenToWorld, computeMinimapViewport, filterGraphByTags, buildTooltipText } from '../lib/knowledge-graph.js';
+import { buildGraphData, forceDirectedLayout, TAG_COLORS, applyZoomTransform, screenToWorld, computeMinimapViewport, filterGraphByTags, buildTooltipText, buildWikiGraphData, extractSubgraph, exportGraphToDataURL, NODE_SHAPES, EDGE_TYPES } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, throttle, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
@@ -346,6 +346,8 @@ class SidebarApp {
     this.graphPopupViewFull = document.getElementById('graphPopupViewFull');
     this.graphMinimapCanvas = document.getElementById('graphMinimapCanvas');
     this.btnResetZoom = document.getElementById('btnResetZoom');
+    this.btnExportGraph = document.getElementById('btnExportGraph');
+    this.btnGraphBack = document.getElementById('btnGraphBack');
 
     // Learning Path
     this.learningPathPanel = document.getElementById('learningPathPanel');
@@ -661,6 +663,16 @@ class SidebarApp {
     // 知识图谱：刷新
     if (this.btnRefreshGraph) {
       this.btnRefreshGraph.addEventListener('click', () => this.renderKnowledgeGraph());
+    }
+
+    // 知识图谱：导出图片
+    if (this.btnExportGraph) {
+      this.btnExportGraph.addEventListener('click', () => this.exportGraphAsImage());
+    }
+
+    // 知识图谱：返回全景
+    if (this.btnGraphBack) {
+      this.btnGraphBack.addEventListener('click', () => this.exitGraphFocusMode());
     }
 
     // 学习路径：生成
