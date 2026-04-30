@@ -90,7 +90,7 @@
 
 ### Level 1 — 知识库 Markdown 导出（轻量级，改动最小）
 
-- [ ] **L1.1 知识库导出为 LLM Wiki 格式** — 将 IndexedDB 中的 Q&A 条目导出为结构化 Markdown 文件
+- [x] **L1.1 知识库导出为 LLM Wiki 格式** — 将 IndexedDB 中的 Q&A 条目导出为结构化 Markdown 文件
   - 每条 Q&A → 独立 .md 文件（含 YAML frontmatter: title, tags, source_url, created）
   - 自动生成 `index.md`（按标签/分类分组）
   - 支持增量导出（只导出新增/修改的条目）
