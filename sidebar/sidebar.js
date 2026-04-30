@@ -659,6 +659,17 @@ class SidebarApp {
       this.btnRetriggerOnboarding.addEventListener('click', () => this.retriggerOnboarding());
     }
 
+    // 备份导出/导入事件
+    if (this.btnExportBackup) {
+      this.btnExportBackup.addEventListener('click', () => this.exportBackup());
+    }
+    if (this.btnImportBackup) {
+      this.btnImportBackup.addEventListener('click', () => this.backupFileInput?.click());
+    }
+    if (this.backupFileInput) {
+      this.backupFileInput.addEventListener('change', (e) => this.importBackup(e));
+    }
+
     // 历史对话
     if (this.btnHistory) {
       this.btnHistory.addEventListener('click', () => this.toggleHistoryPanel());
