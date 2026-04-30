@@ -1,89 +1,186 @@
-# 迭代 #5 需求文档 — 技能详情 + 自动刷新
+# 迭代 #5 需求文档 — AI 响应缓存（避免重复请求）
+
+> 最后更新: 2026-04-30
+> 状态: 📋 待开发
+> 优先级: P0
+
+---
 
 ## 需求概览
 
 | ID | 需求 | 优先级 | 涉及文件 |
 |----|------|--------|----------|
-| R044 | 查看技能 prompt 模板详情 | P1 | sidebar.html, sidebar.js, sidebar.css |
-| R045 | 网页刷新时自动刷新插件内容 | P1 | sidebar.js |
+| R022 | AI 响应缓存 | P0 | `lib/ai-cache.js`(新建)、`lib/ai-client.js`(修改)、`sidebar/sidebar.js`(修改)、`tests/test-ai-cache.js`(新建) |
 
 ---
 
-## R044: 查看技能 prompt 模板详情
+## 一、用户故事
 
-### 描述
-当前技能列表只显示名称、描述、触发类型。用户希望能查看技能的完整详情，包括：
-- 参数列表（名称、类型、描述、是否必填）
-- 触发条件详细说明
-- 执行逻辑概述
+**作为一名 PageWise 用户**，当我在同一页面反复提问相同问题（或技能重复触发相同 prompt）时，我希望系统自动识别并返回缓存的 AI 回答，**以便**节省 API 费用、获得即时响应、减少不必要的网络等待。
 
-### 实现方案
-1. 在每个技能卡片的 footer 添加"详情"按钮（ℹ️）
-2. 点击后展开/折叠一个详情区域（在卡片下方）
-3. 详情区域显示：
-   - **参数表格**：参数名 | 类型 | 描述 | 是否必填
-   - **触发条件**：自动/手动 + 具体条件描述
-   - **说明**：技能的完整描述文字
-
-### 数据来源
-技能对象结构（来自 skills/builtin-skills.js）：
-```javascript
-{
-  id: 'code-explain',
-  name: '解释代码',
-  description: '逐行解释代码的含义和作用',
-  category: 'code',
-  parameters: [
-    { name: 'code', type: 'string', description: '要解释的代码', required: false }
-  ],
-  trigger: (ctx) => ...,  // 函数
-  execute: async (params, context) => ...  // 函数
-}
-```
-
-对于内置技能的 trigger 函数，无法直接获取"人类可读描述"。可以：
-- 如果 trigger.type === 'auto'，显示"当页面满足特定条件时自动触发"
-- 如果是手动触发，显示"用户点击运行时触发"
-- parameters 数组直接渲染为表格
-
-### UI 要求
-- 详情区域用 slideDown 动画展开
-- 参数表格简洁，4 列：参数名 | 类型 | 说明 | 必填
-- 无参数时显示"此技能无自定义参数"
-- 再次点击"详情"按钮折叠
+**补充场景**：
+- 用户在浏览技术文档时，对同一段代码多次追问相同问题（切换标签页后回来）
+- 技能系统（页面感知、自动摘要等）在页面未变化时反复触发相同请求
+- 用户调试时反复点击同一条历史对话的"重新发送"
 
 ---
 
-## R045: 网页刷新时自动刷新插件内容
+## 二、验收标准
 
-### 描述
-当前用户刷新网页后，需要手动点击插件的🔄按钮才能更新页面内容。应该自动检测页面变化并刷新。
+### AC-1: 相同请求命中缓存（核心路径）
+> **Given** 用户对当前页面发送了一个问题，AI 正常回答  
+> **When** 用户在 **30 分钟内**再次发送 **完全相同** 的问题（相同页面内容、相同模型、相同系统提示）  
+> **Then** 系统直接返回缓存回答，**不调用 AI API**，且响应中包含 `fromCache: true` 标记
 
-### 实现方案
-在 sidebar.js 的 init() 或 listenMessages() 中添加 Chrome tabs 事件监听：
+### AC-2: 缓存命中时的 UI 反馈
+> **Given** 缓存命中  
+> **When** AI 回答渲染到聊天区域  
+> **Then** 回答末尾（或顶部）显示 **"⚡ 缓存命中"** 标记，让用户知道此回答来自缓存而非实时请求
 
-```javascript
-// 监听标签页更新（URL 变化、刷新、加载完成）
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (tabId === this.currentTabId && changeInfo.status === 'complete') {
-    this.loadPageContext();
-    if (this.settings.autoExtract) {
-      this.extractContent();
-    }
-  }
-});
+### AC-3: 不同请求不命中缓存（隔离性）
+> **Given** 用户已缓存了一个关于 `Promise` 的回答  
+> **When** 用户发送一个关于 `async/await` 的 **不同** 问题  
+> **Then** 系统正常调用 AI API，**不** 返回缓存的 Promise 回答
 
-// 监听标签页切换
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  if (activeInfo.windowId === chrome.windows.WINDOW_ID_CURRENT) {
-    this.currentTabId = activeInfo.tabId;
-    this.loadPageContext();
-  }
-});
+### AC-4: 缓存过期自动失效
+> **Given** 一条缓存条目的 TTL（默认 30 分钟）已过期  
+> **When** 用户再次发送相同请求  
+> **Then** 系统**不**返回过期缓存，而是正常调用 AI API 并重新缓存
+
+### AC-5: 含图片的请求不缓存
+> **Given** 用户发送了一条包含截图/图片的提问  
+> **When** AI 回答完成  
+> **Then** 该回答**不**被存入缓存（图片数据不稳定，不适合缓存键）
+
+---
+
+## 三、技术约束
+
+### 3.1 缓存策略
+
+| 约束项 | 值 | 理由 |
+|--------|-----|------|
+| 存储方式 | **纯内存**（Map + LRU） | 不持久化到 IndexedDB；扩展进程关闭时自然清理，降低复杂度 |
+| 最大条目数 | **50** | 平衡内存占用与命中率 |
+| 默认 TTL | **30 分钟** | AI 响应时效性有限；页面内容变化后旧缓存应失效 |
+| 淘汰策略 | **LRU**（最近最少使用） | 利用 ES6 Map 的插入顺序保证迭代序 |
+
+### 3.2 缓存键生成
+
+缓存键必须反映影响 AI 回答的 **全部** 输入因素：
+
+```
+键 = FNV-1a-32(
+  model + "|" + maxTokens + "|" + protocol + "|" + systemPrompt
+  + 每条消息的 (role + ":" + textContent)
+)
 ```
 
-### 注意事项
-1. `onUpdated` 会触发多次（loading → complete），只在 `changeInfo.status === 'complete'` 时刷新
-2. 避免在用户正在输入时打断 — 如果 userInput 有内容，不自动刷新
-3. 添加防抖（debounce），300ms 内只触发一次
-4. 不要清空当前对话，只更新页面内容缓存（currentPageContent）
+- **完整参与哈希的因素**：模型名称、最大 token 数、协议类型、系统提示（含记忆/页面感知上下文）、消息内容
+- **不参与缓存的因素**：图片 URL / base64 数据（太大且不稳定）
+- **包含图片的消息** → `generateCacheKey()` 返回 `null`，整条请求跳过缓存
+
+### 3.3 流式响应的缓存时机
+
+- 流式输出 **完整接收后** 一次性缓存完整文本
+- 流式中途的 abort / error **不**缓存不完整响应
+- 缓存命中时，一次性渲染完整内容（不再模拟流式），体验更快
+
+### 3.4 模块边界
+
+| 层 | 职责 |
+|----|------|
+| `lib/ai-cache.js` | 缓存核心模块（`AICache` 类 + `generateCacheKey` 函数），**纯函数，无副作用**，不依赖 Chrome API |
+| `lib/ai-client.js` | 新增 `cachedChat()` / `cachedChatStream()` 方法，封装缓存查询→回退→缓存存储的流程 |
+| `sidebar/sidebar.js` | `sendMessage()` 中集成缓存：命中时跳过 loading 动画、直接渲染、显示"⚡ 缓存命中"标记 |
+
+### 3.5 不引入外部依赖
+
+- 哈希算法使用 **FNV-1a 纯 JS 实现**（无 crypto 依赖）
+- 不引入 LRU 库，基于原生 Map 手动实现
+
+---
+
+## 四、依赖关系
+
+### 4.1 上游依赖（本需求依赖）
+
+| 模块 | 依赖内容 | 状态 |
+|------|---------|------|
+| `lib/ai-client.js` | 现有 `chat()` / `chatStream()` 方法 | ✅ 已实现 |
+| `sidebar/sidebar.js` | 现有 `sendMessage()` 流程 | ✅ 已实现 |
+| `lib/memory.js` | systemPrompt 构建逻辑 | ✅ 已实现 |
+| `lib/page-sense.js` | 页面感知上下文（影响 systemPrompt） | ✅ 已实现 |
+
+### 4.2 下游影响（本需求影响）
+
+| 模块/功能 | 影响说明 |
+|-----------|---------|
+| **技能系统** (`lib/skill-engine.js`) | 技能执行的 AI 调用可通过 `cachedChat` 获得缓存加速 |
+| **自动摘要** | 页面内容未变化时，重复摘要请求将命中缓存 |
+| **对话历史恢复** (`lib/conversation-store.js`) | 恢复历史对话后的"重新发送"将命中缓存 |
+
+### 4.3 与其他需求的关系
+
+| 关联需求 | 关系 |
+|----------|------|
+| R011 对话历史持久化 | 对话历史恢复时的"重新发送"可触发缓存命中 |
+| R025 API 费用仪表盘 | 缓存统计数据（hits/misses）可作为费用节省的参考指标 |
+| R008 记忆系统 | 记忆系统影响 systemPrompt，间接影响缓存键 |
+
+---
+
+## 五、风险与缓解
+
+| 风险 | 概率 | 影响 | 缓解措施 |
+|------|------|------|---------|
+| 缓存键碰撞（不同请求生成相同键） | 低 | 高（返回错误回答） | FNV-1a × 4 段拼接 = 32 字符哈希空间；键包含完整 model + messages |
+| 内存占用过大 | 低 | 中 | maxSize=50 + TTL=30min 双重限制；单条缓存值为纯文本对象 |
+| 用户看到过时回答 | 中 | 低 | 30 分钟 TTL + "⚡ 缓存命中"标记告知用户 |
+| maxSize=0 配置导致死循环 | 低 | 高 | `set()` 方法对 `maxSize <= 0` 提前返回，不进入淘汰循环 |
+
+---
+
+## 六、非目标（本期不做）
+
+1. **IndexedDB 持久化缓存** — 关闭浏览器后缓存丢失是可接受的，降低复杂度
+2. **跨页面缓存共享** — 不同页面的相同问题缓存隔离（systemPrompt 含页面上下文）
+3. **用户可配置缓存策略** — TTL / maxSize 使用合理默认值，暂不暴露设置项
+4. **缓存预热** — 不主动预加载可能的请求
+5. **相似请求模糊匹配** — 仅精确匹配，不实现语义相似度缓存
+
+---
+
+## 七、验收测试清单
+
+| # | 测试场景 | 预期结果 |
+|---|---------|---------|
+| 1 | `AICache.set()` → `get()` 基本存取 | 返回相同值，含 `cachedAt` 时间戳 |
+| 2 | TTL=1ms → `set()` → 等待 → `get()` | 返回 `null` |
+| 3 | `maxSize=2` → 存入 3 条 | 第一条被淘汰（LRU） |
+| 4 | `maxSize=0` → `set()` | 不存入，不报错，不死循环 |
+| 5 | 相同输入 → `generateCacheKey()` 两次 | 返回相同哈希 |
+| 6 | 不同 model → `generateCacheKey()` | 返回不同哈希 |
+| 7 | 含 `image_url` 的消息 → `generateCacheKey()` | 返回 `null` |
+| 8 | `stats()` | hits / misses / evictions 计数正确 |
+| 9 | `evictExpired()` | 正确清理过期条目并返回清理数量 |
+| 10 | `cachedChat()` 命中 | 不调用底层 `chat()`，返回 `{ fromCache: true }` |
+| 11 | `cachedChat()` 未命中 | 调用底层 `chat()`，结果被缓存 |
+| 12 | `cachedChatStream()` 命中 | 一次性 yield 缓存内容 |
+| 13 | `cachedChatStream()` 未命中 → 中断 | 不缓存不完整响应 |
+
+---
+
+## 八、参考文档
+
+- [设计文档: DESIGN-ITER5.md](DESIGN-ITER5.md) — 详细的技术方案与设计决策（D019–D021）
+- [需求文档: REQUIREMENTS.md](REQUIREMENTS.md) — 现有需求全景（R001–R021）
+- [路线图: ROADMAP.md](ROADMAP.md) — Phase 2 迭代计划
+
+---
+
+## 需求变更记录
+
+| 日期 | 需求 | 变更内容 |
+|------|------|----------|
+| 2026-04-30 | R022 | 新增 AI 响应缓存需求文档 |
