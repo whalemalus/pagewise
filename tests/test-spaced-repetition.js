@@ -7,8 +7,12 @@ import assert from 'node:assert/strict';
 import {
   calculateNextReview,
   getDueCards,
+  getDueCardCount,
   formatReviewDate,
-  initializeReviewData
+  initializeReviewData,
+  getReviewStreak,
+  recordReviewDay,
+  DIFFICULTY_MAP
 } from '../lib/spaced-repetition.js';
 
 describe('initializeReviewData', () => {
@@ -239,6 +243,65 @@ describe('getDueCards', () => {
   });
 });
 
+describe('getDueCardCount', () => {
+  it('应返回所有到期卡片数（不受默认 limit=20 限制）', () => {
+    const now = Date.now();
+    const entries = [];
+    for (let i = 0; i < 50; i++) {
+      entries.push({
+        id: i,
+        question: `Q${i}`,
+        answer: `A${i}`,
+        review: { nextReview: now - 1000, interval: 1, repetitions: 0, easeFactor: 2.5, lastReview: now }
+      });
+    }
+
+    const count = getDueCardCount(entries);
+    assert.equal(count, 50);
+  });
+
+  it('无到期卡片时返回 0', () => {
+    const now = Date.now();
+    const entries = [
+      { id: 1, question: 'Q', answer: 'A', review: { nextReview: now + 86400000 } }
+    ];
+    assert.equal(getDueCardCount(entries), 0);
+  });
+});
+
+describe('DIFFICULTY_MAP', () => {
+  it('应包含 again/hard/good/easy 四个键', () => {
+    assert.ok(DIFFICULTY_MAP.again);
+    assert.ok(DIFFICULTY_MAP.hard);
+    assert.ok(DIFFICULTY_MAP.good);
+    assert.ok(DIFFICULTY_MAP.easy);
+  });
+
+  it('again 应映射到 quality=1', () => {
+    assert.equal(DIFFICULTY_MAP.again.quality, 1);
+  });
+
+  it('hard 应映射到 quality=2', () => {
+    assert.equal(DIFFICULTY_MAP.hard.quality, 2);
+  });
+
+  it('good 应映射到 quality=3', () => {
+    assert.equal(DIFFICULTY_MAP.good.quality, 3);
+  });
+
+  it('easy 应映射到 quality=5', () => {
+    assert.equal(DIFFICULTY_MAP.easy.quality, 5);
+  });
+
+  it('每个条目应有 label 和 emoji', () => {
+    for (const key of ['again', 'hard', 'good', 'easy']) {
+      assert.ok(DIFFICULTY_MAP[key].label, `${key} missing label`);
+      assert.ok(DIFFICULTY_MAP[key].emoji, `${key} missing emoji`);
+      assert.ok(DIFFICULTY_MAP[key].nextIntervalHint, `${key} missing nextIntervalHint`);
+    }
+  });
+});
+
 describe('formatReviewDate', () => {
   it('今天的时间戳应返回"今天"', () => {
     const now = Date.now();
@@ -270,5 +333,36 @@ describe('formatReviewDate', () => {
     // 应该包含"月"和"日"
     assert.ok(result.includes('月'));
     assert.ok(result.includes('日'));
+  });
+});
+
+describe('getReviewStreak', () => {
+  it('应返回包含 currentStreak/longestStreak/lastReviewDate 的对象', () => {
+    const streak = getReviewStreak();
+    assert.equal(typeof streak.currentStreak, 'number');
+    assert.equal(typeof streak.longestStreak, 'number');
+    // lastReviewDate 可以是 null 或 string
+    assert.ok(streak.lastReviewDate === null || typeof streak.lastReviewDate === 'string');
+  });
+});
+
+describe('recordReviewDay', () => {
+  it('首次记录应设置 currentStreak=1', () => {
+    // 清理 localStorage
+    try { localStorage.clear(); } catch (_e) {}
+
+    const streak = recordReviewDay();
+    assert.equal(streak.currentStreak, 1);
+    assert.equal(streak.longestStreak, 1);
+    assert.ok(streak.lastReviewDate);
+  });
+
+  it('同一天重复调用不应增加 streak', () => {
+    try { localStorage.clear(); } catch (_e) {}
+
+    const first = recordReviewDay();
+    const second = recordReviewDay();
+    assert.equal(first.currentStreak, second.currentStreak);
+    assert.equal(first.lastReviewDate, second.lastReviewDate);
   });
 });

@@ -268,6 +268,7 @@ class SidebarApp {
     this.reviewProgress = document.getElementById('reviewProgress');
     this.btnCloseReview = document.getElementById('btnCloseReview');
     this.reviewCard = document.getElementById('reviewCard');
+    this.reviewCardInner = document.getElementById('reviewCardInner');
     this.reviewQuestion = document.getElementById('reviewQuestion');
     this.btnShowAnswer = document.getElementById('btnShowAnswer');
     this.reviewAnswer = document.getElementById('reviewAnswer');
@@ -275,6 +276,11 @@ class SidebarApp {
     this.reviewSummary = document.getElementById('reviewSummary');
     this.summaryStats = document.getElementById('summaryStats');
     this.btnReviewDone = document.getElementById('btnReviewDone');
+    this.reviewBadge = document.getElementById('reviewBadge');
+    this.streakDisplay = document.getElementById('streakDisplay');
+    this.streakCount = document.getElementById('streakCount');
+    this.streakBest = document.getElementById('streakBest');
+    this.streakBestCount = document.getElementById('streakBestCount');
 
     // API 配置（新）
     this.providerCards = document.getElementById('providerCards');
@@ -415,6 +421,21 @@ class SidebarApp {
       runAllCodeBlocks: (messageEl) => this.runAllCodeBlocks(messageEl),
       executeCodeSandbox: (code, lang, wrapper) => this.executeCodeSandbox(code, lang, wrapper)
     });
+  }
+
+  /**
+   * 构建页面语言 prompt 片段
+   * @param {'zh' | 'en' | 'other'} language
+   * @returns {string}
+   */
+  _buildLanguagePrompt(language) {
+    const langMap = {
+      zh: '中文页面',
+      en: 'English page',
+      other: '多语言/其他语言页面'
+    };
+    const label = langMap[language] || langMap.other;
+    return `\n页面语言：${label}\n请优先使用与页面相同的语言回答用户问题。\n`;
   }
 
   _initKnowledgePanel() {
@@ -3735,7 +3756,8 @@ ${sendContent}
         tags,
         category: tags[0] || '未分类',
         question: this.conversationHistory[this.conversationHistory.length - 2]?.content || '',
-        answer: answerText
+        answer: answerText,
+        language: this.currentPageContent?.language || 'other'
       });
       if (result && result.duplicate) {
         this.addSystemMessage(`⚠️ 知识库中已存在类似条目「${result.existing.title}」，未重复添加`);
@@ -5748,18 +5770,31 @@ ${sendContent}
   // ==================== 间隔复习 ====================
 
   /**
-   * 检查有多少到期卡片并显示复习提醒
+   * 检查有多少到期卡片并显示复习提醒 + badge
    */
   async checkDueReviews() {
     try {
       const { KnowledgeBase } = await import('../lib/knowledge-base.js');
       const kb = new KnowledgeBase();
       const entries = await kb.getAllEntries(10000);
-      const dueCards = getDueCards(entries);
+      const dueCount = getDueCardCount(entries);
 
-      if (dueCards.length > 0 && this.reviewBanner && this.reviewBannerText) {
-        this.reviewBannerText.textContent = `📚 你有 ${dueCards.length} 条知识待复习`;
+      // 显示复习提醒条（问答面板内）
+      if (dueCount > 0 && this.reviewBanner && this.reviewBannerText) {
+        this.reviewBannerText.textContent = `📚 你有 ${dueCount} 条知识待复习`;
         this.reviewBanner.classList.remove('hidden');
+      } else if (this.reviewBanner) {
+        this.reviewBanner.classList.add('hidden');
+      }
+
+      // 更新知识 tab 上的 badge
+      if (this.reviewBadge) {
+        if (dueCount > 0) {
+          this.reviewBadge.textContent = dueCount > 99 ? '99+' : dueCount;
+          this.reviewBadge.classList.remove('hidden');
+        } else {
+          this.reviewBadge.classList.add('hidden');
+        }
       }
     } catch (e) {
       // 静默处理
@@ -5796,7 +5831,7 @@ ${sendContent}
   }
 
   /**
-   * 显示当前复习卡片
+   * 显示当前复习卡片（重置翻转状态）
    */
   showCurrentReviewCard() {
     if (this.reviewIndex >= this.reviewCards.length) {
@@ -5813,28 +5848,37 @@ ${sendContent}
     const questionText = card.question || card.title || '（无问题）';
     this.reviewQuestion.innerHTML = this.escapeHtml(questionText);
 
+    // 重置翻转状态
+    if (this.reviewCardInner) {
+      this.reviewCardInner.classList.remove('flipped');
+    }
+
     // 重置答案和评分区域
-    this.reviewAnswer.classList.add('hidden');
     this.reviewRating.classList.add('hidden');
     this.btnShowAnswer.classList.remove('hidden');
   }
 
   /**
-   * 显示答案
+   * 显示答案（触发翻转动画）
    */
   showReviewAnswer() {
     const card = this.reviewCards[this.reviewIndex];
     const answerText = card.answer || card.summary || card.content || '（无答案）';
 
     this.reviewAnswer.innerHTML = renderMarkdown(answerText);
-    this.reviewAnswer.classList.remove('hidden');
+
+    // 触发翻转动画
+    if (this.reviewCardInner) {
+      this.reviewCardInner.classList.add('flipped');
+    }
+
     this.reviewRating.classList.remove('hidden');
     this.btnShowAnswer.classList.add('hidden');
   }
 
   /**
    * 评分并更新复习调度
-   * @param {number} quality - 评分 (1/3/5)
+   * @param {number} quality - 评分 (1/2/3/5)
    */
   async rateReviewCard(quality) {
     const card = this.reviewCards[this.reviewIndex];
@@ -5862,7 +5906,7 @@ ${sendContent}
   }
 
   /**
-   * 显示复习完成统计
+   * 显示复习完成统计（含 streak）
    */
   showReviewSummary() {
     this.reviewCard.classList.add('hidden');
@@ -5878,9 +5922,28 @@ ${sendContent}
       <div class="stat-item">正确率：<span class="stat-value">${accuracy}%</span></div>
     `;
 
-    // 隐藏复习提醒条
+    // 记录今日复习并更新 streak
+    try {
+      const streak = recordReviewDay();
+      if (this.streakDisplay && this.streakCount) {
+        this.streakDisplay.classList.remove('hidden');
+        this.streakCount.textContent = streak.currentStreak;
+
+        if (streak.longestStreak > 1 && this.streakBest && this.streakBestCount) {
+          this.streakBest.classList.remove('hidden');
+          this.streakBestCount.textContent = streak.longestStreak;
+        }
+      }
+    } catch (e) {
+      // streak 记录失败不影响主流程
+    }
+
+    // 隐藏复习提醒条和 badge
     if (this.reviewBanner) {
       this.reviewBanner.classList.add('hidden');
+    }
+    if (this.reviewBadge) {
+      this.reviewBadge.classList.add('hidden');
     }
 
     // 记录复习统计
@@ -5896,6 +5959,11 @@ ${sendContent}
     this.reviewIndex = 0;
     this.reviewCorrect = 0;
     this.reviewTotal = 0;
+
+    // 重置翻转状态
+    if (this.reviewCardInner) {
+      this.reviewCardInner.classList.remove('flipped');
+    }
 
     // 重新检查是否有到期卡片
     this.checkDueReviews();
