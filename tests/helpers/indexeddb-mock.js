@@ -20,12 +20,31 @@ class MockIDBRequest {
 
 /** 简易 IDBCursorWithValue — 真实模拟 cursor 行为 */
 class MockIDBCursorWithValue {
-  constructor(values, direction, req) {
+  constructor(values, direction, req, store) {
     this._values = direction === 'prev' ? [...values].reverse() : [...values];
     this._index = 0;
     this._req = req;
+    this._store = store || null;
     // 初始值
     this.value = this._values.length > 0 ? this._values[0] : undefined;
+  }
+
+  /**
+   * 删除当前游标指向的记录。
+   * 真实 IndexedDB 行为：返回 IDBRequest，完成后触发 onsuccess。
+   */
+  delete() {
+    const req = new MockIDBRequest();
+    const currentValue = this.value;
+    if (currentValue && this._store) {
+      const key = this._store.keyPath ? currentValue[this._store.keyPath] : currentValue.id;
+      this._store._records.delete(key);
+    }
+    Promise.resolve().then(() => {
+      req.result = undefined;
+      if (req.onsuccess) req.onsuccess({ target: req });
+    });
+    return req;
   }
 
   /**
@@ -164,7 +183,7 @@ class MockIDBObjectStore {
         req.result = null;
         if (req.onsuccess) req.onsuccess({ target: req });
       } else {
-        const cursor = new MockIDBCursorWithValue(values, direction, req);
+        const cursor = new MockIDBCursorWithValue(values, direction, req, this);
         req.result = cursor;
         if (req.onsuccess) req.onsuccess({ target: req });
       }

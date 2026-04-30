@@ -27,6 +27,7 @@ import { logInfo, logWarn, logError, logDebug, getLogs, clearLogs as clearLogSto
 import { MessageRenderer } from '../lib/message-renderer.js';
 import { KnowledgePanel } from '../lib/knowledge-panel.js';
 import { getShortcuts, matchShortcut } from '../lib/shortcuts.js';
+import { addOfflineAnswer, getOfflineAnswer, searchOfflineAnswers, evictOverflow, getOfflineStats } from '../lib/offline-answer-store.js';
 
 // ==================== 提供商预设 ====================
 
