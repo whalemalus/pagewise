@@ -4924,6 +4924,107 @@ ${sendContent}
     this.showToast('设置已保存', 'success');
   }
 
+  // ==================== 数据备份导出/导入 ====================
+
+  /**
+   * 导出备份：收集 chrome.storage.sync 设置 + IndexedDB 知识库，
+   * 打包为 JSON 下载
+   */
+  async exportBackup() {
+    try {
+      // 1) 收集设置
+      const settings = await new Promise((resolve) => {
+        chrome.storage.sync.get(null, (result) => resolve(result || {}));
+      });
+
+      // 2) 收集所有知识条目
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      await kb.init();
+      const entries = await kb.getAllEntries(100000);
+
+      // 3) 打包 JSON
+      const backup = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        settings,
+        knowledge: entries
+      };
+
+      const json = JSON.stringify(backup, null, 2);
+      const filename = `pagewise-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      this.downloadFile(json, filename, 'application/json;charset=utf-8');
+      this.showToast(`已导出 ${entries.length} 条知识和设置`, 'success');
+    } catch (err) {
+      console.error('[PageWise] exportBackup error:', err);
+      this.showToast('导出备份失败: ' + err.message, 'error');
+    }
+  }
+
+  /**
+   * 导入备份：从 .json 文件恢复设置和知识条目
+   * @param {Event} event - file input change event
+   */
+  async importBackup(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // 重置 input 以便同一文件可再次选择
+    event.target.value = '';
+
+    try {
+      const text = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error('文件读取失败'));
+        reader.readAsText(file, 'utf-8');
+      });
+
+      const data = JSON.parse(text);
+
+      // 验证格式
+      if (!data.version || !data.settings || !Array.isArray(data.knowledge)) {
+        this.showToast('备份文件格式无效', 'error');
+        return;
+      }
+
+      // 确认覆盖
+      const confirmed = confirm(
+        `确认导入备份？\n\n导出时间: ${data.exportedAt || '未知'}\n知识条目: ${data.knowledge.length} 条\n\n导入将覆盖当前设置，知识条目会跳过重复项。`
+      );
+      if (!confirmed) return;
+
+      // 4) 恢复设置到 chrome.storage.sync
+      await new Promise((resolve) => {
+        chrome.storage.sync.set(data.settings, resolve);
+      });
+      this.settings = data.settings;
+      this.loadSettingsForm();
+      this.applyTheme();
+
+      // 5) 导入知识条目（跳过重复）
+      const { KnowledgeBase } = await import('../lib/knowledge-base.js');
+      const kb = new KnowledgeBase();
+      await kb.init();
+
+      let imported = 0;
+      let skipped = 0;
+      for (const entry of data.knowledge) {
+        const result = await kb.saveEntry(entry);
+        if (result && result.duplicate) {
+          skipped++;
+        } else {
+          imported++;
+        }
+      }
+
+      this.showToast(`导入完成：${imported} 条新增，${skipped} 条跳过（重复）`, 'success');
+    } catch (err) {
+      console.error('[PageWise] importBackup error:', err);
+      this.showToast('导入备份失败: ' + err.message, 'error');
+    }
+  }
+
   async testConnection() {
     const protocol = PROVIDERS[this.selectedProvider]?.protocol || 'openai';
     const baseUrl = this.apiBaseUrlInput.value.trim().replace(/\/+$/, '');

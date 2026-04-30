@@ -15,7 +15,10 @@ export function createStorageMock() {
     return {
       get: (keys, callback) => {
         const result = {};
-        if (typeof keys === 'string') {
+        if (keys === null || keys === undefined) {
+          // null/undefined: return all items
+          Object.assign(result, store);
+        } else if (typeof keys === 'string') {
           result[keys] = store[keys] !== undefined ? store[keys] : undefined;
         } else if (Array.isArray(keys)) {
           for (const k of keys) {
