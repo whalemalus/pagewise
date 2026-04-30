@@ -13,7 +13,7 @@ import { allBuiltinSkills } from '../skills/builtin-skills.js';
 import { parseImportFiles } from '../lib/importer.js';
 import { saveHighlight, getHighlightsByUrl, getAllHighlightsFlat, deleteHighlight, deleteHighlightsByUrl } from '../lib/highlight-store.js';
 import { calculateNextReview, getDueCards, getDueCardCount, formatReviewDate, initializeReviewData, getReviewStreak, recordReviewDay, DIFFICULTY_MAP } from '../lib/spaced-repetition.js';
-import { buildGraphData, forceDirectedLayout, TAG_COLORS } from '../lib/knowledge-graph.js';
+import { buildGraphData, forceDirectedLayout, TAG_COLORS, applyZoomTransform, screenToWorld, computeMinimapViewport, filterGraphByTags, buildTooltipText } from '../lib/knowledge-graph.js';
 import { getSettings, saveSettings, renderMarkdown, formatTime, debounce, throttle, saveConversation, loadConversation, clearConversation, saveProfiles, loadProfiles } from '../lib/utils.js';
 import { saveConversation as saveConversationIDB, getConversationByUrl, getAllConversations, deleteConversation, deleteOldConversations, searchConversations } from '../lib/conversation-store.js';
 import { saveSkill as saveCustomSkill, getAllSkills as getAllCustomSkills, getSkillById as getCustomSkillById, deleteSkill as deleteCustomSkill, toggleSkill as toggleCustomSkill, renderTemplate } from '../lib/custom-skills.js';
@@ -342,6 +342,8 @@ class SidebarApp {
     this.graphPopupBody = document.getElementById('graphPopupBody');
     this.graphPopupClose = document.getElementById('graphPopupClose');
     this.graphPopupViewFull = document.getElementById('graphPopupViewFull');
+    this.graphMinimapCanvas = document.getElementById('graphMinimapCanvas');
+    this.btnResetZoom = document.getElementById('btnResetZoom');
 
     // Learning Path
     this.learningPathPanel = document.getElementById('learningPathPanel');
