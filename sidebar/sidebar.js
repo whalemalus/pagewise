@@ -2070,9 +2070,11 @@ class SidebarApp {
     this.btnSend.classList.add('hidden');
     this.btnStop.classList.remove('hidden');
 
+    // 声明在 try 外部，以便 catch 中可以访问（中止时追加"已停止"）
+    let fullResponse = '';
+    let messageEl = null;
+
     try {
-      let fullResponse = '';
-      let messageEl = null;
 
       // 构建用户消息（支持 vision 图片附加）
       const promptText = this.aiClient.buildPageQuestionPrompt(contentWithSelection, text);
