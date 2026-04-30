@@ -31,6 +31,7 @@ import { addOfflineAnswer, getOfflineAnswer, searchOfflineAnswers, evictOverflow
 import { detectLanguage, detectQuestionLanguage, determineResponseLanguage, buildMultilingualPrompt } from '../lib/i18n-detector.js';
 import { ReviewSession, saveSession, getRecentSessions, getWeeklyStats } from '../lib/review-session.js';
 import { detectContradictions, findCandidateEntries, filterContradictions, buildContradictionWarningHtml, CONTRADICTION_SEVERITY } from '../lib/contradiction-detector.js';
+import { WikiStore, PAGE_TYPE_LABELS, PAGE_TYPE_ICONS, renderWikilinks } from '../lib/wiki-store.js';
 
 // ==================== 提供商预设 ====================
 
@@ -354,6 +355,27 @@ class SidebarApp {
     this.learningPathContent = document.getElementById('learningPathContent');
     this.learningPathStatus = document.getElementById('learningPathStatus');
     this.btnGenerateLearningPath = document.getElementById('btnGenerateLearningPath');
+
+    // Wiki
+    this.wikiStore = new WikiStore();
+    this.wikiCurrentPage = 1;
+    this.wikiCurrentFilter = 'all';
+    this.wikiCurrentQuery = '';
+    this.wikiSearchInput = document.getElementById('wikiSearchInput');
+    this.wikiTypeFilters = document.getElementById('wikiTypeFilters');
+    this.wikiStats = document.getElementById('wikiStats');
+    this.wikiPageList = document.getElementById('wikiPageList');
+    this.wikiPageDetail = document.getElementById('wikiPageDetail');
+    this.wikiDetailType = document.getElementById('wikiDetailType');
+    this.wikiDetailContent = document.getElementById('wikiDetailContent');
+    this.wikiBacklinks = document.getElementById('wikiBacklinks');
+    this.wikiBacklinkList = document.getElementById('wikiBacklinkList');
+    this.wikiPagination = document.getElementById('wikiPagination');
+    this.wikiPrevPage = document.getElementById('wikiPrevPage');
+    this.wikiNextPage = document.getElementById('wikiNextPage');
+    this.wikiPageInfo = document.getElementById('wikiPageInfo');
+    this.btnWikiBack = document.getElementById('btnWikiBack');
+    this.emptyWiki = document.getElementById('emptyWiki');
 
     // Export Conversation
     this.btnExportConversation = document.getElementById('btnExportConversation');
@@ -2246,7 +2268,7 @@ class SidebarApp {
       this.mainConversationSnapshot = null;
       this.updateBranchBar();
       await clearConversation();
-      this.chatArea.innerHTML = '';
+      this.messageRenderer.reset();
       this.addSystemMessage('对话已清除');
       this.userInput.value = '';
       this.updateTokenDisplay();
@@ -4112,20 +4134,15 @@ ${sendContent}
 
       this.showLearningPathStatus('AI 正在分析你的知识库...');
 
-      // 设置 120 秒超时（学习路径分析 + JSON 生成需要更多时间）
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('生成超时（120秒），请检查 API 连通性后重试')), 120000);
-      });
-
-      const responsePromise = this.aiClient.chat([{
+      // 使用 AbortSignal 设置 90 秒超时，超时后真正取消 fetch 请求
+      const response = await this.aiClient.chat([{
         role: 'user',
         content: prompt
       }], {
         maxTokens: 2000,
+        signal: AbortSignal.timeout(90000),
         systemPrompt: '你是一个学习规划助手。基于用户的知识库内容，生成结构化的个性化学习路径。只返回 JSON 格式的结果，不要返回其他内容。'
       });
-
-      const response = await Promise.race([responsePromise, timeoutPromise]);
 
       // 4. 解析 AI 返回的学习路径
       const learningPath = parseLearningPathResponse(response.content);
@@ -4144,7 +4161,7 @@ ${sendContent}
       this.showLearningPathStatus(`基于 ${entries.length} 条知识、${topicStats.topics.length} 个主题生成`);
 
     } catch (error) {
-      if (error.message.includes('超时')) {
+      if (error.name === 'TimeoutError' || error.name === 'AbortError' || error.message.includes('超时')) {
         this.showLearningPathStatus('AI 响应超时，请稍后重试');
       } else {
         this.showLearningPathStatus(`生成失败：${error.message}`);
@@ -4745,7 +4762,7 @@ ${sendContent}
     if (this.conversationHistory.length === 0) return;
     if (!confirm('确定要清空当前对话吗？此操作不可恢复。')) return;
     this.conversationHistory = [];
-    this.chatArea.innerHTML = '';
+    this.messageRenderer.reset();
     saveConversation([], this.currentTabUrl);
     this.updateTokenDisplay();
   }
@@ -5787,7 +5804,7 @@ ${sendContent}
       this.switchTab('chat');
 
       // 清空当前对话
-      this.chatArea.innerHTML = '';
+      this.messageRenderer.reset();
       this.conversationHistory = conv.messages;
 
       // 渲染对话
