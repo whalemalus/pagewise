@@ -188,6 +188,19 @@
 - **方案选择**: `<code>` 完整文本；`<blockquote>` 截取前 200 字符
 - **原因**: 行内代码通常很短，完整匹配更精确；引用块 200 字符足以定位唯一位置，且 TreeWalker 遍历性能可控
 
+### D019: 智能上下文抓取 — 代码块、表格、公式提取
+- **决策日期**: 2026-04-30
+- **问题**: `extractPageContent()` 对代码块只提取了 `<pre><code>` 文本，表格和公式完全丢失，导致 AI 对技术页面的理解残缺
+- **方案选择**: **独立 `lib/context-extractor.js` 模块 + content script 集成**
+- **架构设计**:
+  1. **代码块增强**: 提取 `<pre><code>` 带语言检测、行号、上下文标题，排除 inline `<code>` 的干扰
+  2. **表格提取**: 递归遍历 `<table>` → 结构化 `{ headers, rows, caption }` → Markdown 格式化输出
+  3. **公式提取**: 识别 MathJax (`<script type="math/tex">`), KaTeX (`<annotation encoding="application/x-tex">`), MathML (`<math>`), 以及常见 `$$...$$` / `\(...\)` 文本模式
+- **设计决策 D019a**: 表格提取选择 Markdown 格式而非 JSON — AI 对 Markdown 表格的理解更好，且 token 更少
+- **设计决策 D019b**: 公式优先保留 LaTeX 源码而非渲染后的 MathML — LaTeX 更紧凑、AI 理解更好
+- **设计决策 D019c**: 表格行数限制 200 行 — 避免大表格（如数据集）撑爆 context
+- **设计决策 D019d**: 代码块保留上下文标题（前一个 `<h1>`-`<h6>` 或 `<summary>`）— 帮助 AI 理解代码属于哪个章节
+
 ## 已知技术债务
 
 | ID | 描述 | 优先级 | 状态 |
