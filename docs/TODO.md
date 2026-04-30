@@ -106,7 +106,7 @@
   - 基于标签关联: 同标签的页面互相引用
   - 每个页面至少 2 个出站链接（孤立页面自动补链）
 
-- [ ] **L1.4 Git 集成** — 导出的 wiki 目录自动初始化为 Git 仓库
+- [x] **L1.4 Git 集成** — 导出的 wiki 目录自动初始化为 Git 仓库
   - 每次导出自动 commit
   - 支持推送到用户指定的 GitHub 仓库
   - commit message 格式: `ingest: {N} new entries, {M} updated pages`
