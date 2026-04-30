@@ -28,6 +28,7 @@ import { MessageRenderer } from '../lib/message-renderer.js';
 import { KnowledgePanel } from '../lib/knowledge-panel.js';
 import { getShortcuts, matchShortcut } from '../lib/shortcuts.js';
 import { addOfflineAnswer, getOfflineAnswer, searchOfflineAnswers, evictOverflow, getOfflineStats } from '../lib/offline-answer-store.js';
+import { detectLanguage, detectQuestionLanguage, determineResponseLanguage, buildMultilingualPrompt } from '../lib/i18n-detector.js';
 
 // ==================== 提供商预设 ====================
 
@@ -453,18 +454,26 @@ class SidebarApp {
   }
 
   /**
-   * 构建页面语言 prompt 片段
-   * @param {'zh' | 'en' | 'other'} language
+   * 构建多语言 prompt 片段（R15: 使用 I18nDetector 增强）
+   *
+   * 检测用户问题语言，结合页面语言和用户设置，生成精确的多语言回答策略。
+   *
+   * @param {string} pageLang - 页面语言代码 (zh/en/ja/ko/ru/ar/other)
+   * @param {string} questionText - 用户问题文本（用于检测问题语言）
    * @returns {string}
    */
-  _buildLanguagePrompt(language) {
-    const langMap = {
-      zh: '中文页面',
-      en: 'English page',
-      other: '多语言/其他语言页面'
-    };
-    const label = langMap[language] || langMap.other;
-    return `\n页面语言：${label}\n请优先使用与页面相同的语言回答用户问题。\n`;
+  _buildLanguagePrompt(pageLang, questionText) {
+    // 检测用户问题语言
+    const questionLang = detectQuestionLanguage(questionText);
+
+    // 获取用户设置的首选语言（如果有）
+    const preferredLang = this.settings?.responseLanguage || null;
+
+    // 决定最佳回答语言
+    const responseLang = determineResponseLanguage(pageLang, questionLang, preferredLang);
+
+    // 构建多语言 prompt
+    return buildMultilingualPrompt(pageLang || 'other', questionLang, responseLang);
   }
 
   _initKnowledgePanel() {
