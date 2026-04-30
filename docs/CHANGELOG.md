@@ -7,6 +7,19 @@
 ## [Unreleased]
 
 ### 新增
+- **L1.2 实体/概念自动提取（迭代 #21）** — 导出时用 AI 自动识别 Q&A 中提到的实体和概念
+  - `lib/entity-extractor.js`: 实体/概念自动提取模块
+  - `extractEntities(entries, aiClient)`: 从 Q&A 条目中使用 AI 提取实体（人名、工具、框架、API 等）和概念（技术概念、设计模式、方法论）
+  - `generateEntityMarkdown(entity)`: 生成实体页 Markdown（含 YAML frontmatter、概述、相关 Q&A 列表、关联实体）
+  - `generateConceptMarkdown(concept)`: 生成概念页 Markdown（含 YAML frontmatter、概述、相关 Q&A、关联技术）
+  - `buildEntityIndex(entities, concepts)`: 生成实体/概念索引 Markdown（按类型分组）
+  - 支持批量处理（大知识库分批调用 AI）和同名去重合并
+  - Wikilink 格式 `[[name]]` 预留 L1.3 交叉引用
+  - 22 个单元测试覆盖全部核心逻辑
+
+### 变更
+- `lib/entity-extractor.js` — 新增模块，纯 ES Module，不依赖 IndexedDB 或 Chrome API
+
 - **PDF 提取引擎增强（迭代 #8）** — 引入 pdf.js 提升 PDF 文本提取可靠性
   - `lib/pdf-extractor.js`: PDF 文本提取器模块（PdfExtractor 类）
   - 使用 pdf.js v3.11.174 (ES Module) 进行可靠 PDF 解析

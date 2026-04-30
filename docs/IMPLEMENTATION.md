@@ -1,4 +1,42 @@
-# IMPLEMENTATION.md — 迭代 R8 实现记录
+# IMPLEMENTATION.md — 迭代实现记录
+
+---
+
+## 迭代 21 — L1.2 实体/概念自动提取
+
+> 日期: 2026-04-30
+> 任务: L1.2 实体/概念自动提取 — 导出时用 AI 自动识别 Q&A 中提到的实体和概念
+
+### 新增文件
+
+1. **lib/entity-extractor.js** — 实体/概念自动提取模块
+   - `ENTITY_TYPES` — 支持的实体类型常量（person, tool, framework, api, language, platform, library, service, other）
+   - `buildExtractionPrompt(entries)` — 构建 AI 提示词，指示 AI 从 Q&A 条目中提取实体和概念
+   - `parseExtractionResponse(response)` — 解析 AI 返回的 JSON（支持 markdown 代码块包裹）
+   - `extractEntities(entries, aiClient, options)` — 主提取流程，支持批量处理和去重合并
+   - `generateEntityMarkdown(entity)` — 生成实体页 Markdown（含 YAML frontmatter + 概述 + 相关 Q&A + 关联实体）
+   - `generateConceptMarkdown(concept)` — 生成概念页 Markdown（含 YAML frontmatter + 概述 + 相关 Q&A + 关联技术）
+   - `buildEntityIndex(entities, concepts)` — 生成实体/概念索引 Markdown（按类型分组）
+   - `sanitizeFilename(name)` — 清理文件系统不安全字符
+
+2. **tests/test-entity-extractor.js** — 22 个单元测试
+
+### 设计决策
+
+- **纯 ES Module**：不依赖 IndexedDB 或 Chrome API，与 `KnowledgeBase` 完全解耦
+- **批量分批处理**：默认每批 10 条，大知识库分批调用 AI 后合并去重
+- **去重策略**：同名实体/概念自动合并 `relatedEntryIds`
+- **容错解析**：支持直接 JSON、markdown 代码块包裹、无效输入安全降级
+- **Wikilink 格式**：关联实体使用 `[[name]]` 格式，为 L1.3 交叉引用做准备
+
+### 测试结果
+
+- 新增: 22 个测试，全部通过
+- 总测试: 1539
+
+---
+
+## 迭代 R8 — PDF 提取引擎增强
 
 > 日期: 2026-04-30
 > 任务: PDF 提取引擎增强
