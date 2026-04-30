@@ -29,6 +29,7 @@ import { KnowledgePanel } from '../lib/knowledge-panel.js';
 import { getShortcuts, matchShortcut } from '../lib/shortcuts.js';
 import { addOfflineAnswer, getOfflineAnswer, searchOfflineAnswers, evictOverflow, getOfflineStats } from '../lib/offline-answer-store.js';
 import { detectLanguage, detectQuestionLanguage, determineResponseLanguage, buildMultilingualPrompt } from '../lib/i18n-detector.js';
+import { ReviewSession, saveSession, getRecentSessions, getWeeklyStats } from '../lib/review-session.js';
 
 // ==================== 提供商预设 ====================
 
