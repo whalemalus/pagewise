@@ -7,6 +7,21 @@
 ## [1.3.0] - 2026-04-30
 
 ### 新增
+- **AI 响应缓存（迭代 #5）** — 避免对相同请求重复调用 AI API，节省费用并降低延迟
+  - `AICache` 类: 纯内存 LRU 缓存（FNV-1a 哈希键、TTL 过期、LRU 淘汰、统计计数）
+  - `generateCacheKey()`: 基于 model + messages + systemPrompt + maxTokens + protocol 生成 32 位哈希键
+  - 图片消息自动跳过缓存（图片 URL 不稳定且数据量大）
+  - `AIClient.cachedChat()`: 带缓存的非流式调用，返回 `{ fromCache: boolean }`
+  - `AIClient.cachedChatStream()`: 带缓存的流式调用，命中时一次性 yield 缓存内容
+  - `sendMessage()` 集成: 自动使用缓存，命中时显示 `⚡ 缓存命中` 徽章
+  - 默认配置: 最多 50 条缓存，30 分钟 TTL
+  - 43 个单元测试覆盖全部核心逻辑
+
+### 变更
+- `sidebar/sidebar.js` — `chatStream()` 替换为 `cachedChatStream()`，集成 AICache
+- `sidebar/sidebar.css` — 新增 `.pw-cache-badge` 缓存命中徽章样式
+
+### 新增
 - **R012: 页面高亮关联** — AI 回答中的引用文本（行内代码、引用块）可点击跳转，在页面中高亮并定位到原文位置
   - `_injectQuoteAttributes()`: 渲染后扫描 `<code>`（行内）和 `<blockquote>` 元素，注入 `data-quote` 属性和可点击样式
   - `flashHighlight()`: 在页面中查找文本并创建临时高亮，3 秒后自动淡出并移除 DOM 元素

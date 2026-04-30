@@ -2,6 +2,66 @@
 
 ---
 
+## 迭代 #5: AI 响应缓存
+
+> **迭代日期**: 2026-04-30
+> **迭代目标**: AI 响应缓存（避免重复请求）
+> **执行者**: Claude Code (Sub Agent)
+
+### 文件变更统计
+
+| 文件 | 变更类型 | 增/删 |
+|------|----------|-------|
+| `lib/ai-cache.js` | 新建 | +270 行 |
+| `lib/ai-client.js` | 修改 | +73 行（cachedChat/cachedChatStream 方法 + import） |
+| `sidebar/sidebar.js` | 修改 | +35 行（缓存集成 + UI 标记） |
+| `sidebar/sidebar.css` | 修改 | +20 行（缓存命中徽章样式） |
+| `tests/test-ai-cache.js` | 新建 | +543 行 |
+| `docs/CHANGELOG.md` | 修改 | +22 行 |
+| `docs/TODO.md` | 修改 | +1/-1 行 |
+| `docs/DESIGN-ITER5.md` | 已有 | — |
+
+### 功能实现详情
+
+#### 1. lib/ai-cache.js — 核心缓存模块 ✅
+- **FNV-1a 哈希**: `fnv1aHash()` 纯 JS 实现，`hash32()` 四轮拼接生成 32 位十六进制键
+- **generateCacheKey()**: 构建键字符串 (model + maxTokens + protocol + systemPrompt + messages)，含图片时返回 null
+- **AICache 类**: LRU 纯内存缓存
+  - `get(key)`: TTL 检查 + LRU 刷新（删除-重插入）
+  - `set(key, value)`: 容量检查 + LRU 淘汰（删除 Map 迭代序第一条）
+  - `has(key)`, `delete(key)`, `clear()`, `size()`
+  - `evictExpired()`: 主动清理过期条目
+  - `stats()`: 返回 hits/misses/evictions/size 统计
+- **设计决策 D019**: 纯内存 vs IndexedDB — 纯内存，生命周期与扩展进程一致
+- **设计决策 D020**: 完整哈希键 — model + messages + systemPrompt + maxTokens + protocol
+- **设计决策 D021**: 流式完成后一次性缓存完整文本
+
+#### 2. lib/ai-client.js — 缓存增强方法 ✅
+- `cachedChat(messages, options, cache)`: 非流式缓存调用
+  - generateCacheKey → cache.get → 命中返回 `{ ...cached, fromCache: true }`
+  - 未命中 → this.chat → cache.set → 返回 `{ ...result, fromCache: false }`
+  - 图片消息 cacheKey=null，跳过缓存
+- `cachedChatStream(messages, options, cache)`: 流式缓存调用
+  - 命中 → 一次性 yield 缓存内容
+  - 未命中 → 正常流式 + 收集完整内容 + cache.set
+
+#### 3. sidebar/sidebar.js — 缓存集成 ✅
+- `import { AICache } from '../lib/ai-cache.js'`
+- 构造函数新增 `this.aiCache = new AICache({ maxSize: 50, ttlMs: 30 * 60 * 1000 })`
+- `sendMessage()` 中: `chatStream` → `cachedChatStream`，传入 `this.aiCache`
+- 缓存命中检测: TTFT < 50ms 视为命中
+- 命中时显示 `⚡ 缓存命中` 徽章（附 stats tooltip）
+
+#### 4. CSS 样式 ✅
+- `.pw-cache-badge`: 绿色半透明背景 + 紧凑文字样式
+- 暗色主题适配: `[data-theme="dark"]` 变量覆盖
+
+#### 5. 测试 ✅
+- `tests/test-ai-cache.js` — 43 个测试，9 个 suite
+- 覆盖: generateCacheKey（一致性、区分性、图片排除）、AICache（构造、存取、TTL、LRU 淘汰、统计、边界）、AIClient 集成（cachedChat/cachedChatStream 命中/未命中）
+
+---
+
 ## 迭代 #4: R012 页面高亮关联
 
 > **迭代日期**: 2026-04-30

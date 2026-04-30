@@ -3,6 +3,7 @@
  */
 
 import { AIClient, estimateMessagesTokens } from '../lib/ai-client.js';
+import { AICache } from '../lib/ai-cache.js';
 import { SkillEngine } from '../lib/skill-engine.js';
 import { PageSense } from '../lib/page-sense.js';
 import { MemorySystem } from '../lib/memory.js';
@@ -56,6 +57,9 @@ class SidebarApp {
     this.memory = new MemorySystem();
     this.evolution = new EvolutionEngine();
     this.skillStore = new SkillStore();
+
+    // AI 响应缓存（纯内存 LRU，30 分钟 TTL，最多 50 条）
+    this.aiCache = new AICache({ maxSize: 50, ttlMs: 30 * 60 * 1000 });
 
     // 搜索模式
     this.searchMode = 'keyword'; // 'keyword' | 'semantic'
@@ -2348,17 +2352,26 @@ class SidebarApp {
 
       // 记录 API 调用开始时间
       const _apiStart = performance.now();
+      let cacheHit = false;
 
-      for await (const chunk of this.aiClient.chatStream(
-        [
-          ...this.conversationHistory.slice(-6),
-          userMessage
-        ],
-        { systemPrompt: enhancedSystemPrompt, signal: this.abortController.signal }
+      const streamMessages = [
+        ...this.conversationHistory.slice(-6),
+        userMessage
+      ];
+      const streamOpts = {
+        systemPrompt: enhancedSystemPrompt,
+        signal: this.abortController.signal,
+        model: this.settings.model,
+        maxTokens: this.aiClient.maxTokens
+      };
+
+      for await (const chunk of this.aiClient.cachedChatStream(
+        streamMessages, streamOpts, this.aiCache
       )) {
         if (!messageEl) {
           // 记录首个 chunk 到达的时间（Time to First Token）
-          recordMetric('api', performance.now() - _apiStart, {
+          const ttft = performance.now() - _apiStart;
+          recordMetric('api', ttft, {
             type: 'ttft',
             model: this.settings.model
           });
@@ -2367,6 +2380,11 @@ class SidebarApp {
           messageEl = this.addAIMessage('');
           // 记录首次渲染耗时
           recordMetric('rendering', performance.now() - _renderStart, { type: 'first' });
+
+          // 检测缓存命中：首个 chunk 时 TTFT 极低视为缓存命中
+          if (ttft < 50) {
+            cacheHit = true;
+          }
         }
         fullResponse += chunk;
         const _updateStart = performance.now();
@@ -2386,6 +2404,18 @@ class SidebarApp {
         model: this.settings.model,
         responseLength: fullResponse.length
       });
+
+      // 缓存命中标记
+      if (cacheHit && messageEl) {
+        const badge = document.createElement('span');
+        badge.className = 'pw-cache-badge';
+        badge.textContent = '⚡ 缓存命中';
+        badge.title = `缓存统计: ${JSON.stringify(this.aiCache.stats())}`;
+        const header = messageEl.querySelector('.ai-header') || messageEl.firstElementChild;
+        if (header) {
+          header.appendChild(badge);
+        }
+      }
 
       // 检查是否有技能调用指令
       await this.handleSkillCalls(fullResponse, contentWithSelection);
