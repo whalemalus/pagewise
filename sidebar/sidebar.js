@@ -2054,6 +2054,10 @@ class SidebarApp {
       selection
     };
 
+    // 缓存最后一次提问，用于一键重试
+    this._lastUserText = text;
+    this._lastContentWithSelection = contentWithSelection;
+
     console.log('[PageWise] sendMessage:', { question: text.slice(0, 80), hasContent: !!contentWithSelection.content, contentLength: contentWithSelection.content.length, hasSelection: !!selection, currentTabId: this.currentTabId });
 
     // 构建增强 prompt（加入记忆、页面感知、进化策略）
@@ -2289,21 +2293,61 @@ class SidebarApp {
   async handleAIError(error, userText, contentWithSelection, _retryCount = 0) {
     const classified = classifyAIError(error);
 
-    // 速率限制：自动重试（最多 3 次，指数退避）
+    // 速率限制（429）：固定 5 秒后自动重试（最多 3 次）
     if (classified.type === ErrorType.RATE_LIMIT && _retryCount < 3) {
-      const delay = 1000 * Math.pow(2, _retryCount);
-      this.showToast(`请求过于频繁，${delay / 1000} 秒后自动重试...`, 'warning');
-      await new Promise(resolve => setTimeout(resolve, delay));
-      // 重新发送消息（传入重试计数）
+      const delaySec = 5;
+      this.showToast(`请求频繁，${delaySec} 秒后自动重试（${_retryCount + 1}/3）...`, 'warning');
+      await new Promise(resolve => setTimeout(resolve, delaySec * 1000));
       this._retrySendMessage(userText, contentWithSelection, _retryCount + 1);
       return;
     }
 
-    // 构建友好错误消息
-    let errorMsg = `⚠️ ${classified.message}`;
+    // 速率限制超过最大重试次数
+    if (classified.type === ErrorType.RATE_LIMIT) {
+      const msgEl = this.addSystemMessage('');
+      msgEl.innerHTML = `
+        <span class="system-msg-text">${this.escapeHtml('⚠️ 请求频繁，已重试多次，请稍后再试')}</span>
+        <button class="btn-retry-inline" style="
+          margin-left:8px;padding:2px 10px;font-size:12px;
+          border:1px solid var(--primary,#4f46e5);border-radius:4px;
+          background:transparent;color:var(--primary,#4f46e5);cursor:pointer;
+        ">重试</button>
+      `;
+      this._bindRetryButton(msgEl, userText);
+      return;
+    }
 
-    // 网络错误和超时：提供重试按钮
-    if (classified.type === ErrorType.NETWORK || classified.type === ErrorType.TIMEOUT) {
+    // 认证错误（401/403）：提示 + 跳转设置链接
+    if (classified.type === ErrorType.AUTH) {
+      const msgEl = this.addSystemMessage('');
+      msgEl.innerHTML = `
+        <span class="system-msg-text">${this.escapeHtml('⚠️ API Key 无效，请检查设置')}</span>
+        <a href="#" class="btn-settings-link" style="
+          margin-left:8px;padding:2px 10px;font-size:12px;
+          border:1px solid var(--primary,#4f46e5);border-radius:4px;
+          background:var(--primary,#4f46e5);color:#fff;cursor:pointer;
+          text-decoration:none;display:inline-block;
+        ">去设置</a>
+      `;
+      const settingsLink = msgEl.querySelector('.btn-settings-link');
+      if (settingsLink) {
+        settingsLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.switchTab('settings');
+        });
+      }
+      return;
+    }
+
+    // 构建友好错误消息
+    const errorMsg = `⚠️ ${classified.message}`;
+
+    // 网络错误、超时、服务器错误（500+）：提供重试按钮
+    if (
+      classified.type === ErrorType.NETWORK ||
+      classified.type === ErrorType.TIMEOUT ||
+      classified.type === ErrorType.SERVER_ERROR
+    ) {
       const msgEl = this.addSystemMessage('');
       msgEl.innerHTML = `
         <span class="system-msg-text">${this.escapeHtml(errorMsg)}</span>
@@ -2313,19 +2357,30 @@ class SidebarApp {
           background:transparent;color:var(--primary,#4f46e5);cursor:pointer;
         ">重试</button>
       `;
-      const retryBtn = msgEl.querySelector('.btn-retry-inline');
-      if (retryBtn) {
-        retryBtn.addEventListener('click', () => {
-          msgEl.remove();
-          this.userInput.value = userText;
-          this.sendMessage();
-        });
-      }
+      this._bindRetryButton(msgEl, userText);
       return;
     }
 
     // 其他错误：普通提示
     this.addSystemMessage(errorMsg);
+  }
+
+  /**
+   * 为错误消息的重试按钮绑定点击事件
+   * @param {HTMLElement} msgEl - 消息元素
+   * @param {string} userText - 用户输入文本
+   */
+  _bindRetryButton(msgEl, userText) {
+    const retryBtn = msgEl.querySelector('.btn-retry-inline');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        msgEl.remove();
+        // 使用缓存的最后提问内容（优先）或传入的文本
+        const retryText = this._lastUserText || userText;
+        this.userInput.value = retryText;
+        this.sendMessage();
+      });
+    }
   }
 
   /**

@@ -77,7 +77,7 @@ describe('classifyAIError - 速率限制', () => {
   it('API 429 被识别为速率限制', () => {
     const result = classifyAIError(new Error('API 429: Too Many Requests'));
     assert.equal(result.type, ErrorType.RATE_LIMIT);
-    assert.equal(result.message, '请求过于频繁，请稍后重试');
+    assert.equal(result.message, '请求频繁，请稍后重试');
     assert.equal(result.retryable, true);
   });
 
@@ -117,8 +117,22 @@ describe('classifyAIError - 未知错误', () => {
 });
 
 describe('classifyAIError - 服务器错误', () => {
-  it('500 被识别为可重试的未知错误', () => {
+  it('500 被识别为 SERVER_ERROR 且可重试', () => {
     const result = classifyAIError(new Error('API 500: Internal Server Error'));
+    assert.equal(result.type, ErrorType.SERVER_ERROR);
+    assert.equal(result.message, '服务器错误，请稍后重试');
+    assert.equal(result.retryable, true);
+  });
+
+  it('502 被识别为 SERVER_ERROR', () => {
+    const result = classifyAIError(new Error('API 502: Bad Gateway'));
+    assert.equal(result.type, ErrorType.SERVER_ERROR);
+    assert.equal(result.retryable, true);
+  });
+
+  it('503 被识别为 SERVER_ERROR', () => {
+    const result = classifyAIError(new Error('API 503: Service Unavailable'));
+    assert.equal(result.type, ErrorType.SERVER_ERROR);
     assert.equal(result.retryable, true);
   });
 });
