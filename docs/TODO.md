@@ -12,13 +12,13 @@
 
 ### Phase 1: 核心模块 E2E 测试 (R36-R45)
 
-- [ ] R36: AI Client E2E — API 调用、流式解析、错误重试、超时处理、模型切换
-- [ ] R37: AI Cache E2E — 缓存命中/未命中、过期清理、LRU 淘汰、容量上限、并发读写
-- [ ] R38: Knowledge Base E2E — 增删改查、全文搜索、标签过滤、分页、数据完整性
-- [ ] R39: Conversation Store E2E — 创建/恢复/分支/合并对话、持久化、大对话性能
-- [ ] R40: Page Sense + Content E2E — 页面内容提取、动态页面、iframe、懒加载内容
+- [x] R36: AI Client E2E — API 调用、流式解析、错误重试、超时处理、模型切换
+- [x] R37: AI Cache E2E — 缓存命中/未命中、过期清理、LRU 淘汰、容量上限、并发读写
+- [x] R38: Knowledge Base E2E — 增删改查、全文搜索、标签过滤、分页、数据完整性
+- [x] R39: Conversation Store E2E — 创建/恢复/分支/合并对话、持久化、大对话性能
+- [x] R40: Page Sense + Content E2E — 页面内容提取、动态页面、iframe、懒加载内容
 - [x] R41: PDF Extractor E2E — 各类 PDF 解析、大文件、加密 PDF、表格/图片提取
-- [ ] R42: Skill Engine + Custom Skills E2E — 技能加载/执行/参数传递、自定义技能 CRUD
+- [x] R42: Skill Engine + Custom Skills E2E — 技能加载/执行/参数传递、自定义技能 CRUD
 - [ ] R43: Spaced Repetition E2E — 卡片创建/复习/评分/间隔调整、连续学习天数
 - [ ] R44: Knowledge Graph + Entity Extractor E2E — 实体识别、关系构建、图查询
 - [ ] R45: Wiki Store + Query E2E — Wiki CRUD、查询语法、类型过滤、分页

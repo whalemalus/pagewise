@@ -7,6 +7,15 @@
 ## [Unreleased]
 
 ### 新增
+- **R42: Skill Engine + Custom Skills E2E 测试（迭代 #42）**
+  - `tests/test-skill-engine-e2e.js`: 23 个 E2E 测试用例，8 个 suite
+  - 覆盖: 技能加载→注册→执行完整流程、CRUD 生命周期+引擎同步、参数传递+模板渲染、触发匹配+执行、容量上限(20)、Hook 集成、分类+批量操作、错误处理
+  - 发现: saveSkill 不持久化 parameters 字段（设计决策，非 bug）— 参数通过 toEngineSkill 桥接层注入
+  - 全套测试 2111 通过（+23 新增），0 失败
+
+### 修复
+- **R41: TODO.md 同步修复** — R36-R40 已完成但 TODO.md 未标记，现已修正
+
 - **R41: PDF Extractor E2E 测试（迭代 #41）**
   - `tests/test-pdf-extractor-e2e.js`: 19 个 E2E 测试用例，使用真实 PdfExtractor（非 mock）
   - 覆盖: extractText 返回结构验证、单页/多页 PDF、元数据提取、错误处理（null/空/非PDF）、extractFromUrl mock fetch、HTTP 错误、网络错误
