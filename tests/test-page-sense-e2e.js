@@ -181,25 +181,22 @@ if (importError) {
   // ================================================================
 
   describe('detectGitHubPageType — GitHub 页面子类型', () => {
-    it('仓库首页返回含 type 的对象', () => {
+    it('仓库首页返回 repo-root', () => {
       const sense = createSense();
       const result = sense.detectGitHubPageType('https://github.com/user/repo');
-      assert.ok(result, '应返回结果');
-      assert.ok(result.type, '应有 type 字段');
+      assert.equal(result, 'repo-root');
     });
 
     it('issue 页面识别', () => {
       const sense = createSense();
       const result = sense.detectGitHubPageType('https://github.com/user/repo/issues/42');
-      assert.ok(result);
-      assert.ok(result.type);
+      assert.equal(result, 'repo-issues');
     });
 
     it('pull request 页面识别', () => {
       const sense = createSense();
       const result = sense.detectGitHubPageType('https://github.com/user/repo/pull/100');
-      assert.ok(result);
-      assert.ok(result.type);
+      assert.equal(result, 'repo-pr');
     });
   });
 
@@ -238,13 +235,13 @@ if (importError) {
       assert.equal(meta.description, 'A test page');
     });
 
-    it('提取 Open Graph 元数据', () => {
+    it('无 title 标签时返回空', () => {
       const sense = createSense();
-      const html = '<html><head><meta property="og:title" content="OG Title"><meta property="og:description" content="OG Desc"></head><body></body></html>';
+      const html = '<html><head><meta name="description" content="Desc only"></head><body></body></html>';
       const meta = sense.extractMetadata(html);
       assert.ok(meta);
-      assert.equal(meta.title, 'OG Title');
-      assert.equal(meta.description, 'OG Desc');
+      assert.equal(meta.title, '');
+      assert.equal(meta.description, 'Desc only');
     });
 
     it('空 HTML 返回空元数据对象', () => {
@@ -335,16 +332,16 @@ if (importError) {
   // ================================================================
 
   describe('extractEndpoints — API 端点提取', () => {
-    it('提取 fetch 调用中的 URL', () => {
+    it('提取 GET/POST 端点', () => {
       const sense = createSense();
-      const endpoints = sense.extractEndpoints('fetch("/api/v1/users") and fetch("/api/v2/items")');
+      const endpoints = sense.extractEndpoints('GET /api/v1/users\nPOST /api/v2/items');
       assert.ok(Array.isArray(endpoints), '应返回数组');
-      assert.ok(endpoints.length >= 1, '应提取到端点');
+      assert.ok(endpoints.length >= 2, '应提取到端点');
     });
 
-    it('提取 HTTP URL', () => {
+    it('提取反引号 API 路径', () => {
       const sense = createSense();
-      const endpoints = sense.extractEndpoints('GET https://api.example.com/v1/test');
+      const endpoints = sense.extractEndpoints('调用 `/api/v1/test` 接口');
       assert.ok(Array.isArray(endpoints));
       assert.ok(endpoints.length >= 1);
     });
@@ -401,8 +398,8 @@ if (importError) {
   describe('buildSummary — 构建摘要', () => {
     it('从分析结果构建摘要字符串', () => {
       const sense = createSense();
-      const analysis = sense.analyze('https://example.com', 'Test Page', 'Some content');
-      const summary = sense.buildSummary(analysis);
+      const analysis = sense.analyze({ url: 'https://github.com/user/repo', title: 'user/repo', content: 'README' });
+      const summary = sense.buildSummary(analysis.types);
       assert.ok(typeof summary === 'string', '应返回字符串');
       assert.ok(summary.length > 0, '摘要不应为空');
     });
@@ -415,8 +412,7 @@ if (importError) {
   describe('toPrompt — 生成提示词', () => {
     it('将分析结果转为 prompt 字符串', () => {
       const sense = createSense();
-      const analysis = sense.analyze('https://example.com', 'Test', 'content');
-      const prompt = sense.toPrompt(analysis);
+      const prompt = sense.toPrompt({ url: 'https://github.com/user/repo', title: 'user/repo', content: 'README' });
       assert.ok(typeof prompt === 'string', '应返回字符串');
       assert.ok(prompt.length > 0, 'prompt 不应为空');
     });
