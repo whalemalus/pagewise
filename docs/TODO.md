@@ -174,3 +174,8 @@
   - 通过 WebDAV / Git / 自定义 API 同步
   - 支持离线编辑，联网后自动合并
   - Claude Code 在服务器上维护 wiki，PageWise 在浏览器中浏览
+
+## 🔥 本次迭代（v2.2）
+
+### P0 — Chrome Web Store 准备
+- [ ] R35: 统一错误处理集成 + _locales 国际化基础

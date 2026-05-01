@@ -4,6 +4,17 @@
  */
 
 import { logInfo, logError, logWarn } from '../lib/log-store.js';
+import { classifyAIError } from '../lib/error-handler.js';
+
+// ==================== 全局错误捕获 ====================
+self.onerror = function (message, source, lineno, colno, error) {
+  console.error('[PageWise SW 全局错误]', { message, source, lineno, colno, error });
+};
+
+self.addEventListener('unhandledrejection', function (event) {
+  console.error('[PageWise SW 未处理的 Promise]', event.reason);
+  event.preventDefault();
+});
 
 // ==================== 初始化 ====================
 
