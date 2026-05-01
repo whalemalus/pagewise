@@ -4,7 +4,6 @@
  */
 
 import { logInfo, logError, logWarn } from '../lib/log-store.js';
-import { classifyAIError } from '../lib/error-handler.js';
 
 // ==================== 全局错误捕获 ====================
 self.onerror = function (message, source, lineno, colno, error) {

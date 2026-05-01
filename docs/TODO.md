@@ -178,4 +178,5 @@
 ## 🔥 本次迭代（v2.2）
 
 ### P0 — Chrome Web Store 准备
-- [ ] R35: 统一错误处理集成 + _locales 国际化基础
+- [x] R35: 统一错误处理集成 + _locales 国际化基础
+- [ ] R36: error-handler 集成扩展（wiki-store, conversation-store）+ 集成测试

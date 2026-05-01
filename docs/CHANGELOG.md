@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### 新增
+- **R35: 统一错误处理集成 + _locales 国际化基础（迭代 #35）**
+  - `lib/ai-client.js`: 所有错误附带 `.classified` 属性（ErrorType 分类）
+  - `lib/knowledge-base.js`: IndexedDB 操作错误使用 `classifyStorageError()` 分类
+  - `background/service-worker.js`: 全局错误捕获（self.onerror + unhandledrejection）
+  - `_locales/en/messages.json`: 英文 locale（Chrome Web Store 准备）
+  - `_locales/zh_CN/messages.json`: 中文 locale
+
 - **L1.2 实体/概念自动提取（迭代 #21）** — 导出时用 AI 自动识别 Q&A 中提到的实体和概念
   - `lib/entity-extractor.js`: 实体/概念自动提取模块
   - `extractEntities(entries, aiClient)`: 从 Q&A 条目中使用 AI 提取实体（人名、工具、框架、API 等）和概念（技术概念、设计模式、方法论）
