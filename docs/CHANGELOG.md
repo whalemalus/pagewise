@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### 新增
+- **R41: PDF Extractor E2E 测试（迭代 #41）**
+  - `tests/test-pdf-extractor-e2e.js`: 19 个 E2E 测试用例，使用真实 PdfExtractor（非 mock）
+  - 覆盖: extractText 返回结构验证、单页/多页 PDF、元数据提取、错误处理（null/空/非PDF）、extractFromUrl mock fetch、HTTP 错误、网络错误
+  - `lib/pdf.worker.mjs`: 符号链接到 pdf.worker.min.mjs（pdf.js worker 路径修复）
+  - `docs/ISSUES.md`: 设计问题追踪文档
+
+### 修复
+- **R40: Page Sense E2E 测试修复** — analyze() API 使用修正（对象参数 vs 位置参数）
+
+### 新增
 - **R35: 统一错误处理集成 + _locales 国际化基础（迭代 #35）**
   - `lib/ai-client.js`: 所有错误附带 `.classified` 属性（ErrorType 分类）
   - `lib/knowledge-base.js`: IndexedDB 操作错误使用 `classifyStorageError()` 分类
@@ -114,8 +124,6 @@
 - **总计 106 个测试，全部通过**
 
 ---
-
-## [Unreleased]
 
 ### 新增
 - 项目飞轮迭代模板（CLAUDE.md、docs/）
