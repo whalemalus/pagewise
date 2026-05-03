@@ -1,0 +1,74 @@
+你是测试工程师。创建 tests/test-memory-e2e.js。
+
+不要读任何源码文件。所有需要的信息在这里。
+
+模块: lib/memory.js — export class MemorySystem
+
+API:
+- constructor() — 内部创建 KnowledgeBase 实例
+- async init() — 初始化 KnowledgeBase + 加载用户画像
+- async loadUserProfile() — 从 chrome.storage.sync 加载用户画像
+- async saveUserProfile() — 保存用户画像到 chrome.storage.sync
+- async learnFromInteraction(question, answer, pageContext) — 从交互中学习用户画像
+  - pageContext: { codeBlocks: [{lang}], url: string }
+  - 学习编程语言（从 codeBlocks.lang）
+  - 学习领域（从 url 提取域名）
+  - domains 最多保留 20 个
+- async recall(query, aiClient=null) — 三层检索：关键词→评分→AI重排
+  - 返回 Array<{type, content, source?, title?, tags?}>
+  - type: 'knowledge' | 'user-profile'
+- async extractKeywords(query) — 提取关键词，过滤停用词
+- async keywordSearch(keywords) — 关键词搜索，匹配 title/summary/question/answer/tags
+- scoreRelevance(entry, keywords, query) — 计算相关性分数（标题5分/标签4分/问题3分/摘要2分/回答1分）
+- async aiRerank(query, candidates, aiClient) — AI 重排序，返回 top5
+- async autoSaveIfWorth(question, answer, pageContext, aiClient) — 自动保存判断
+  - 规则1: answer.length >= 100
+  - 规则2: 包含技术关键词
+  - 返回 null 或 saveEntry 结果
+- async getAllEntries(limit) — 透传到 KnowledgeBase
+- async getEntry(id) — 透传到 KnowledgeBase
+- async deleteEntry(id) — 透传到 KnowledgeBase
+- async getAllTags() — 透传到 KnowledgeBase
+- async exportMarkdown() — 透传到 KnowledgeBase
+- async exportJSON() — 透传到 KnowledgeBase
+- extractDomain(url) — 从 URL 提取域名
+- async toPrompt(query, aiClient=null) — 生成给 AI 的记忆上下文
+
+测试模板:
+```javascript
+import { describe, it, beforeEach, afterEach } from 'node:test'
+import assert from 'node:assert/strict'
+import { installChromeMock, resetChromeMock } from './helpers/chrome-mock.js'
+import { installIndexedDBMock, resetIndexedDBMock } from './helpers/indexeddb-mock.js'
+
+installChromeMock()
+installIndexedDBMock()
+
+const { MemorySystem } = await import('../lib/memory.js')
+
+let memory
+beforeEach(async () => {
+  memory = new MemorySystem()
+  await memory.init()
+})
+
+afterEach(() => {
+  resetChromeMock()
+  resetIndexedDBMock()
+})
+```
+
+要求: 至少 25 个测试场景，覆盖:
+1. 初始化和用户画像加载/保存
+2. learnFromInteraction 学习编程语言和领域
+3. recall 三层检索流程
+4. extractKeywords 中英文关键词提取
+5. scoreRelevance 评分逻辑
+6. autoSaveIfWorth 自动保存判断
+7. toPrompt 生成上下文
+8. extractDomain 域名提取
+9. 边界情况：空输入、超长输入、特殊字符
+10. 错误处理：AI 调用失败时的降级
+
+运行 node --test tests/test-memory-e2e.js 确认通过。
+git add tests/test-memory-e2e.js && git commit -m "test: R43 Memory E2E — 25+ test scenarios"
