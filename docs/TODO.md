@@ -49,11 +49,11 @@
   - 测试: 22 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R48: 相似推荐 BookmarkRecommender** — `lib/bookmark-recommender.js`
-  - 选中书签 → Top-5 相似推荐
-  - 显示相似度分数
-  - 推荐结果可点击
-  - 测试: 8+ 用例
+- [x] **R48: 相似推荐 BookmarkRecommender** — `lib/bookmark-recommender.js`
+  - 基于图谱的 Top-K 相似推荐 (recommend)
+  - 基于内容的即时推荐 (recommendByContent)
+  - 推荐理由生成: 同域名/同文件夹/标题相似/混合
+  - 测试: 15 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R49: 书签搜索 BookmarkSearch** — `lib/bookmark-search.js`
