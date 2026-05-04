@@ -93,11 +93,11 @@
 
 ### 增强功能：主题聚类 → 学习路径 → 标签管理 → 重复检测
 
-- [ ] **R53: 主题聚类 TopicClustering** — `lib/bookmark-clusterer.js`
+- [x] **R53: 主题聚类 TopicClustering** — `lib/bookmark-clusterer.js`
   - 基于关键词/URL模式自动分类
   - 支持 15+ 技术领域 (前端/后端/DevOps/AI/数据库等)
   - 聚类结果可手动调整
-  - 测试: 10+ 用例
+  - 测试: 21 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R54: 学习路径推荐 LearningPathFromBookmarks** — `lib/bookmark-learning-path.js`

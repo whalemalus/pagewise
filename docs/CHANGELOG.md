@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### 新增
+- **R53: BookmarkClusterer 主题聚类引擎（迭代 #53）**
+  - `lib/bookmark-clusterer.js`: BookmarkClusterer 类 — 基于关键词/URL模式自动分类书签到技术领域
+  - 内置 14 个技术领域分类规则 + "其他"兜底（前端/后端/数据库/DevOps/AI-ML/移动开发/安全/云服务/数据/测试/设计/工具/架构/性能）
+  - `cluster()`: Map<category, Bookmark[]> 聚类结果
+  - `getCategories()`: 分类概览列表 (name/count/keywords)
+  - `moveBookmark(bookmarkId, from, to)`: 手动移动书签到指定分类
+  - `mergeCategories(cat1, cat2, name)`: 合并两个分类
+  - `getCategoryForBookmark(id)`: 查询书签所属分类
+  - 支持中文关键词匹配，域名匹配权重 > 关键词权重
+  - `tests/test-bookmark-clusterer.js`: 21 个测试用例，全部通过
+
 - **R43: BookmarkCollector 书签采集器（迭代 #43）**
   - `lib/bookmark-collector.js`: BookmarkCollector 类 — 递归读取 Chrome 书签树
   - `collect()`: 标准化书签数组 (id/title/url/folderPath/dateAdded/dateAddedISO)
