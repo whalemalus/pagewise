@@ -32,12 +32,12 @@
   - 测试: 22 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R46: 图谱可视化 BookmarkVisualizer** — `lib/bookmark-visualizer.js`
-  - Canvas 力导向图渲染
-  - 缩放/拖拽/搜索高亮
-  - 节点颜色按文件夹分类
-  - 1000节点 > 30fps
-  - 测试: 8+ 用例
+- [x] **R46: 图谱可视化 BookmarkVisualizer** — `lib/bookmark-visualizer.js`
+  - Canvas 力导向图渲染 (库仑斥力 + 弹簧引力 + 阻尼)
+  - 缩放/拖拽/搜索高亮/点击回调
+  - 节点颜色按 group 15 色方案, 大小按连接数缩放
+  - 视口裁剪优化, requestAnimationFrame 驱动
+  - 测试: 15 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R47: 详情面板 BookmarkDetailPanel** — `lib/bookmark-detail-panel.js`
