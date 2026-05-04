@@ -7,6 +7,13 @@
 ## [Unreleased]
 
 ### 新增
+- **R63: BookmarkLinkChecker 链接健康检查（飞轮迭代 R3）**
+  - `lib/bookmark-link-checker.js`: 批量检测书签链接有效性 — 310 行
+  - 功能: 并发控制(1-10)、域名限流(QPS≤2)、HEAD→GET 回退、进度回调、cancel()中断
+  - 状态判定: alive(2xx)/dead(4xx/5xx/timeout)/redirect(3xx)/unknown(非HTTP/无效URL)
+  - 测试: `tests/test-bookmark-link-checker-e2e.js` — 27 用例 ✅
+  - 覆盖: AC-1~AC-5 全部验收标准 + 边界条件 + 并发控制 + 网络错误
+  - 评分: Guard 91.15/100 通过
 - **R52: BookmarkGraph MVP E2E 测试（飞轮迭代 R2 验证）**
   - `tests/test-bookmark-graph-e2e.js`: MVP 全模块集成测试 — 14 用例 ✅
   - 覆盖: 采集→索引→图谱→搜索→推荐 完整链路
