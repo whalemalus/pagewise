@@ -267,14 +267,21 @@ export class BookmarkPanel {
       this._visualizer.highlight(id);
     }
 
-    // 获取相似书签
+    // 获取相似书签 — 统一格式为 { id, title, url, score, bookmark }
     let similar = [];
     if (this._recommender) {
-      similar = this._recommender.recommend(id, 5);
+      const recs = this._recommender.recommend(id, 5);
+      similar = recs.map(r => ({
+        id: String(r.bookmark?.id || r.id || ''),
+        title: r.bookmark?.title || r.title || '',
+        url: r.bookmark?.url || r.url || '',
+        score: r.score,
+        bookmark: r.bookmark,
+      }));
     } else if (this._graphEngine) {
       const raw = this._graphEngine.getSimilar(id, 5);
       similar = raw.map(item => ({
-        id: item.id,
+        id: String(item.id),
         title: item.bookmark?.title || '',
         url: item.bookmark?.url || '',
         score: item.score,
