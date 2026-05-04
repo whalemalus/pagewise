@@ -36,6 +36,14 @@ import { BookmarkCollector } from '../lib/bookmark-collector.js';
 import { BookmarkIndexer } from '../lib/bookmark-indexer.js';
 import { BookmarkGraphEngine } from '../lib/bookmark-graph.js';
 import { BookmarkSearch } from '../lib/bookmark-search.js';
+import { BookmarkClusterer } from '../lib/bookmark-clusterer.js';
+import { BookmarkStatusManager, VALID_STATUSES } from '../lib/bookmark-status.js';
+import { BookmarkTagger } from '../lib/bookmark-tagger.js';
+import { BookmarkDedup } from '../lib/bookmark-dedup.js';
+import { BookmarkFolderAnalyzer } from '../lib/bookmark-folder-analyzer.js';
+import { BookmarkGapDetector } from '../lib/bookmark-gap-detector.js';
+import { BookmarkImportExport } from '../lib/bookmark-io.js';
+import { BookmarkDetailPanel } from '../lib/bookmark-detail-panel.js';
 
 // ==================== 提供商预设 ====================
 
@@ -118,6 +126,23 @@ class SidebarApp {
     this._bookmarkSearchQuery = '';
     this._bookmarkActiveFolder = '*';
     this._bookmarksLoaded = false;
+
+    // 书签 Phase 4: 新功能状态
+    this._bookmarkSubTab = 'list'; // 'list' | 'cluster' | 'learning' | 'tags' | 'status' | 'duplicates' | 'folders' | 'gaps' | 'import-export'
+    this._bookmarkSortBy = 'date'; // 'date' | 'title' | 'domain' | 'status'
+    this._bookmarkSortDir = 'desc';
+    this._bookmarkStatusFilter = '*'; // '*' | 'unread' | 'reading' | 'read'
+    this._bookmarkTagFilter = '';
+    this._bookmarkClusterFilter = '';
+    this._bookmarkSelectMode = false;
+    this._bookmarkSelectedIds = new Set();
+    this._bookmarkClusterer = null;
+    this._bookmarkStatusManager = null;
+    this._bookmarkTagger = null;
+    this._bookmarkDedup = null;
+    this._bookmarkFolderAnalyzer = null;
+    this._bookmarkGapDetector = null;
+    this._bookmarkDetailPanel = new BookmarkDetailPanel();
 
     // 引导流程状态
     this.onboardingStep = 0;
@@ -491,6 +516,13 @@ class SidebarApp {
     this.bookmarksList = document.getElementById('bookmarksList');
     this.emptyBookmarks = document.getElementById('emptyBookmarks');
     this.bookmarksDetail = document.getElementById('bookmarksDetail');
+    // Phase 4 新元素
+    this.bookmarksSubTabs = document.getElementById('bookmarksSubTabs');
+    this.bookmarksSortSelect = document.getElementById('bookmarksSortSelect');
+    this.bookmarksStatusFilter = document.getElementById('bookmarksStatusFilter');
+    this.bookmarksBatchToolbar = document.getElementById('bookmarksBatchToolbar');
+    this.bookmarksBatchCount = document.getElementById('bookmarksBatchCount');
+    this.bookmarksContentPanel = document.getElementById('bookmarksContentPanel');
     this.bookmarksDetailContent = document.getElementById('bookmarksDetailContent');
     this.bookmarksDetailSimilar = document.getElementById('bookmarksDetailSimilar');
     this.bookmarksSimilarList = document.getElementById('bookmarksSimilarList');
@@ -978,7 +1010,106 @@ class SidebarApp {
     if (this.btnBookmarksBack) {
       this.btnBookmarksBack.addEventListener('click', () => this._hideBookmarkDetail());
     }
+
+    // Phase 4: 子标签页切换
+    if (this.bookmarksSubTabs) {
+      this.bookmarksSubTabs.addEventListener('click', (e) => {
+        const btn = e.target.closest('.bk-subtab');
+        if (!btn) return;
+        this.bookmarksSubTabs.querySelectorAll('.bk-subtab').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._bookmarkSubTab = btn.dataset.subtab;
+        this._renderBookmarksContent();
+      });
+    }
+
+    // Phase 4: 排序选择
+    if (this.bookmarksSortSelect) {
+      this.bookmarksSortSelect.addEventListener('change', () => {
+        this._bookmarkSortBy = this.bookmarksSortSelect.value;
+        this._renderBookmarksList();
+      });
+    }
+
+    // Phase 4: 状态过滤
+    if (this.bookmarksStatusFilter) {
+      this.bookmarksStatusFilter.addEventListener('click', (e) => {
+        const btn = e.target.closest('.bk-status-btn');
+        if (!btn) return;
+        this.bookmarksStatusFilter.querySelectorAll('.bk-status-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._bookmarkStatusFilter = btn.dataset.status;
+        this._renderBookmarksList();
+      });
+    }
+
+    // Phase 4: 批量选择相关
+    if (this.bookmarksBatchToolbar) {
+      const btnSelectAll = this.bookmarksBatchToolbar.querySelector('#btnBkSelectAll');
+      const btnDeselectAll = this.bookmarksBatchToolbar.querySelector('#btnBkDeselectAll');
+      const btnBatchRead = this.bookmarksBatchToolbar.querySelector('#btnBkBatchRead');
+      const btnBatchDelete = this.bookmarksBatchToolbar.querySelector('#btnBkBatchDelete');
+      const btnToggleSelect = this.bookmarksBatchToolbar.querySelector('#btnBkToggleSelect');
+
+      if (btnToggleSelect) {
+        btnToggleSelect.addEventListener('click', () => {
+          this._bookmarkSelectMode = !this._bookmarkSelectMode;
+          if (!this._bookmarkSelectMode) this._bookmarkSelectedIds.clear();
+          btnToggleSelect.textContent = this._bookmarkSelectMode ? '✅ 取消选择' : '☑️ 批量选择';
+          this._renderBookmarksList();
+        });
+      }
+      if (btnSelectAll) {
+        btnSelectAll.addEventListener('click', () => {
+          this._filteredBookmarks.forEach(bm => this._bookmarkSelectedIds.add(bm.id));
+          this._renderBookmarksList();
+        });
+      }
+      if (btnDeselectAll) {
+        btnDeselectAll.addEventListener('click', () => {
+          this._bookmarkSelectedIds.clear();
+          this._renderBookmarksList();
+        });
+      }
+      if (btnBatchRead) {
+        btnBatchRead.addEventListener('click', () => {
+          if (this._bookmarkStatusManager && this._bookmarkSelectedIds.size > 0) {
+            const count = this._bookmarkStatusManager.batchSetStatus([...this._bookmarkSelectedIds], 'read');
+            // Update local bookmark data
+            for (const bm of this._bookmarks) {
+              if (this._bookmarkSelectedIds.has(bm.id)) bm.status = 'read';
+            }
+            this._bookmarkSelectedIds.clear();
+            this._bookmarkSelectMode = false;
+            this.showToast(`已标记 ${count} 个书签为已读`, 'success');
+            this._renderBookmarksList();
+            this._renderBookmarksStats();
+          }
+        });
+      }
+      if (btnBatchDelete) {
+        btnBatchDelete.addEventListener('click', () => {
+          if (this._bookmarkSelectedIds.size === 0) return;
+          this._bookmarks = this._bookmarks.filter(bm => !this._bookmarkSelectedIds.has(bm.id));
+          const count = this._bookmarkSelectedIds.size;
+          this._bookmarkSelectedIds.clear();
+          this._bookmarkSelectMode = false;
+          this.showToast(`已移除 ${count} 个书签`, 'success');
+          this._renderBookmarksList();
+          this._renderBookmarksStats();
+        });
+      }
+    }
+
+    // Phase 4: 内容面板事件委托
+    if (this.bookmarksContentPanel) {
+      this.bookmarksContentPanel.addEventListener('click', (e) => {
+        this._handleContentPanelClick(e);
+      });
+    }
   }
+
+  async loadSettings() {
     this.settings = await getSettings();
     console.log('[PageWise] loadSettings:', {
       hasApiKey: !!this.settings.apiKey,
@@ -6807,10 +6938,33 @@ ${sendContent}
       this._bookmarkActiveFolder = '*';
       this._bookmarksLoaded = true;
 
+      // Phase 4: 初始化分析模块
+      try {
+        this._bookmarkClusterer = new BookmarkClusterer(this._bookmarks);
+        this._bookmarkStatusManager = new BookmarkStatusManager(this._bookmarks);
+        this._bookmarkTagger = new BookmarkTagger(this._bookmarks);
+        this._bookmarkDedup = new BookmarkDedup(this._bookmarks);
+        this._bookmarkFolderAnalyzer = new BookmarkFolderAnalyzer(this._bookmarks);
+
+        // 恢复书签状态
+        for (const bm of this._bookmarks) {
+          if (bm.status && bm.status !== 'unread') {
+            this._bookmarkStatusManager.setStatus(bm.id, bm.status);
+          }
+        }
+
+        // 生成标签
+        this._bookmarkTagger.generateAllTags();
+      } catch (e) {
+        logWarn('bookmarks', '初始化分析模块失败', e);
+      }
+
       // 渲染统计
       this._renderBookmarksStats();
       // 渲染文件夹导航
       this._renderFolderNav();
+      // 渲染内容面板
+      this._renderBookmarksContent();
       // 渲染列表
       this._renderBookmarksList();
 
