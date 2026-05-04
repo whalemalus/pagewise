@@ -56,12 +56,14 @@
   - 测试: 15 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R49: 书签搜索 BookmarkSearch** — `lib/bookmark-search.js`
-  - 实时搜索过滤
-  - 搜索结果高亮在图谱中
-  - 支持按文件夹/标签过滤
-  - 测试: 8+ 用例
-  - 复杂度: Simple
+- [x] **R49: 书签搜索 BookmarkSearch** — `lib/bookmark-search.js`
+  - 综合搜索: 索引关键词匹配 + 图谱相关性扩展
+  - 条件过滤: 文件夹 / 标签 / 状态 / 域名
+  - 搜索建议: 基于标签 + 热门搜索 + 书签标题
+  - 200ms 防抖搜索建议
+  - 多排序: relevance / date / title
+  - 测试: 22 用例 ✅
+  - 复杂度: Medium
 
 - [ ] **R50: 弹窗概览 BookmarkPopup** — `popup/bookmark-overview.js`
   - 显示书签总数/领域分布/最近添加
