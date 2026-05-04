@@ -32,11 +32,21 @@ function createMockDocument() {
       const children = [];
       const listeners = {};
       const attrs = {};
+      let _textContent = '';
+      let _innerHTML = '';
       const el = {
         tagName: tag.toUpperCase(),
         className: '',
-        innerHTML: '',
-        textContent: '',
+        get innerHTML() { return _innerHTML; },
+        set innerHTML(v) { _innerHTML = v; },
+        get textContent() {
+          // 递归拼接子元素 textContent (模拟 DOM 行为)
+          if (children.length > 0) {
+            return _textContent + children.map(c => c.textContent).join('');
+          }
+          return _textContent;
+        },
+        set textContent(v) { _textContent = v; },
         href: '',
         title: '',
         value: '',

@@ -62,11 +62,19 @@ function createTabManager({ tabNav, settingsPanel, bookmarkPanel, panel }) {
       bookmarkPanel.style.display = 'block';
 
       if (panelInstance) {
-        // 懒初始化: render + init
+        // 标记加载中，渲染加载状态，再异步初始化
+        panelInstance.markLoading();
         panelInstance.render(bookmarkPanel);
-        panelInstance.init().catch(err => {
-          console.error('BookmarkPanel init failed:', err);
-        });
+        panelInstance.init()
+          .then(() => {
+            // init 完成后重新渲染，显示图谱数据
+            panelInstance.render(bookmarkPanel);
+          })
+          .catch(err => {
+            console.error('BookmarkPanel init failed:', err);
+            // init 失败后也重新渲染，显示错误状态
+            panelInstance.render(bookmarkPanel);
+          });
       }
     } else if (tabName === 'settings') {
       // 切换回设置标签页

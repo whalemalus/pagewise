@@ -260,17 +260,27 @@ describe('BookmarkCollector', () => {
     assert.deepEqual(stats.domainDistribution, {});
   });
 
-  // ─── 14. collect() 在 chrome.bookmarks 不可用时抛错 ─────────────────────────
+  // ─── 14. collect() 在 getTree 失败时返回空数组 (R2 修复) ────────────────────
 
-  it('14. collect() 在 getTree 失败时抛出错误', async () => {
+  it('14. collect() 在 getTree 失败时返回空数组并打印警告', async () => {
     chrome.bookmarks = {
       getTree: async () => { throw new Error('Permission denied'); },
     };
 
-    await assert.rejects(
-      () => collector.collect(),
-      /Failed to read bookmark tree: Permission denied/,
-    );
+    const result = await collector.collect();
+    assert.equal(result.length, 0, 'getTree 失败应返回空数组');
+  });
+
+  it('14b. collect() 在 chrome.bookmarks 不存在时返回空数组', async () => {
+    // 临时保存并删除 chrome.bookmarks
+    const savedBookmarks = chrome.bookmarks;
+    chrome.bookmarks = undefined;
+
+    const result = await collector.collect();
+    assert.equal(result.length, 0, 'API 不存在应返回空数组');
+
+    // 恢复
+    chrome.bookmarks = savedBookmarks;
   });
 
   // ─── 15. 深层嵌套 (3+ 层文件夹) ─────────────────────────────────────────────

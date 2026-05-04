@@ -10,6 +10,39 @@
 
 ---
 
+## [v2.2.1] - 2026-05-04 — BookmarkGraph Phase 1 核心功能修复
+
+### 修复
+- **R1: render/init 顺序修复** — `options/options.js`
+  - `createTabManager`: 先调用 `markLoading()` → `render()` 显示加载动画，再 `init()` 异步初始化，完成后自动重新 `render()`
+  - 修复点击图谱标签页后显示"暂无书签"空白页的根本原因
+- **R2: BookmarkCollector 错误处理** — `lib/bookmark-collector.js`
+  - `chrome.bookmarks` API 不存在时返回空数组 + `console.warn` (非扩展环境安全降级)
+  - `getTree()` 失败时返回空数组 + `console.warn` (不再抛出异常)
+- **R3: 加载状态 spinner** — `options/bookmark-panel.js`
+  - 新增 `markLoading()` 方法供外部标记加载状态
+  - 新增 `_renderLoadingSpinner()` 创建带 `role=status` 的加载动画元素
+  - `refresh()` 方法先渲染加载状态再异步初始化
+- **R4: 错误状态重试** — `options/bookmark-panel.js`
+  - `_renderError()` 添加重试按钮，点击调用 `refresh()` 重新加载
+- **R5: 空状态引导** — `options/bookmark-panel.js`
+  - `_renderEmpty()` 显示引导信息 (Ctrl+D 收藏、右键添加等) + 刷新书签按钮
+
+### 测试
+- **R6-R10: 集成测试** — `tests/test-bookmark-panel-integration.js` — 18 用例 ✅
+  - R1: render/init 顺序 (markLoading → render → init → re-render)
+  - R2: BookmarkCollector 错误处理 (API 不存在、采集失败)
+  - R3: 加载状态 spinner (render loading、spinner 属性、降级)
+  - R4: 错误状态重试 (重试按钮、click 事件绑定)
+  - R5: 空状态引导 (引导信息、刷新按钮、Ctrl+D 提示)
+  - R6-R10: 完整流程 (加载→图谱→节点→详情→搜索→refresh→错误重试)
+- 更新 `tests/test-bookmark-collector.js` — 测试 14/14b 适配 R2 新行为
+- 更新 `tests/test-bookmark-options-tab.js` — `buildTabManager` 同步生产代码流程
+- 更新 `tests/test-bookmark-panel.js` — mock DOM 增强 textContent 递归拼接
+- 全量测试: 66 用例通过，0 失败
+
+---
+
 ## [v2.2.0] - 2026-05-04 — BookmarkGraph 书签知识图谱
 
 ### 新增

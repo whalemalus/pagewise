@@ -105,7 +105,11 @@ function createMockPanel() {
     _filters: null,
     _refreshed: false,
     _bookmarks: [],
+    _loadingMarked: false,
 
+    markLoading() {
+      this._loadingMarked = true;
+    },
     async init(bookmarks) {
       this._initialized = true;
       this._bookmarks = bookmarks || [];
@@ -209,8 +213,19 @@ function buildTabManager({ settingsPanel, bookmarkPanel, panel }) {
       settingsPanel.style.display = 'none';
       bookmarkPanel.style.display = 'block';
       if (panel) {
+        // 先标记加载中，渲染加载状态，再异步初始化
+        if (panel.markLoading) panel.markLoading();
         panel.render(bookmarkPanel);
-        panel.init().catch(() => {});
+        panel.init()
+          .then(() => {
+            // init 完成后重新渲染，显示图谱数据
+            panel.render(bookmarkPanel);
+          })
+          .catch(err => {
+            console.error('BookmarkPanel init failed:', err);
+            // init 失败后也重新渲染，显示错误状态
+            panel.render(bookmarkPanel);
+          });
       }
     } else if (tabName === 'settings') {
       bookmarkPanel.style.display = 'none';

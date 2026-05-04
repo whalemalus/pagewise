@@ -191,6 +191,14 @@ export class BookmarkPanel {
   }
 
   /**
+   * 标记面板为加载中状态 (外部调用，用于 render() 显示加载动画)
+   */
+  markLoading() {
+    this._state.loading = true;
+    this._state.error = '';
+  }
+
+  /**
    * 清理所有资源
    */
   destroy() {
@@ -333,7 +341,20 @@ export class BookmarkPanel {
    */
   async refresh() {
     this._state.initialized = false;
-    await this.init();
+
+    // 先渲染加载状态
+    if (this._container) {
+      this.markLoading();
+      this.render(this._container);
+    }
+
+    try {
+      await this.init();
+    } catch (err) {
+      // init 失败时 error 已设置在 init() 内部
+    }
+
+    // 重新渲染，显示数据或错误状态
     if (this._container) {
       this.render(this._container);
     }
@@ -669,36 +690,90 @@ export class BookmarkPanel {
   }
 
   /**
-   * 渲染加载状态
+   * 渲染加载状态 (包含旋转动画)
    * @param {HTMLElement} container
    */
   _renderLoading(container) {
     const el = this._el('div');
     el.className = 'bookmark-panel-loading';
-    el.textContent = '正在加载书签数据...';
+    el.appendChild(this._renderLoadingSpinner());
+    const text = this._el('span');
+    text.className = 'bookmark-panel-loading-text';
+    text.textContent = '正在加载书签数据...';
+    el.appendChild(text);
     container.appendChild(el);
   }
 
   /**
-   * 渲染错误状态
+   * 创建加载旋转动画元素
+   * @returns {HTMLElement}
+   */
+  _renderLoadingSpinner() {
+    const spinner = this._el('div');
+    spinner.className = 'bookmark-panel-spinner';
+    spinner.setAttribute('role', 'status');
+    spinner.setAttribute('aria-label', '加载中');
+    return spinner;
+  }
+
+  /**
+   * 渲染错误状态 (包含重试按钮)
    * @param {HTMLElement} container
    * @param {string} message
    */
   _renderError(container, message) {
     const el = this._el('div');
     el.className = 'bookmark-panel-error';
-    el.textContent = `加载失败: ${message}`;
+
+    const msg = this._el('div');
+    msg.className = 'bookmark-panel-error-message';
+    msg.textContent = `加载失败: ${message}`;
+    el.appendChild(msg);
+
+    const retryBtn = this._el('button');
+    retryBtn.className = 'bookmark-panel-error-retry';
+    retryBtn.textContent = '重试';
+    retryBtn.addEventListener('click', () => {
+      this.refresh();
+    });
+    el.appendChild(retryBtn);
+
     container.appendChild(el);
   }
 
   /**
-   * 渲染空状态
+   * 渲染空状态 (包含引导信息)
    * @param {HTMLElement} container
    */
   _renderEmpty(container) {
     const el = this._el('div');
     el.className = 'bookmark-panel-empty';
-    el.textContent = '暂无书签数据';
+
+    const title = this._el('div');
+    title.className = 'bookmark-panel-empty-title';
+    title.textContent = '暂无书签数据';
+    el.appendChild(title);
+
+    const guide = this._el('div');
+    guide.className = 'bookmark-panel-empty-guide';
+    guide.innerHTML =
+      '<p>💡 您可以通过以下方式添加书签：</p>' +
+      '<ul>' +
+      '  <li>在浏览器中按 <kbd>Ctrl+D</kbd> 收藏当前页面</li>' +
+      '  <li>右键点击页面 → "为此页面添加书签"</li>' +
+      '  <li>点击地址栏右侧的 ☆ 图标</li>' +
+      '</ul>' +
+      '<p>添加书签后，点击下方按钮刷新。</p>';
+    el.appendChild(guide);
+
+    const refreshBtn = this._el('button');
+    refreshBtn.className = 'bookmark-panel-empty-refresh';
+    refreshBtn.textContent = '刷新书签';
+    refreshBtn.addEventListener('click', () => {
+      this.refresh();
+    });
+    el.appendChild(refreshBtn);
+
     container.appendChild(el);
   }
 }
