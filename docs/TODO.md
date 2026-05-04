@@ -158,11 +158,14 @@
   - 测试: 36 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R61: 数据导入导出 BookmarkImportExport** — `lib/bookmark-io.js`
-  - 导出 JSON (完整图谱)
-  - 导出 CSV (书签列表)
-  - 导入 Chrome 书签 HTML
-  - 测试: 8+ 用例
+- [x] **R61: 数据导入导出 BookmarkImportExport** — `lib/bookmark-io.js`
+  - `exportJSON()`: 导出完整图谱 (书签+聚类+标签+状态)
+  - `exportCSV()`: 导出书签列表 (含表头, 中文路径)
+  - `importFromChromeHTML(html)`: 解析 Chrome 书签 HTML
+  - `importFromJSON(json)`: 从 JSON 导入完整图谱
+  - `exportToFile(format)`: 导出 Blob ('json' | 'csv')
+  - 进度回调: onProgress(phase, current, total)
+  - 测试: 24 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R62: BookmarkGraph V1.0 E2E 测试**

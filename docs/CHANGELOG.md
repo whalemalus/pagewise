@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### 新增
+- **R61: BookmarkImportExport 数据导入导出（迭代 #61）**
+  - `lib/bookmark-io.js`: BookmarkImportExport 类 — 书签数据导入导出
+  - `exportJSON()`: 导出完整图谱数据 (书签+聚类+标签+状态) 为 JSON 字符串
+  - `exportCSV()`: 导出书签列表为 CSV 字符串 (含表头，支持中文文件夹路径)
+  - `importFromChromeHTML(html)`: 解析 Chrome 书签 HTML 文件，提取书签+文件夹层级+时间戳
+  - `importFromJSON(json)`: 从 JSON 字符串导入完整图谱数据
+  - `exportToFile(format)`: 导出为 Blob ('json' | 'csv')
+  - 进度回调: onProgress(phase, current, total) 支持所有导入导出操作
+  - CSV 特殊字符转义: 逗号/双引号/换行符自动包裹
+  - 24 个测试用例 ✅
 - **R60: BookmarkDedup 重复检测（迭代 #60）**
   - `lib/bookmark-dedup.js`: BookmarkDedup 类 — 检测和处理重复书签
   - `normalizeUrl(url)`: 静态方法 — URL 规范化 (移除协议/www/尾斜杠/跟踪参数/转小写)
