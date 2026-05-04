@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### 新增
+- **R52: BookmarkGraph MVP E2E 测试（飞轮迭代 R2 验证）**
+  - `tests/test-bookmark-graph-e2e.js`: MVP 全模块集成测试 — 14 用例 ✅
+  - 覆盖: 采集→索引→图谱→搜索→推荐 完整链路
+  - 边界: 空书签、单书签、100+书签性能 (<200ms)
+  - 交互: 增量索引、多关键词搜索、详情面板切换
+- **R62: BookmarkGraph V1.0 E2E 测试（飞轮迭代 R2 验证）**
+  - `tests/test-bookmark-v1-e2e.js`: Phase B 全模块集成测试 — 15 用例 ✅
+  - 覆盖: 聚类→学习路径、标签→编辑、状态→过滤、去重→清理、导入导出
+  - 模块联动: 聚类→盲区、标签→频率、状态→进度、文件夹→聚类、去重→导出
+
 - **R51: 选项页集成 BookmarkOptionsPage（迭代 #51）**
   - `options/options.html`: 新增 Tab 导航结构 (设置 / 书签图谱) + `<div id="bookmark-panel">` 容器
   - `options/options.js`: 新增 `createTabManager()` — Tab 切换 + BookmarkPanel 生命周期管理 (懒初始化、destroy 释放、hash 路由)

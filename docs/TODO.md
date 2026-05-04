@@ -80,11 +80,11 @@
   - 测试: 13 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R52: BookmarkGraph MVP E2E 测试**
-  - 全模块集成测试
-  - 边界情况覆盖
-  - 性能基准测试
-  - 测试: 20+ 用例
+- [x] **R52: BookmarkGraph MVP E2E 测试** — `tests/test-bookmark-graph-e2e.js`
+  - 全模块集成测试 (Collector → Indexer → Graph → Search → Recommender)
+  - 边界情况覆盖 (空书签/单书签/100+书签)
+  - 性能基准测试 (100+ 书签 <200ms)
+  - 测试: 14 用例 ✅
   - 复杂度: Medium
 
 ---
@@ -168,10 +168,11 @@
   - 测试: 24 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R62: BookmarkGraph V1.0 E2E 测试**
-  - 全模块集成测试
-  - 模块间交互测试
-  - 测试: 15+ 用例
+- [x] **R62: BookmarkGraph V1.0 E2E 测试** — `tests/test-bookmark-v1-e2e.js`
+  - 全模块集成测试 (Phase B: Clusterer, LearningPath, Tagger, TagEditor, GapDetector, Status, FolderAnalyzer, Dedup, ImportExport)
+  - 模块间交互测试 (聚类→盲区、标签→搜索、去重→导出)
+  - 空数据兼容 + 100+书签性能测试
+  - 测试: 15 用例 ✅
   - 复杂度: Medium
 
 ---
