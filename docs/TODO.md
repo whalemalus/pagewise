@@ -25,11 +25,11 @@
   - 测试: 24 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R45: 书签图谱引擎 BookmarkGraphEngine** — `lib/bookmark-graph.js`
-  - 提取书签关键词 (标题分词 + URL域名 + 文件夹标签)
-  - 计算相似度 (Jaccard + TF-IDF 混合)
-  - 生成图谱数据 {nodes, edges}
-  - 测试: 12+ 用例
+- [x] **R45: 书签图谱引擎 BookmarkGraphEngine** — `lib/bookmark-graph.js`
+  - 混合相似度算法 (Jaccard标题 + 域名匹配 + 文件夹重叠)
+  - 倒排索引优化候选对生成 (避免 O(n²))
+  - 生成图谱数据 {nodes, edges}，支持聚类
+  - 测试: 22 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R46: 图谱可视化 BookmarkVisualizer** — `lib/bookmark-visualizer.js`
