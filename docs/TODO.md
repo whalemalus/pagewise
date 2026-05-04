@@ -123,11 +123,12 @@
   - 测试: 30 用例 ✅
   - 复杂度: Simple
 
-- [ ] **R57: 知识盲区检测 KnowledgeGapDetection** — `lib/bookmark-gap-detector.js`
-  - 分析各领域书签数量
-  - 识别"热门但资料少"的领域
-  - 推荐补充方向
-  - 测试: 6+ 用例
+- [x] **R57: 知识盲区检测 KnowledgeGapDetection** — `lib/bookmark-gap-detector.js`
+  - 分析各领域书签数量分布（14 个技术领域）
+  - 识别"热门但资料少"的领域，4 级覆盖度: well-covered / moderate / weak / gap
+  - 推荐补充方向（盲区入门 + 关联领域，弱项进阶）
+  - 支持聚类结果和标签频率两种数据源
+  - 测试: 27 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R58: 状态标记 BookmarkStatusMarking**

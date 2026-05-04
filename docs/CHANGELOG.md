@@ -7,6 +7,20 @@
 ## [Unreleased]
 
 ### 新增
+- **R57: BookmarkGapDetector 知识盲区检测（迭代 #57）**
+  - `lib/bookmark-gap-detector.js`: BookmarkGapDetector 类 — 检测用户知识盲区和薄弱领域
+  - 14 个技术领域目录（前端/后端/数据库/DevOps/AI-ML/移动开发/安全/云服务/数据/测试/设计/工具/架构/性能）
+  - 覆盖度 4 级: well-covered(≥10) / moderate(3-9) / weak(1-2) / gap(0)
+  - `detectGaps()`: 检测所有领域的盲区、弱项，返回描述和推荐
+  - `getDomainCoverage()`: 各领域覆盖度分布（count/percentage/level），按数量降序
+  - `getRecommendations(limit)`: 知识补充推荐，盲区优先，考虑关联领域
+  - `getStrengths()`: 强项领域 (well-covered)，按数量降序
+  - `getWeaknesses()`: 弱项领域 (weak + gap)，按数量升序
+  - `generateReport()`: 完整报告（summary/strengths/weaknesses/recommendations）
+  - 推荐逻辑: 盲区推荐入门主题 + 关联领域提示，弱项推荐进阶主题
+  - 支持聚类结果和标签频率两种数据源，聚类优先
+  - `tests/test-bookmark-gap-detector.js`: 27 个测试用例，全部通过
+
 - **R56: BookmarkTagEditor 标签手动编辑（迭代 #56）**
   - `lib/bookmark-tag-editor.js`: BookmarkTagEditor 类 — 手动管理书签标签
   - 单书签标签编辑: `addTag()`, `removeTag()`, `setTags()`, `getTags()`
