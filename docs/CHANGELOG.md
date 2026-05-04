@@ -7,6 +7,19 @@
 ## [Unreleased]
 
 ### 新增
+- **R58: BookmarkStatusManager 状态标记（迭代 #58）**
+  - `lib/bookmark-status.js`: BookmarkStatusManager 类 — 管理书签阅读状态
+  - 三种状态: unread / reading / read，默认 unread
+  - `setStatus(bookmarkId, status)`: 设置单个书签状态，返回 boolean
+  - `getStatus(bookmarkId)`: 获取状态，未知 ID 返回 null
+  - `batchSetStatus(bookmarkIds, status)`: 批量设置状态，返回成功数量
+  - `getByStatus(status)`: 按状态过滤书签数组
+  - `getStatusCounts()`: 返回 {unread, reading, read} 统计
+  - `markAllAsRead(bookmarkIds)`: 批量标记已读
+  - `getRecentlyRead(limit)`: 获取最近阅读书签（单调递增序保证排序稳定）
+  - 数字 ID 自动转字符串兼容
+  - 19 个测试用例 ✅
+
 - **R57: BookmarkGapDetector 知识盲区检测（迭代 #57）**
   - `lib/bookmark-gap-detector.js`: BookmarkGapDetector 类 — 检测用户知识盲区和薄弱领域
   - 14 个技术领域目录（前端/后端/数据库/DevOps/AI-ML/移动开发/安全/云服务/数据/测试/设计/工具/架构/性能）

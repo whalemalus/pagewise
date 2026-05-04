@@ -131,11 +131,14 @@
   - 测试: 27 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R58: 状态标记 BookmarkStatusMarking**
-  - 三种状态: unread/reading/read
-  - 状态批量修改
-  - 按状态过滤
-  - 测试: 6+ 用例
+- [x] **R58: 状态标记 BookmarkStatusMarking** — `lib/bookmark-status.js`
+  - 三种状态: unread/reading/read（默认 unread）
+  - 状态批量修改 (batchSetStatus / markAllAsRead)
+  - 按状态过滤 (getByStatus)
+  - 状态统计 (getStatusCounts)
+  - 最近阅读 (getRecentlyRead)
+  - 单调递增序保证排序稳定性
+  - 测试: 19 用例 ✅
   - 复杂度: Simple
 
 - [ ] **R59: 文件夹分析 FolderAnalysis** — `lib/bookmark-folder-analyzer.js`
