@@ -10,11 +10,11 @@
 
 ### 核心功能：书签采集 → 图谱构建 → 可视化 → 搜索
 
-- [ ] **R43: 书签采集器 BookmarkCollector** — `lib/bookmark-collector.js`
+- [x] **R43: 书签采集器 BookmarkCollector** — `lib/bookmark-collector.js`
   - 递归读取 Chrome 书签树
   - 标准化书签对象 (id, title, url, folderPath, dateAdded)
   - 处理空书签/重复书签/特殊字符
-  - 测试: 10+ 用例
+  - 测试: 18 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R44: 书签索引器 BookmarkIndexer** — `lib/bookmark-indexer.js`

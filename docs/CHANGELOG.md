@@ -7,6 +7,14 @@
 ## [Unreleased]
 
 ### 新增
+- **R43: BookmarkCollector 书签采集器（迭代 #43）**
+  - `lib/bookmark-collector.js`: BookmarkCollector 类 — 递归读取 Chrome 书签树
+  - `collect()`: 标准化书签数组 (id/title/url/folderPath/dateAdded/dateAddedISO)
+  - `normalize()`: BookmarkTreeNode → 标准格式
+  - `getStats()`: 统计信息 (总数/文件夹数/领域分布)
+  - 处理: 空书签树/重复书签(同URL不同文件夹)/特殊字符标题/1000+书签性能
+  - `tests/test-bookmark-collector.js`: 18 个测试用例，全部通过
+
 - **R42: Skill Engine + Custom Skills E2E 测试（迭代 #42）**
   - `tests/test-skill-engine-e2e.js`: 23 个 E2E 测试用例，8 个 suite
   - 覆盖: 技能加载→注册→执行完整流程、CRUD 生命周期+引擎同步、参数传递+模板渲染、触发匹配+执行、容量上限(20)、Hook 集成、分类+批量操作、错误处理
