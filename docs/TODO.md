@@ -40,11 +40,13 @@
   - 测试: 15 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R47: 详情面板 BookmarkDetailPanel** — `lib/bookmark-detail-panel.js`
+- [x] **R47: 详情面板 BookmarkDetailPanel** — `lib/bookmark-detail-panel.js`
   - 点击节点显示详情 (标题/URL/文件夹/时间)
-  - 显示相似书签列表
-  - 点击URL打开原网页
-  - 测试: 8+ 用例
+  - 显示相似书签列表 (Top-5)
+  - 点击URL打开原网页 (chrome.tabs.create)
+  - 标签编辑 (添加/删除/自动补全) + 状态标记 (unread/reading/read)
+  - 操作回调 (onAction) + 异常安全
+  - 测试: 22 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R48: 相似推荐 BookmarkRecommender** — `lib/bookmark-recommender.js`
