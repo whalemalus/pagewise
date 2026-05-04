@@ -53,16 +53,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // 书签图谱
-  btnBookmarks.addEventListener('click', () => {
-    chrome.runtime.openOptionsPage();
-    // 延迟后跳转到书签标签页
+  btnBookmarks.addEventListener('click', async () => {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    await chrome.sidePanel.open({ tabId: tab.id });
     setTimeout(() => {
-      chrome.tabs.query({ url: chrome.runtime.getURL('options/options.html') }, (tabs) => {
-        if (tabs[0]) {
-          chrome.tabs.update(tabs[0].id, { url: chrome.runtime.getURL('options/options.html#tab=bookmark') });
-        }
-      });
-    }, 100);
+      chrome.runtime.sendMessage({ action: 'switchToBookmarks' }).catch(() => {});
+    }, 300);
     window.close();
   });
 

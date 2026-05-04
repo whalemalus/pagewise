@@ -45,6 +45,10 @@
           <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
           <span>设置</span>
         </button>
+        <button class="tab" data-tab="bookmarks" role="tab" aria-selected="false" aria-controls="panelBookmarks">
+          <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          <span>书签</span>
+        </button>
         <button class="tab" data-tab="logs" role="tab" aria-selected="false" aria-controls="panelLogs">
           <svg class="tab-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
           <span>日志</span>
@@ -519,6 +523,56 @@
         </div>
         <div class="page-preview-images" id="previewImages"></div>
         <div class="page-preview-code" id="previewCode"></div>
+      </div>
+    </div>
+
+    <!-- 书签面板 -->
+    <div class="panel" id="panelBookmarks" role="tabpanel" aria-label="书签面板">
+      <div class="bookmarks-panel">
+        <div class="bookmarks-header">
+          <div class="bookmarks-header-left">
+            <h3 class="bookmarks-title">🔖 书签图谱</h3>
+            <span class="bookmarks-count" id="bookmarksCount"></span>
+          </div>
+          <div class="bookmarks-header-actions">
+            <button class="btn-sm" id="btnOpenFullGraph" aria-label="查看完整图谱">📊 完整图谱</button>
+            <button class="btn-icon" id="btnRefreshBookmarks" title="刷新书签" aria-label="刷新书签">🔄</button>
+          </div>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="bookmarks-search-box">
+          <input type="text" id="bookmarksSearchInput" placeholder="搜索书签..." aria-label="搜索书签">
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="bookmarks-stats" id="bookmarksStats"></div>
+
+        <!-- 文件夹导航 -->
+        <div class="bookmarks-folder-nav" id="bookmarksFolderNav">
+          <button class="folder-nav-item active" data-folder="*" aria-label="全部文件夹">📁 全部</button>
+        </div>
+
+        <!-- 书签列表 -->
+        <div class="bookmarks-list" id="bookmarksList">
+          <div class="empty-state" id="emptyBookmarks">
+            <div class="empty-icon">🔖</div>
+            <p>暂无书签</p>
+            <p class="text-muted">Chrome 中的书签将显示在这里</p>
+          </div>
+        </div>
+
+        <!-- 书签详情面板 -->
+        <div class="bookmarks-detail hidden" id="bookmarksDetail">
+          <div class="bookmarks-detail-header">
+            <button class="btn-back" id="btnBookmarksBack" aria-label="返回书签列表">← 返回列表</button>
+          </div>
+          <div class="bookmarks-detail-content" id="bookmarksDetailContent"></div>
+          <div class="bookmarks-detail-similar" id="bookmarksDetailSimilar">
+            <h4 class="bookmarks-similar-title">🔗 相似书签</h4>
+            <div class="bookmarks-similar-list" id="bookmarksSimilarList"></div>
+          </div>
+        </div>
       </div>
     </div>
 

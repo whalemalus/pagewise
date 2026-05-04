@@ -32,6 +32,10 @@ import { detectLanguage, detectQuestionLanguage, determineResponseLanguage, buil
 import { ReviewSession, saveSession, getRecentSessions, getWeeklyStats } from '../lib/review-session.js';
 import { detectContradictions, findCandidateEntries, filterContradictions, buildContradictionWarningHtml, CONTRADICTION_SEVERITY } from '../lib/contradiction-detector.js';
 import { WikiStore, PAGE_TYPE_LABELS, PAGE_TYPE_ICONS, renderWikilinks } from '../lib/wiki-store.js';
+import { BookmarkCollector } from '../lib/bookmark-collector.js';
+import { BookmarkIndexer } from '../lib/bookmark-indexer.js';
+import { BookmarkGraphEngine } from '../lib/bookmark-graph.js';
+import { BookmarkSearch } from '../lib/bookmark-search.js';
 
 // ==================== 提供商预设 ====================
 
@@ -103,6 +107,17 @@ class SidebarApp {
 
     // 性能优化：懒加载标记
     this._statsLoaded = false;
+
+    // 书签图谱状态
+    this._bookmarkCollector = new BookmarkCollector();
+    this._bookmarkIndexer = new BookmarkIndexer();
+    this._bookmarkGraphEngine = new BookmarkGraphEngine();
+    this._bookmarkSearch = new BookmarkSearch(this._bookmarkIndexer, this._bookmarkGraphEngine);
+    this._bookmarks = [];
+    this._filteredBookmarks = [];
+    this._bookmarkSearchQuery = '';
+    this._bookmarkActiveFolder = '*';
+    this._bookmarksLoaded = false;
 
     // 引导流程状态
     this.onboardingStep = 0;
@@ -465,6 +480,21 @@ class SidebarApp {
     this.btnExportBackup = document.getElementById('btnExportBackup');
     this.btnImportBackup = document.getElementById('btnImportBackup');
     this.backupFileInput = document.getElementById('backupFileInput');
+
+    // 书签面板
+    this.bookmarksCount = document.getElementById('bookmarksCount');
+    this.btnRefreshBookmarks = document.getElementById('btnRefreshBookmarks');
+    this.btnOpenFullGraph = document.getElementById('btnOpenFullGraph');
+    this.bookmarksSearchInput = document.getElementById('bookmarksSearchInput');
+    this.bookmarksStats = document.getElementById('bookmarksStats');
+    this.bookmarksFolderNav = document.getElementById('bookmarksFolderNav');
+    this.bookmarksList = document.getElementById('bookmarksList');
+    this.emptyBookmarks = document.getElementById('emptyBookmarks');
+    this.bookmarksDetail = document.getElementById('bookmarksDetail');
+    this.bookmarksDetailContent = document.getElementById('bookmarksDetailContent');
+    this.bookmarksDetailSimilar = document.getElementById('bookmarksDetailSimilar');
+    this.bookmarksSimilarList = document.getElementById('bookmarksSimilarList');
+    this.btnBookmarksBack = document.getElementById('btnBookmarksBack');
   }
 
   _initMessageRenderer() {
@@ -922,9 +952,33 @@ class SidebarApp {
         }
       }
     });
-  }
 
-  async loadSettings() {
+    // 书签面板事件
+    if (this.btnRefreshBookmarks) {
+      this.btnRefreshBookmarks.addEventListener('click', () => this.loadBookmarks(true));
+    }
+    if (this.btnOpenFullGraph) {
+      this.btnOpenFullGraph.addEventListener('click', () => {
+        chrome.runtime.openOptionsPage();
+        setTimeout(() => {
+          chrome.tabs.query({ url: chrome.runtime.getURL('options/options.html') }, (tabs) => {
+            if (tabs[0]) {
+              chrome.tabs.update(tabs[0].id, { url: chrome.runtime.getURL('options/options.html#tab=bookmark') });
+            }
+          });
+        }, 100);
+      });
+    }
+    if (this.bookmarksSearchInput) {
+      this.bookmarksSearchInput.addEventListener('input', debounce(() => {
+        this._bookmarkSearchQuery = this.bookmarksSearchInput.value.trim();
+        this._renderBookmarksList();
+      }, 200));
+    }
+    if (this.btnBookmarksBack) {
+      this.btnBookmarksBack.addEventListener('click', () => this._hideBookmarkDetail());
+    }
+  }
     this.settings = await getSettings();
     console.log('[PageWise] loadSettings:', {
       hasApiKey: !!this.settings.apiKey,
@@ -979,6 +1033,8 @@ class SidebarApp {
         this.handlePendingAction(request);
       } else if (request.action === 'switchToKnowledge') {
         this.switchTab('knowledge');
+      } else if (request.action === 'switchToBookmarks') {
+        this.switchTab('bookmarks');
       } else if (request.action === 'shortcutSummarize') {
         logInfo('sidebar', '收到快捷键总结');
         this.quickSummarize();
@@ -1228,6 +1284,7 @@ class SidebarApp {
       }
     }
     else if (tabName === 'page') this.loadPagePreview();
+    else if (tabName === 'bookmarks') this.loadBookmarks();
     else if (tabName === 'logs') this.loadLogsList();
   }
 
@@ -6713,6 +6770,417 @@ ${sendContent}
     }
     this.switchTab('chat');
     this.showOnboarding();
+  }
+
+  // ==================== 书签面板 ====================
+
+  /**
+   * 加载书签数据（懒加载：首次切换时采集+索引+图谱，后续直接渲染）
+   * @param {boolean} forceRefresh — 强制重新加载
+   */
+  async loadBookmarks(forceRefresh = false) {
+    if (this._bookmarksLoaded && !forceRefresh) {
+      this._renderBookmarksList();
+      return;
+    }
+
+    try {
+      this.bookmarksList.innerHTML = '<div class="empty-state"><p>🔄 加载书签中...</p></div>';
+      this.bookmarksStats.innerHTML = '';
+
+      // 采集书签
+      this._bookmarks = await this._bookmarkCollector.collect();
+
+      // 构建索引
+      if (this._bookmarks.length > 0) {
+        this._bookmarkIndexer.buildIndex(this._bookmarks);
+      }
+
+      // 构建图谱
+      if (this._bookmarks.length > 0) {
+        this._bookmarkGraphEngine.buildGraph(this._bookmarks);
+      }
+
+      this._bookmarkSearch.setKnownTags(this._extractTags(this._bookmarks));
+      this._filteredBookmarks = [...this._bookmarks];
+      this._bookmarkSearchQuery = '';
+      this._bookmarkActiveFolder = '*';
+      this._bookmarksLoaded = true;
+
+      // 渲染统计
+      this._renderBookmarksStats();
+      // 渲染文件夹导航
+      this._renderFolderNav();
+      // 渲染列表
+      this._renderBookmarksList();
+
+      logInfo('bookmarks', `加载完成: ${this._bookmarks.length} 条书签`);
+    } catch (err) {
+      logError('bookmarks', '加载书签失败', err);
+      this.bookmarksList.innerHTML = '<div class="empty-state"><p>❌ 加载书签失败</p></div>';
+    }
+  }
+
+  /**
+   * 渲染书签统计概览
+   */
+  _renderBookmarksStats() {
+    if (!this.bookmarksStats) return;
+
+    const total = this._bookmarks.length;
+    const unreadCount = this._bookmarks.filter(b => !b.status || b.status === 'unread').length;
+
+    // 统计域名 Top-3
+    const domainCounts = new Map();
+    for (const bm of this._bookmarks) {
+      try {
+        const domain = new URL(bm.url).hostname.replace(/^www\./, '');
+        domainCounts.set(domain, (domainCounts.get(domain) || 0) + 1);
+      } catch { /* ignore */ }
+    }
+    const topDomains = [...domainCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+
+    // 更新数量
+    if (this.bookmarksCount) {
+      this.bookmarksCount.textContent = `${total} 个书签`;
+    }
+
+    let html = `<div class="bk-stat-row">
+      <div class="bk-stat-item"><span class="bk-stat-value">${total}</span><span class="bk-stat-label">书签总数</span></div>
+      <div class="bk-stat-item"><span class="bk-stat-value">${unreadCount}</span><span class="bk-stat-label">待读</span></div>
+      <div class="bk-stat-item"><span class="bk-stat-value">${domainCounts.size}</span><span class="bk-stat-label">域名</span></div>
+    </div>`;
+
+    if (topDomains.length > 0) {
+      html += '<div class="bk-stat-domains">';
+      for (const [domain, count] of topDomains) {
+        html += `<span class="bk-domain-chip" title="${this._escapeHtml(domain)}">${this._escapeHtml(domain)} (${count})</span>`;
+      }
+      html += '</div>';
+    }
+
+    this.bookmarksStats.innerHTML = html;
+  }
+
+  /**
+   * 渲染文件夹导航标签
+   */
+  _renderFolderNav() {
+    if (!this.bookmarksFolderNav) return;
+
+    // 收集文件夹
+    const folderCounts = new Map();
+    for (const bm of this._bookmarks) {
+      if (bm.folderPath && bm.folderPath.length > 0) {
+        const key = bm.folderPath[0]; // 取第一级文件夹
+        folderCounts.set(key, (folderCounts.get(key) || 0) + 1);
+      }
+    }
+
+    const topFolders = [...folderCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8);
+
+    let html = '<button class="folder-nav-item active" data-folder="*" aria-label="全部">📁 全部</button>';
+    for (const [folder, count] of topFolders) {
+      html += `<button class="folder-nav-item" data-folder="${this._escapeHtml(folder)}" aria-label="${this._escapeHtml(folder)}">${this._escapeHtml(folder)} (${count})</button>`;
+    }
+
+    this.bookmarksFolderNav.innerHTML = html;
+
+    // 绑定事件
+    this.bookmarksFolderNav.querySelectorAll('.folder-nav-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        this.bookmarksFolderNav.querySelectorAll('.folder-nav-item').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        this._bookmarkActiveFolder = btn.dataset.folder;
+        this._renderBookmarksList();
+      });
+    });
+  }
+
+  /**
+   * 渲染书签列表
+   */
+  _renderBookmarksList() {
+    if (!this.bookmarksList) return;
+
+    let bookmarks = [...this._bookmarks];
+
+    // 文件夹过滤
+    if (this._bookmarkActiveFolder && this._bookmarkActiveFolder !== '*') {
+      bookmarks = bookmarks.filter(bm =>
+        bm.folderPath && bm.folderPath.length > 0 && bm.folderPath[0] === this._bookmarkActiveFolder
+      );
+    }
+
+    // 搜索过滤
+    if (this._bookmarkSearchQuery) {
+      const lower = this._bookmarkSearchQuery.toLowerCase();
+      const tokens = lower.split(/\s+/).filter(Boolean);
+      bookmarks = bookmarks.filter(bm => {
+        const title = (bm.title || '').toLowerCase();
+        const url = (bm.url || '').toLowerCase();
+        const folder = (bm.folderPath || []).join(' ').toLowerCase();
+        const tags = (bm.tags || []).join(' ').toLowerCase();
+        const haystack = `${title} ${url} ${folder} ${tags}`;
+        return tokens.every(token => haystack.includes(token));
+      });
+    }
+
+    this._filteredBookmarks = bookmarks;
+
+    if (bookmarks.length === 0) {
+      this.bookmarksList.innerHTML = this._bookmarkSearchQuery
+        ? '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到匹配的书签</p></div>'
+        : '<div class="empty-state"><div class="empty-icon">🔖</div><p>暂无书签</p><p class="text-muted">Chrome 中的书签将显示在这里</p></div>';
+      return;
+    }
+
+    // 限制显示数量（性能）
+    const display = bookmarks.slice(0, 100);
+
+    let html = '<div class="bk-list">';
+    for (const bm of display) {
+      const domain = this._getDomain(bm.url);
+      const folderStr = bm.folderPath && bm.folderPath.length > 0
+        ? this._escapeHtml(bm.folderPath.join(' / '))
+        : '';
+      const status = bm.status || 'unread';
+      const statusLabel = { unread: '待读', reading: '阅读中', read: '已读' }[status] || status;
+      const title = this._highlightMatch(bm.title || bm.url, this._bookmarkSearchQuery);
+
+      html += `<div class="bk-item" data-bookmark-id="${this._escapeHtml(bm.id)}">
+        <div class="bk-item-icon">
+          <img class="bk-favicon" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=16" alt="" onerror="this.style.display='none'">
+        </div>
+        <div class="bk-item-info">
+          <a class="bk-item-title" href="#" title="${this._escapeHtml(bm.url)}">${title}</a>
+          <div class="bk-item-meta">
+            ${folderStr ? `<span class="bk-item-folder">📁 ${folderStr}</span>` : ''}
+            <span class="bk-item-domain">${this._escapeHtml(domain)}</span>
+            <span class="bk-item-status bk-status-${status}">${statusLabel}</span>
+          </div>
+        </div>
+      </div>`;
+    }
+    html += '</div>';
+
+    if (bookmarks.length > 100) {
+      html += `<div class="bk-more-hint">显示 100/${bookmarks.length}，请使用搜索缩小范围</div>`;
+    }
+
+    this.bookmarksList.innerHTML = html;
+
+    // 绑定点击事件
+    this.bookmarksList.querySelectorAll('.bk-item').forEach(item => {
+      const id = item.dataset.bookmarkId;
+      const bm = this._bookmarks.find(b => b.id === id);
+
+      // 点击标题 → 打开链接
+      const titleLink = item.querySelector('.bk-item-title');
+      if (titleLink && bm) {
+        titleLink.addEventListener('click', (e) => {
+          e.preventDefault();
+          chrome.tabs.create({ url: bm.url });
+        });
+      }
+
+      // 点击整个条目 → 显示详情
+      item.addEventListener('click', (e) => {
+        if (e.target.closest('.bk-item-title')) return;
+        if (bm) this._showBookmarkDetail(bm);
+      });
+    });
+  }
+
+  /**
+   * 显示书签详情
+   * @param {Object} bm
+   */
+  _showBookmarkDetail(bm) {
+    if (!this.bookmarksDetail || !this.bookmarksDetailContent) return;
+
+    const domain = this._getDomain(bm.url);
+    const folderStr = bm.folderPath && bm.folderPath.length > 0
+      ? bm.folderPath.join(' / ')
+      : '/';
+    const dateStr = bm.dateAdded
+      ? new Date(bm.dateAdded).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      : '';
+    const status = bm.status || 'unread';
+    const statusLabel = { unread: '待读', reading: '阅读中', read: '已读' }[status] || status;
+    const tags = bm.tags || [];
+
+    let html = `
+      <div class="bk-detail-top">
+        <img class="bk-detail-favicon" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=32" alt="" onerror="this.style.display='none'">
+        <div class="bk-detail-info">
+          <h3 class="bk-detail-title">${this._escapeHtml(bm.title || 'Untitled')}</h3>
+          <span class="bk-detail-domain">${this._escapeHtml(domain)}</span>
+        </div>
+      </div>
+      <div class="bk-detail-actions">
+        <button class="btn-sm btn-primary-sm" id="btnBkOpen">🔗 打开链接</button>
+        <button class="btn-sm" id="btnBkCopyUrl">📋 复制链接</button>
+      </div>
+      <div class="bk-detail-fields">
+        <div class="bk-detail-field">
+          <span class="bk-detail-label">📁 文件夹</span>
+          <span class="bk-detail-value">${this._escapeHtml(folderStr)}</span>
+        </div>
+        <div class="bk-detail-field">
+          <span class="bk-detail-label">🔗 URL</span>
+          <span class="bk-detail-value bk-detail-url">${this._escapeHtml(bm.url)}</span>
+        </div>
+        <div class="bk-detail-field">
+          <span class="bk-detail-label">📊 状态</span>
+          <span class="bk-detail-value bk-status-${status}">${statusLabel}</span>
+        </div>
+        ${dateStr ? `<div class="bk-detail-field">
+          <span class="bk-detail-label">🕐 添加时间</span>
+          <span class="bk-detail-value">${dateStr}</span>
+        </div>` : ''}
+        ${tags.length > 0 ? `<div class="bk-detail-field">
+          <span class="bk-detail-label">🏷️ 标签</span>
+          <span class="bk-detail-value">${tags.map(t => `<span class="bk-tag-chip">${this._escapeHtml(t)}</span>`).join(' ')}</span>
+        </div>` : ''}
+      </div>`;
+
+    this.bookmarksDetailContent.innerHTML = html;
+
+    // 绑定按钮事件
+    const btnOpen = this.bookmarksDetailContent.querySelector('#btnBkOpen');
+    const btnCopy = this.bookmarksDetailContent.querySelector('#btnBkCopyUrl');
+    if (btnOpen) {
+      btnOpen.addEventListener('click', () => chrome.tabs.create({ url: bm.url }));
+    }
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => {
+        navigator.clipboard.writeText(bm.url).then(() => {
+          this.showToast('链接已复制', 'success');
+        }).catch(() => {});
+      });
+    }
+
+    // 加载相似书签
+    this._loadSimilarBookmarks(bm);
+
+    // 显示详情，隐藏列表
+    this.bookmarksDetail.classList.remove('hidden');
+    this.bookmarksList.style.display = 'none';
+    if (this.bookmarksSearchInput) this.bookmarksSearchInput.parentElement.style.display = 'none';
+    if (this.bookmarksFolderNav) this.bookmarksFolderNav.style.display = 'none';
+    if (this.bookmarksStats) this.bookmarksStats.style.display = 'none';
+  }
+
+  /**
+   * 隐藏书签详情
+   */
+  _hideBookmarkDetail() {
+    if (this.bookmarksDetail) this.bookmarksDetail.classList.add('hidden');
+    if (this.bookmarksList) this.bookmarksList.style.display = '';
+    if (this.bookmarksSearchInput) this.bookmarksSearchInput.parentElement.style.display = '';
+    if (this.bookmarksFolderNav) this.bookmarksFolderNav.style.display = '';
+    if (this.bookmarksStats) this.bookmarksStats.style.display = '';
+  }
+
+  /**
+   * 加载相似书签
+   * @param {Object} bm
+   */
+  _loadSimilarBookmarks(bm) {
+    if (!this.bookmarksSimilarList || !this.bookmarksDetailSimilar) return;
+
+    try {
+      const similar = this._bookmarkGraphEngine.getSimilar(bm.id, 5);
+      if (similar.length === 0) {
+        this.bookmarksDetailSimilar.classList.add('hidden');
+        return;
+      }
+
+      this.bookmarksDetailSimilar.classList.remove('hidden');
+      let html = '';
+      for (const item of similar) {
+        const title = item.bookmark?.title || item.title || '';
+        const url = item.bookmark?.url || item.url || '';
+        const domain = this._getDomain(url);
+        const score = Math.round((item.score || 0) * 100);
+        html += `<div class="bk-similar-item" data-id="${this._escapeHtml(item.id)}">
+          <div class="bk-similar-info">
+            <span class="bk-similar-title">${this._escapeHtml(title || 'Untitled')}</span>
+            <span class="bk-similar-domain">${this._escapeHtml(domain)}</span>
+          </div>
+          <span class="bk-similar-score">${score}%</span>
+        </div>`;
+      }
+
+      this.bookmarksSimilarList.innerHTML = html;
+
+      // 绑定点击事件
+      this.bookmarksSimilarList.querySelectorAll('.bk-similar-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const id = item.dataset.id;
+          const fullBm = this._bookmarks.find(b => b.id === id);
+          if (fullBm) {
+            this._showBookmarkDetail(fullBm);
+          }
+        });
+      });
+    } catch {
+      this.bookmarksDetailSimilar.classList.add('hidden');
+    }
+  }
+
+  /**
+   * 获取域名
+   * @param {string} url
+   * @returns {string}
+   */
+  _getDomain(url) {
+    try {
+      return new URL(url).hostname.replace(/^www\./, '');
+    } catch {
+      return '';
+    }
+  }
+
+  /**
+   * 高亮匹配文本
+   * @param {string} text
+   * @param {string} query
+   * @returns {string} HTML
+   */
+  _highlightMatch(text, query) {
+    if (!query || !text) return this._escapeHtml(text);
+    const escaped = this._escapeHtml(text);
+    const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+    let result = escaped;
+    for (const token of tokens) {
+      if (token.length < 1) continue;
+      const regex = new RegExp(`(${token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      result = result.replace(regex, '<mark>$1</mark>');
+    }
+    return result;
+  }
+
+  /**
+   * 从书签中提取标签
+   * @param {Object[]} bookmarks
+   * @returns {string[]}
+   */
+  _extractTags(bookmarks) {
+    const tags = new Set();
+    for (const bm of bookmarks) {
+      if (bm.tags && Array.isArray(bm.tags)) {
+        for (const tag of bm.tags) {
+          tags.add(tag);
+        }
+      }
+    }
+    return [...tags];
   }
 
   /** HTML 转义（防 XSS） */
