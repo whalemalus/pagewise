@@ -7,6 +7,14 @@
 ## [Unreleased]
 
 ### 新增
+- **R56: BookmarkTagEditor 标签手动编辑（迭代 #56）**
+  - `lib/bookmark-tag-editor.js`: BookmarkTagEditor 类 — 手动管理书签标签
+  - 单书签标签编辑: `addTag()`, `removeTag()`, `setTags()`, `getTags()`
+  - 标签规范化: 小写、去首尾空格、连续空格→连字符、移除特殊字符、最大 30 字符
+  - 标签自动补全: `getAutocomplete(partial, limit)` — 基于已有标签库前缀匹配
+  - 批量编辑: `batchAddTag()`, `batchRemoveTag()` — 多书签同时操作，返回成功数量
+  - 全局标签查询: `getAllTags()` — 去重排序的标签列表
+  - 测试: 30 用例 ✅
 - **R55: BookmarkTagger 标签自动生成（迭代 #55）**
   - `lib/bookmark-tagger.js`: BookmarkTagger 类 — 基于标题/URL/文件夹路径自动生成 3-5 个标签
   - 域名标签提取: 已知域名 (github.com → "github") + 主域名解析

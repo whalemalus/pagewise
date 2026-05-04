@@ -115,11 +115,12 @@
   - 测试: 21 用例
   - 复杂度: Medium
 
-- [ ] **R56: 标签手动编辑 TagManualEditing**
-  - 添加/删除标签 UI
-  - 标签自动补全
-  - 批量编辑标签
-  - 测试: 6+ 用例
+- [x] **R56: 标签手动编辑 TagManualEditing** — `lib/bookmark-tag-editor.js`
+  - 添加/删除/覆盖标签: `addTag()`, `removeTag()`, `setTags()`
+  - 标签自动补全: `getAutocomplete(partial, limit)`
+  - 批量编辑标签: `batchAddTag()`, `batchRemoveTag()`
+  - 标签规范化: 小写、去空格、去特殊字符、最大 30 字符
+  - 测试: 30 用例 ✅
   - 复杂度: Simple
 
 - [ ] **R57: 知识盲区检测 KnowledgeGapDetection** — `lib/bookmark-gap-detector.js`
