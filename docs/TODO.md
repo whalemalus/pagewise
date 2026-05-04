@@ -1,70 +1,403 @@
-# TODO — 智阅 PageWise
+# TODO — BookmarkGraph 飞轮迭代计划
 
-> 驱动下一轮迭代的待办事项
-> 更新日期: 2026-05-02
+> 基于 PRD.md 和 REQUIREMENTS-BOOKMARK.md 规划
+> 50 轮迭代: R43 - R92
+> 最后更新: 2026-05-03
 
 ---
 
-## 🔥 本次迭代 — 功能测试 & 可靠性测试飞轮 (R43-R72)
+## Phase A: BookmarkGraph MVP (R43-R52) — 10 轮
 
-> 目标：端到端验证每个功能点，确保可靠性，发现设计问题提 Issue
-> 不做新功能，只做测试覆盖 + 质量保障
-> 当前测试: 2111 (全部通过)
+### 核心功能：书签采集 → 图谱构建 → 可视化 → 搜索
 
-### Phase 1: 未覆盖模块 E2E 测试 (R43-R48)
+- [ ] **R43: 书签采集器 BookmarkCollector** — `lib/bookmark-collector.js`
+  - 递归读取 Chrome 书签树
+  - 标准化书签对象 (id, title, url, folderPath, dateAdded)
+  - 处理空书签/重复书签/特殊字符
+  - 测试: 10+ 用例
+  - 复杂度: Medium
 
-- [ ] R43: Memory E2E — 记忆存储/检索/遗忘、容量限制、持久化、跨会话
-- [ ] R44: Message Renderer E2E — 消息渲染/Markdown/代码高亮/懒加载/大消息
-- [ ] R45: Knowledge Panel E2E — 面板渲染/数据绑定/交互/刷新/错误状态
-- [ ] R46: Agent Loop E2E — 代理循环/工具调用/状态管理/中断恢复
-- [ ] R47: Importer E2E — 数据导入/格式识别/大文件/错误处理/进度回调
-- [ ] R48: Evolution E2E — 数据演进/版本迁移/向后兼容/回滚
+- [ ] **R44: 书签索引器 BookmarkIndexer** — `lib/bookmark-indexer.js`
+  - 基于标题+URL+文件夹建立倒排索引
+  - 支持中英文分词
+  - 搜索响应 < 100ms
+  - 测试: 10+ 用例
+  - 复杂度: Medium
 
-### Phase 2: 已有模块深度 E2E (R49-R58)
+- [ ] **R45: 书签图谱引擎 BookmarkGraphEngine** — `lib/bookmark-graph.js`
+  - 提取书签关键词 (标题分词 + URL域名 + 文件夹标签)
+  - 计算相似度 (Jaccard + TF-IDF 混合)
+  - 生成图谱数据 {nodes, edges}
+  - 测试: 12+ 用例
+  - 复杂度: Complex
 
-- [ ] R49: Spaced Repetition 深度 — 卡片创建/复习/评分/间隔调整/连续天数/统计
-- [ ] R50: Knowledge Graph 深度 — 实体识别/关系构建/图查询/路径查找/可视化数据
-- [ ] R51: Wiki Store 深度 — CRUD/查询语法/类型过滤/分页/全文搜索/关联
-- [ ] R52: Embedding Engine 深度 — 向量生成/相似度计算/批量处理/缓存/降级
-- [ ] R53: Error Handler 深度 — 错误捕获/分类/用户通知/恢复流程/日志记录
-- [ ] R54: Cost Estimator 深度 — 成本计算/多模型/缓存节省/预算告警/历史统计
-- [ ] R55: Stats 深度 — 使用统计/趋势分析/导出/重置/并发更新
-- [ ] R56: Highlight Store 深度 — 高亮创建/删除/颜色/关联/导出/大量数据
-- [ ] R57: Learning Path 深度 — 路径创建/进度追踪/推荐/完成判定/重置
-- [ ] R58: Plugin System 深度 — 插件加载/卸载/钩子/权限/冲突/热更新
+- [ ] **R46: 图谱可视化 BookmarkVisualizer** — `lib/bookmark-visualizer.js`
+  - Canvas 力导向图渲染
+  - 缩放/拖拽/搜索高亮
+  - 节点颜色按文件夹分类
+  - 1000节点 > 30fps
+  - 测试: 8+ 用例
+  - 复杂度: Complex
 
-### Phase 3: 集成测试 (R59-R64)
+- [ ] **R47: 详情面板 BookmarkDetailPanel** — `lib/bookmark-detail-panel.js`
+  - 点击节点显示详情 (标题/URL/文件夹/时间)
+  - 显示相似书签列表
+  - 点击URL打开原网页
+  - 测试: 8+ 用例
+  - 复杂度: Medium
 
-- [ ] R59: AI Pipeline 集成 — Page Sense → AI Client → Knowledge Base 完整流程
-- [ ] R60: Sidebar 面板集成 — 面板切换/状态保持/数据同步/UI 响应
-- [ ] R61: 搜索+检索集成 — 倒排索引 + 语义搜索 + 知识图谱联合查询
-- [ ] R62: Settings 全局集成 — 设置变更传播/导入导出/默认值回退
-- [ ] R63: Knowledge → Learning 联动 — 知识条目自动创建复习卡片
-- [ ] R64: Wiki ↔ Knowledge 双向同步 — Wiki 更新同步到知识库
+- [ ] **R48: 相似推荐 BookmarkRecommender** — `lib/bookmark-recommender.js`
+  - 选中书签 → Top-5 相似推荐
+  - 显示相似度分数
+  - 推荐结果可点击
+  - 测试: 8+ 用例
+  - 复杂度: Medium
 
-### Phase 4: 边界 & 可靠性测试 (R65-R70)
+- [ ] **R49: 书签搜索 BookmarkSearch** — `lib/bookmark-search.js`
+  - 实时搜索过滤
+  - 搜索结果高亮在图谱中
+  - 支持按文件夹/标签过滤
+  - 测试: 8+ 用例
+  - 复杂度: Simple
 
-- [ ] R65: Network Resilience — 断网/慢网/超时/DNS 失败/SSL 错误
-- [ ] R66: Storage Limits — IndexedDB 配额耗尽/数据损坏/并发写入/版本升级
-- [ ] R67: Large Data — 大对话(1000+ 消息)/大知识库(10000+ 条目)/大 PDF(100MB)
-- [ ] R68: Concurrent Access — 多 Tab 同时操作/Service Worker 重启/消息乱序
-- [ ] R69: Input Validation — 恶意输入/XSS 注入/超长文本/特殊字符/空值
-- [ ] R70: Cross-Browser Compatibility — Chrome/Firefox/Edge API 差异/降级策略
+- [ ] **R50: 弹窗概览 BookmarkPopup** — `popup/bookmark-overview.js`
+  - 显示书签总数/领域分布/最近添加
+  - 快速搜索入口
+  - "查看完整图谱"按钮
+  - 测试: 6+ 用例
+  - 复杂度: Medium
 
-### Phase 5: 设计审查 & Issue 提交 (R71-R72)
+- [ ] **R51: 选项页集成 BookmarkOptionsPage** — `options/bookmark-panel.js`
+  - 新增"书签图谱"标签页
+  - 完整图谱 + 搜索 + 详情面板
+  - 与现有标签页风格一致
+  - 测试: 6+ 用例
+  - 复杂度: Medium
 
-- [ ] R71: 设计合理性审查 — 审查所有模块的设计，识别不合理之处
-- [ ] R72: Issue 提交 & 总结 — 将发现的设计问题提交为 GitHub Issue
+- [ ] **R52: BookmarkGraph MVP E2E 测试**
+  - 全模块集成测试
+  - 边界情况覆盖
+  - 性能基准测试
+  - 测试: 20+ 用例
+  - 复杂度: Medium
+
+---
+
+## Phase B: BookmarkGraph V1.0 (R53-R62) — 10 轮
+
+### 增强功能：主题聚类 → 学习路径 → 标签管理 → 重复检测
+
+- [ ] **R53: 主题聚类 TopicClustering** — `lib/bookmark-clusterer.js`
+  - 基于关键词/URL模式自动分类
+  - 支持 15+ 技术领域 (前端/后端/DevOps/AI/数据库等)
+  - 聚类结果可手动调整
+  - 测试: 10+ 用例
+  - 复杂度: Complex
+
+- [ ] **R54: 学习路径推荐 LearningPathFromBookmarks** — `lib/bookmark-learning-path.js`
+  - 分析书签内容难度 (入门/进阶/高级)
+  - 生成学习路径: 基础 → 实战 → 框架对比 → 生产实践
+  - 标记已学/待学状态
+  - 复用 `lib/learning-path.js`
+  - 测试: 8+ 用例
+  - 复杂度: Complex
+
+- [ ] **R55: 标签自动生成 AutoTagGeneration** — `lib/bookmark-tagger.js`
+  - 基于标题/URL/文件夹生成标签
+  - 每个书签 3-5 个标签
+  - 标签去重/合并
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R56: 标签手动编辑 TagManualEditing**
+  - 添加/删除标签 UI
+  - 标签自动补全
+  - 批量编辑标签
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R57: 知识盲区检测 KnowledgeGapDetection** — `lib/bookmark-gap-detector.js`
+  - 分析各领域书签数量
+  - 识别"热门但资料少"的领域
+  - 推荐补充方向
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R58: 状态标记 BookmarkStatusMarking**
+  - 三种状态: unread/reading/read
+  - 状态批量修改
+  - 按状态过滤
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R59: 文件夹分析 FolderAnalysis** — `lib/bookmark-folder-analyzer.js`
+  - 统计各文件夹书签数量
+  - 识别低质量文件夹
+  - 建议整理方案
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R60: 重复检测 DuplicateDetection** — `lib/bookmark-dedup.js`
+  - URL 去重
+  - 标题相似度去重
+  - 合并/删除建议
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R61: 数据导入导出 BookmarkImportExport** — `lib/bookmark-io.js`
+  - 导出 JSON (完整图谱)
+  - 导出 CSV (书签列表)
+  - 导入 Chrome 书签 HTML
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R62: BookmarkGraph V1.0 E2E 测试**
+  - 全模块集成测试
+  - 模块间交互测试
+  - 测试: 15+ 用例
+  - 复杂度: Medium
+
+---
+
+## Phase C: BookmarkGraph V2.0 (R63-R72) — 10 轮
+
+### 高级功能：链接检测 → 语义搜索 → AI 推荐 → 知识关联
+
+- [ ] **R63: 链接健康检查 LinkHealthCheck** — `lib/bookmark-link-checker.js`
+  - 后台批量检测链接状态
+  - 标记失效链接
+  - 修复/删除建议
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R64: 书签内容预览 BookmarkContentPreview** — `lib/bookmark-preview.js`
+  - 提取页面标题+摘要
+  - 缓存预览数据
+  - 测试: 6+ 用例
+  - 复杂度: Complex
+
+- [ ] **R65: 语义搜索 BookmarkSemanticSearch**
+  - 复用 `lib/embedding-engine.js`
+  - 自然语言查询
+  - 语义相似度排序
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R66: 知识关联 BookmarkKnowledgeCorrelation** — `lib/bookmark-knowledge-link.js`
+  - 书签与 Q&A 记录关联
+  - 双向跳转
+  - 关联强度可视化
+  - 测试: 8+ 用例
+  - 复杂度: Complex
+
+- [ ] **R67: 学习进度追踪 BookmarkLearningProgress**
+  - 记录学习时间
+  - 进度百分比
+  - 学习统计图表
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R68: AI 推荐 BookmarkAIRecommendations** — `lib/bookmark-ai-recommender.js`
+  - 复用 `lib/ai-client.js`
+  - 分析收藏模式
+  - 推荐相关领域资料
+  - 推荐理由说明
+  - 测试: 6+ 用例
+  - 复杂度: Complex
+
+- [ ] **R69: 统计仪表盘 BookmarkStatistics** — `lib/bookmark-stats.js`
+  - 收藏趋势图
+  - 领域分布饼图
+  - 活跃度热力图
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R70: 暗色主题 BookmarkDarkTheme**
+  - 跟随系统/手动切换
+  - 图谱节点/边颜色适配
+  - 所有面板暗色适配
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R71: 快捷键 BookmarkKeyboardShortcuts**
+  - 搜索: Ctrl+F
+  - 缩放: +/-/0
+  - 刷新: F5
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R72: BookmarkGraph V2.0 E2E 测试**
+  - 全模块集成测试
+  - 性能测试 (1000+ 书签)
+  - 测试: 15+ 用例
+  - 复杂度: Medium
+
+---
+
+## Phase D: 集成与打磨 (R73-R82) — 10 轮
+
+### 集成：与 PageWise 核心功能联动
+
+- [ ] **R73: 书签-知识库联动 BookmarkKnowledgeIntegration**
+  - 书签与 PageWise 知识库双向关联
+  - 从知识库跳转到相关书签
+  - 从书签跳转到相关知识
+  - 测试: 8+ 用例
+  - 复杂度: Complex
+
+- [ ] **R74: 自动分类 BookmarkAutoCategorize**
+  - 新增书签自动分类
+  - 基于历史分类学习
+  - 分类规则可配置
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R75: 智能集合 BookmarkSmartCollections**
+  - 基于规则的动态集合
+  - 规则: 标签/领域/时间/状态
+  - 集合自动更新
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R76: 书签分享 BookmarkSharing**
+  - 导出可分享集合
+  - 生成分享链接
+  - 隐私控制
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R77: 高级分析 BookmarkAdvancedAnalytics**
+  - 收藏模式分析
+  - 学习效率分析
+  - 知识覆盖度分析
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R78: 性能优化 BookmarkPerformanceOptimization**
+  - 10000+ 书签支持
+  - 懒加载/虚拟滚动
+  - Web Worker 计算
+  - 测试: 6+ 用例
+  - 复杂度: Complex
+
+- [ ] **R79: 无障碍 BookmarkAccessibility**
+  - 键盘导航
+  - 屏幕阅读器支持
+  - ARIA 标签
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R80: 国际化 BookmarkI18n**
+  - 中英文界面
+  - 日期格式本地化
+  - 测试: 6+ 用例
+  - 复杂度: Simple
+
+- [ ] **R81: 引导向导 BookmarkOnboarding**
+  - 首次使用引导
+  - 功能介绍
+  - 隐私说明
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R82: Phase D 集成测试**
+  - 全功能集成测试
+  - 端到端用户流程测试
+  - 测试: 15+ 用例
+  - 复杂度: Medium
+
+---
+
+## Phase E: 发布准备 (R83-R92) — 10 轮
+
+### 打磨：安全 → 性能 → 文档 → 发布
+
+- [ ] **R83: Chrome Web Store 准备 BookmarkStorePrep**
+  - 更新 manifest.json
+  - 更新 _locales
+  - 截图准备
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R84: 安全审计 BookmarkSecurityAudit**
+  - XSS 防护
+  - 数据隔离
+  - 权限最小化
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R85: 性能基准测试 BookmarkPerformanceBenchmark**
+  - 采集性能基准
+  - 渲染性能基准
+  - 搜索性能基准
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R86: 错误处理 BookmarkErrorHandler**
+  - 全局错误捕获
+  - 用户友好提示
+  - 错误上报（可选）
+  - 测试: 8+ 用例
+  - 复杂度: Medium
+
+- [ ] **R87: 用户文档 BookmarkDocumentation**
+  - 使用指南
+  - API 文档
+  - 常见问题
+  - 测试: 4+ 用例
+  - 复杂度: Simple
+
+- [ ] **R88: 数据迁移 BookmarkMigration**
+  - 版本升级迁移
+  - 数据格式兼容
+  - 迁移脚本
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R89: 备份恢复 BookmarkBackupRestore**
+  - 书签数据备份
+  - 一键恢复
+  - 自动备份策略
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R90: UI/UX 最终打磨 BookmarkFinalPolish**
+  - 动画优化
+  - 布局微调
+  - 交互细节
+  - 测试: 6+ 用例
+  - 复杂度: Medium
+
+- [ ] **R91: 发布候选版 BookmarkReleaseCandidate**
+  - RC 版本测试
+  - Bug 修复
+  - 性能回归测试
+  - 测试: 10+ 用例
+  - 复杂度: Medium
+
+- [ ] **R92: BookmarkGraph v3.0.0 正式发布**
+  - 最终测试
+  - 版本号更新
+  - 发布说明
+  - 测试: 全量回归
+  - 复杂度: Medium
+
+---
+
+## 统计
+
+| Phase | 轮次 | 预计新增模块 | 预计新增测试 |
+|-------|------|------------|------------|
+| A: MVP | R43-R52 | 9 个 | 90+ |
+| B: V1.0 | R53-R62 | 8 个 | 70+ |
+| C: V2.0 | R63-R72 | 7 个 | 70+ |
+| D: 集成 | R73-R82 | 6 个 | 70+ |
+| E: 发布 | R83-R92 | 4 个 | 60+ |
+| **总计** | **50 轮** | **34 个** | **360+** |
 
 ---
 
 ## ✅ 已完成
 
-### v2.1.0 — E2E 测试飞轮 (R36-R42)
-- [x] R36: AI Client E2E — API 调用、流式解析、错误重试、超时处理、模型切换
-- [x] R37: AI Cache E2E — 缓存命中/未命中、过期清理、LRU 淘汰、容量上限、并发读写
-- [x] R38: Knowledge Base E2E — 增删改查、全文搜索、标签过滤、分页、数据完整性
-- [x] R39: Conversation Store E2E — 创建/恢复/分支/合并对话、持久化、大对话性能
-- [x] R40: Page Sense + Content E2E — 页面内容提取、动态页面、iframe、懒加载内容
-- [x] R41: PDF Extractor E2E — 各类 PDF 解析、大文件、加密 PDF、表格/图片提取
-- [x] R42: Skill Engine + Custom Skills E2E — 技能加载/执行/参数传递、自定义技能 CRUD
+### 之前迭代 (R1-R42)
+- [x] R1-R42: 见 ROADMAP.md
