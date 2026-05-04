@@ -108,11 +108,11 @@
   - 测试: 21 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R55: 标签自动生成 AutoTagGeneration** — `lib/bookmark-tagger.js`
+- [x] **R55: 标签自动生成 AutoTagGeneration** — `lib/bookmark-tagger.js`
   - 基于标题/URL/文件夹生成标签
   - 每个书签 3-5 个标签
   - 标签去重/合并
-  - 测试: 8+ 用例
+  - 测试: 21 用例
   - 复杂度: Medium
 
 - [ ] **R56: 标签手动编辑 TagManualEditing**

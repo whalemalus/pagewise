@@ -7,6 +7,21 @@
 ## [Unreleased]
 
 ### 新增
+- **R55: BookmarkTagger 标签自动生成（迭代 #55）**
+  - `lib/bookmark-tagger.js`: BookmarkTagger 类 — 基于标题/URL/文件夹路径自动生成 3-5 个标签
+  - 域名标签提取: 已知域名 (github.com → "github") + 主域名解析
+  - URL 路径分词: 从路径段提取有意义的关键词
+  - 标题分词: 空格/标点分割 + 英文停用词过滤
+  - 技术关键词识别: 内置 150+ 技术关键词集合（语言/框架/工具/云平台/AI/ML 等）
+  - 中文标签: 2-4 字中文词组提取 + 中文停用词过滤
+  - `generateTags(bookmark)`: 单书签标签生成 (1-5 tags)
+  - `generateAllTags()`: 全量标签生成 Map<bookmarkId, string[]>
+  - `getTagFrequency()`: 全局标签频率统计
+  - `getPopularTags(limit)`: 热门标签排行（降序）
+  - `mergeTags(oldTag, newTag)`: 标签合并，返回受影响书签数
+  - `getBookmarksByTag(tag)`: 按标签反查书签
+  - `tests/test-bookmark-tagger.js`: 21 个测试用例，全部通过
+
 - **R54: BookmarkLearningPath 学习路径推荐（迭代 #54）**
   - `lib/bookmark-learning-path.js`: BookmarkLearningPath 类 — 基于书签内容和聚类结果自动生成分阶段学习路径
   - 难度判断 `judgeDifficulty()`: 入门/进阶/高级三级，覆盖中英文关键词 + URL 匹配
