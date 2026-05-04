@@ -181,7 +181,7 @@
 
 ### 高级功能：链接检测 → 语义搜索 → AI 推荐 → 知识关联
 
-- [ ] **R63: 链接健康检查 LinkHealthCheck** — `lib/bookmark-link-checker.js`
+- [x] **R63: 链接健康检查 LinkHealthCheck** — `lib/bookmark-link-checker.js`
   - 后台批量检测链接状态
   - 标记失效链接
   - 修复/删除建议
