@@ -17,11 +17,12 @@
   - 测试: 18 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R44: 书签索引器 BookmarkIndexer** — `lib/bookmark-indexer.js`
+- [x] **R44: 书签索引器 BookmarkIndexer** — `lib/bookmark-indexer.js`
   - 基于标题+URL+文件夹建立倒排索引
-  - 支持中英文分词
-  - 搜索响应 < 100ms
-  - 测试: 10+ 用例
+  - 支持中英文混合分词 (中文逐字 + bigram)
+  - 多关键词 AND 逻辑搜索
+  - 按文件夹/标签过滤 + 匹配度排序
+  - 测试: 24 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R45: 书签图谱引擎 BookmarkGraphEngine** — `lib/bookmark-graph.js`
