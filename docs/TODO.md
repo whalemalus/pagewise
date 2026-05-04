@@ -100,12 +100,12 @@
   - 测试: 21 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R54: 学习路径推荐 LearningPathFromBookmarks** — `lib/bookmark-learning-path.js`
+- [x] **R54: 学习路径推荐 LearningPathFromBookmarks** — `lib/bookmark-learning-path.js`
   - 分析书签内容难度 (入门/进阶/高级)
-  - 生成学习路径: 基础 → 实战 → 框架对比 → 生产实践
-  - 标记已学/待学状态
-  - 复用 `lib/learning-path.js`
-  - 测试: 8+ 用例
+  - 生成学习路径: 基础入门 → 实战练习 → 深入理解 → 生产实践
+  - 标记已学/待学状态 + 进度统计
+  - 复用 `lib/learning-path.js` 路径排序思路
+  - 测试: 21 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R55: 标签自动生成 AutoTagGeneration** — `lib/bookmark-tagger.js`

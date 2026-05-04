@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### 新增
+- **R54: BookmarkLearningPath 学习路径推荐（迭代 #54）**
+  - `lib/bookmark-learning-path.js`: BookmarkLearningPath 类 — 基于书签内容和聚类结果自动生成分阶段学习路径
+  - 难度判断 `judgeDifficulty()`: 入门/进阶/高级三级，覆盖中英文关键词 + URL 匹配
+  - 4 阶段学习路径: 基础入门 → 实战练习 → 深入理解 → 生产实践，按 dateAdded 排序
+  - `generatePath(category)`: 单分类学习路径，每书签只出现在一个阶段
+  - `getAllPaths()`: 所有分类路径 Map，带惰性缓存
+  - `markAsRead/markAsUnread`: 已读/未读状态切换，自动清除路径缓存
+  - `getProgress(category)`: 分类进度统计 (total/read/percent)
+  - `getOverallProgress()`: 整体进度 + 分类明细
+  - `tests/test-bookmark-learning-path.js`: 21 个测试用例，全部通过
+
 - **R53: BookmarkClusterer 主题聚类引擎（迭代 #53）**
   - `lib/bookmark-clusterer.js`: BookmarkClusterer 类 — 基于关键词/URL模式自动分类书签到技术领域
   - 内置 14 个技术领域分类规则 + "其他"兜底（前端/后端/数据库/DevOps/AI-ML/移动开发/安全/云服务/数据/测试/设计/工具/架构/性能）
