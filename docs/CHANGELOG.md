@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+（开发中）
+
+---
+
+## [v2.2.0] - 2026-05-04 — BookmarkGraph 书签知识图谱
+
 ### 新增
 - **R63: BookmarkLinkChecker 链接健康检查（飞轮迭代 R3）**
   - `lib/bookmark-link-checker.js`: 批量检测书签链接有效性 — 310 行
