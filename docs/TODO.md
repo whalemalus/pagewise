@@ -141,18 +141,21 @@
   - 测试: 19 用例 ✅
   - 复杂度: Simple
 
-- [ ] **R59: 文件夹分析 FolderAnalysis** — `lib/bookmark-folder-analyzer.js`
-  - 统计各文件夹书签数量
-  - 识别低质量文件夹
-  - 建议整理方案
-  - 测试: 6+ 用例
+- [x] **R59: 文件夹分析 FolderAnalysis** — `lib/bookmark-folder-analyzer.js`
+  - 统计各文件夹书签数量和分布
+  - 识别低质量文件夹（过少/过多/空）
+  - 建议整理方案（合并/拆分/删除）
+  - 文件夹深度分析和树形结构
+  - 质量评估 5 级: excellent/normal/underused/overcrowded/empty
+  - 测试: 20 用例 ✅
   - 复杂度: Simple
 
-- [ ] **R60: 重复检测 DuplicateDetection** — `lib/bookmark-dedup.js`
-  - URL 去重
-  - 标题相似度去重
-  - 合并/删除建议
-  - 测试: 8+ 用例
+- [x] **R60: 重复检测 BookmarkDedup** — `lib/bookmark-dedup.js`
+  - URL 规范化去重 (移除协议/www/尾斜杠/跟踪参数)
+  - 标题相似度去重 (Jaccard 系数, 可配置阈值, 默认 0.7)
+  - findDuplicates() 综合检测 + suggestCleanup() 合并/删除建议
+  - batchRemove() 批量清理重复书签
+  - 测试: 36 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R61: 数据导入导出 BookmarkImportExport** — `lib/bookmark-io.js`

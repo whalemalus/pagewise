@@ -7,6 +7,28 @@
 ## [Unreleased]
 
 ### 新增
+- **R60: BookmarkDedup 重复检测（迭代 #60）**
+  - `lib/bookmark-dedup.js`: BookmarkDedup 类 — 检测和处理重复书签
+  - `normalizeUrl(url)`: 静态方法 — URL 规范化 (移除协议/www/尾斜杠/跟踪参数/转小写)
+  - `titleSimilarity(a, b)`: 静态方法 — Jaccard 系数标题相似度 (0-1)
+  - `findByExactUrl()`: 按规范化 URL 精确匹配分组
+  - `findBySimilarTitle(threshold)`: 按标题相似度分组 (默认阈值 0.7, union-find 聚类)
+  - `findDuplicates()`: 综合检测 (URL 精确 + 标题相似)
+  - `suggestCleanup()`: 生成 remove/merge 清理建议
+  - `batchRemove(bookmarkIds)`: 批量清理重复书签
+  - 36 个测试用例 ✅
+- **R59: BookmarkFolderAnalyzer 文件夹分析（迭代 #59）**
+  - `lib/bookmark-folder-analyzer.js`: BookmarkFolderAnalyzer 类 — 分析书签文件夹结构
+  - `analyzeFolders()`: 分析所有文件夹，返回路径/数量/深度/质量/建议
+  - `getEmptyFolders()`: 获取空文件夹列表
+  - `getOvercrowdedFolders(threshold)`: 获取过度拥挤的文件夹（默认 >50）
+  - `getUnderusedFolders(threshold)`: 获取使用不足的文件夹（默认 <3）
+  - `getFolderTree()`: 返回文件夹树形结构（name/children/count）
+  - `suggestReorganization()`: 生成整理建议（delete/merge/split）
+  - `getMaxDepth()`: 获取最大文件夹深度
+  - 质量评估 5 级: excellent(5-30) / normal(3-4) / underused(<3) / overcrowded(>50) / empty(0)
+  - 20 个测试用例 ✅
+
 - **R58: BookmarkStatusManager 状态标记（迭代 #58）**
   - `lib/bookmark-status.js`: BookmarkStatusManager 类 — 管理书签阅读状态
   - 三种状态: unread / reading / read，默认 unread
