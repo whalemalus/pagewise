@@ -65,11 +65,12 @@
   - 测试: 22 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R50: 弹窗概览 BookmarkPopup** — `popup/bookmark-overview.js`
-  - 显示书签总数/领域分布/最近添加
-  - 快速搜索入口
-  - "查看完整图谱"按钮
-  - 测试: 6+ 用例
+- [x] **R50: 弹窗概览 BookmarkPopup** — `popup/bookmark-overview.js`
+  - 显示书签总数/领域分布/最近添加/待读数量
+  - 快速搜索入口 (实时过滤，中英文多关键词 AND)
+  - "查看完整图谱"按钮 (打开选项页)
+  - 点击书签打开原网页
+  - 测试: 17 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R51: 选项页集成 BookmarkOptionsPage** — `options/bookmark-panel.js`
