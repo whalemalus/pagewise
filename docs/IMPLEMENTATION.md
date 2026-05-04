@@ -2,6 +2,59 @@
 
 ---
 
+## 迭代 R51 — 选项页集成 BookmarkOptionsPage
+
+> 日期: 2026-05-04
+> 任务: R51 选项页集成 BookmarkOptionsPage — 将 BookmarkPanel 集成到选项页，新增 Tab 导航
+
+### 新增文件
+
+1. **tests/test-bookmark-options-tab.js** — 13 个单元测试
+   - Tab 创建 / Tab 切换 / 默认 Tab / 初始容器
+   - BookmarkPanel 生命周期: init → render → destroy → re-init
+   - 搜索集成 / 节点点击 / 过滤器传递
+   - Hash 路由 #tab=bookmark
+   - 完整集成流: init → switch → search → node click → destroy → re-init
+
+### 修改文件
+
+1. **options/options.html** — 新增 Tab 导航结构 + 图谱面板容器
+   - `<nav class="tab-nav">` 包含 "⚙ 设置" 和 "🕸 书签图谱" 两个 Tab 按钮
+   - `<div id="settings-panel">` 包裹原有设置表单
+   - `<div id="bookmark-panel">` 作为 BookmarkPanel 渲染容器 (初始 `display: none`)
+
+2. **options/options.js** — 新增 TabManager + BookmarkPanel 集成
+   - `createTabManager()` — Tab 切换核心逻辑:
+     - `switchTab('bookmark')`: 隐藏设置面板 → 显示图谱面板 → `panel.render()` + `panel.init()`
+     - `switchTab('settings')`: 隐藏图谱面板 → 显示设置面板 → `panel.destroy()` 释放 Canvas/事件
+   - 导入 BookmarkPanel 及全部 7 个依赖模块 (Collector/Indexer/GraphEngine/Visualizer/DetailPanel/Search/Recommender)
+   - Hash 路由支持: `#tab=bookmark` 直接跳转图谱标签页
+   - 导出 `createTabManager` 供测试使用
+
+3. **options/options.css** — 新增 Tab 导航样式 + 图谱三栏布局样式
+   - Tab 导航: `.tab-nav` / `.tab-btn` / `.tab-btn.active`
+   - 三栏布局: `.bookmark-panel-layout` (`grid: 240px 1fr 280px`)
+   - 左侧面板: 搜索框 / 过滤器组 / 统计栏
+   - 中间面板: Canvas 图谱
+   - 右侧面板: 详情面板 / 标题 / URL / 文件夹 / 日期 / 标签 / 相似推荐
+   - 状态消息: loading / error / empty
+
+### 设计决策
+
+- **Tab 切换使用 CSS display:none/block**: 不使用路由或页面跳转，保持设置页输入值不丢失
+- **懒初始化 BookmarkPanel**: 切换到图谱 Tab 时才 render + init，避免不看图谱时浪费资源
+- **destroy 释放资源**: 切换离开时调用 `panel.destroy()` 释放 Canvas 事件监听器，防止内存泄漏
+- **Hash 路由**: `#tab=bookmark` 支持从 Popup "查看完整图谱" 按钮直接跳转
+- **设置标签页保持 640px**: 图谱全宽但设置页不改变原有布局
+
+### 测试结果
+
+- 新增: 13 个测试，全部通过
+- 已有 BookmarkPanel: 16 个测试，全部通过
+- 总测试: 445 (bookmark 模块)
+
+---
+
 ## 迭代 21 — L1.2 实体/概念自动提取
 
 > 日期: 2026-04-30

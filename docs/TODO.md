@@ -73,11 +73,11 @@
   - 测试: 17 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R51: 选项页集成 BookmarkOptionsPage** — `options/bookmark-panel.js`
+- [x] **R51: 选项页集成 BookmarkOptionsPage** — `options/bookmark-panel.js`
   - 新增"书签图谱"标签页
   - 完整图谱 + 搜索 + 详情面板
   - 与现有标签页风格一致
-  - 测试: 6+ 用例
+  - 测试: 13 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R52: BookmarkGraph MVP E2E 测试**

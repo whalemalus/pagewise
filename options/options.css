@@ -16,9 +16,234 @@ body {
 }
 
 .options-container {
-  max-width: 640px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 40px 20px;
+}
+
+/* ==================== Tab 导航 ==================== */
+
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 0;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: -2px;
+}
+
+.tab-btn:hover {
+  color: #374151;
+  background: #f9fafb;
+}
+
+.tab-btn.active {
+  color: #6366f1;
+  border-bottom-color: #6366f1;
+}
+
+/* ==================== 设置标签页 (限制宽度) ==================== */
+
+#settings-panel .options-main {
+  max-width: 640px;
+}
+
+/* ==================== 书签图谱面板 ==================== */
+
+#bookmark-panel {
+  width: 100%;
+  min-height: 600px;
+}
+
+.bookmark-panel-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  gap: 16px;
+  height: calc(100vh - 180px);
+  min-height: 500px;
+}
+
+/* 左侧面板: 搜索 + 过滤器 */
+.bookmark-panel-left {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.bookmark-panel-search {
+  margin-bottom: 16px;
+}
+
+.bookmark-panel-search-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  background: #f9fafb;
+  transition: border-color 0.15s;
+}
+
+.bookmark-panel-search-input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.bookmark-panel-filter-group {
+  margin-bottom: 12px;
+}
+
+.bookmark-panel-filter-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bookmark-panel-filter-select {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  background: #f9fafb;
+}
+
+.bookmark-panel-stats {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
+/* 中间面板: Canvas 图谱 */
+.bookmark-panel-center {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.bookmark-panel-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* 右侧面板: 详情 */
+.bookmark-panel-right {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.bookmark-panel-detail-hint {
+  color: #9ca3af;
+  font-size: 13px;
+  text-align: center;
+  padding: 40px 16px;
+}
+
+.bookmark-panel-detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.bookmark-panel-detail-url {
+  display: block;
+  font-size: 12px;
+  color: #6366f1;
+  text-decoration: none;
+  margin-bottom: 8px;
+  word-break: break-all;
+}
+
+.bookmark-panel-detail-url:hover {
+  text-decoration: underline;
+}
+
+.bookmark-panel-detail-folder,
+.bookmark-panel-detail-date,
+.bookmark-panel-detail-status,
+.bookmark-panel-detail-tags {
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 4px;
+}
+
+.bookmark-panel-detail-similar-header {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.bookmark-panel-detail-similar-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.bookmark-panel-detail-similar-item {
+  margin-bottom: 4px;
+}
+
+.bookmark-panel-detail-similar-link {
+  font-size: 13px;
+  color: #6366f1;
+  text-decoration: none;
+}
+
+.bookmark-panel-detail-similar-link:hover {
+  text-decoration: underline;
+}
+
+/* 状态消息 */
+.bookmark-panel-loading,
+.bookmark-panel-error,
+.bookmark-panel-empty {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bookmark-panel-loading::before {
+  content: '⏳ ';
+}
+
+.bookmark-panel-error {
+  color: #ef4444;
+}
+
+.bookmark-panel-error::before {
+  content: '❌ ';
 }
 
 .options-header {

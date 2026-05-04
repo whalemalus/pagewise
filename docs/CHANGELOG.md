@@ -7,6 +7,16 @@
 ## [Unreleased]
 
 ### 新增
+- **R51: 选项页集成 BookmarkOptionsPage（迭代 #51）**
+  - `options/options.html`: 新增 Tab 导航结构 (设置 / 书签图谱) + `<div id="bookmark-panel">` 容器
+  - `options/options.js`: 新增 `createTabManager()` — Tab 切换 + BookmarkPanel 生命周期管理 (懒初始化、destroy 释放、hash 路由)
+  - `options/options.css`: 新增 Tab 导航样式 + 图谱三栏布局样式 (`grid: 240px 1fr 280px`)
+  - `options/bookmark-panel.js`: 已有 BookmarkPanel 类，无需修改
+  - Tab 切换逻辑: 设置 Tab → 图谱 Tab 时调用 `panel.render()` + `panel.init()`，离开时调用 `panel.destroy()` 释放 Canvas 和事件监听器
+  - 支持 hash 路由 `#tab=bookmark` 直接跳转图谱标签页 (供 Popup "查看完整图谱" 按钮使用)
+  - 设置标签页保持原有 `max-width: 640px` 居中布局，图谱标签页全宽
+  - 13 个测试用例 ✅
+
 - **R61: BookmarkImportExport 数据导入导出（迭代 #61）**
   - `lib/bookmark-io.js`: BookmarkImportExport 类 — 书签数据导入导出
   - `exportJSON()`: 导出完整图谱数据 (书签+聚类+标签+状态) 为 JSON 字符串
