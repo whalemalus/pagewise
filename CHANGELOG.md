@@ -4,6 +4,39 @@
 
 ---
 
+## [2.3.0] - 2026-05-04
+
+BookmarkGraph Phase 5 — 测试验证与发布，完成书签知识图谱功能的全面测试和发布准备。
+
+### 新增
+
+- **Popup 书签图谱入口**：弹窗新增「🔖 书签图谱」按钮，一键跳转侧边栏书签标签页
+- **Sidebar 书签标签页**：侧边栏新增完整的书签管理标签页，包含搜索、文件夹导航、详情面板
+- **Options 页书签图谱**：设置页新增「🕸 书签图谱」标签页，提供全屏图谱可视化体验
+- **书签详情面板**：点击图谱节点显示书签详情，包含相似书签推荐
+- **书签搜索功能**：支持标题、URL、文件夹、标签多维搜索过滤
+- **BookmarkOverview 模块**：Popup 中的书签概览，展示统计、分布、最近添加
+- **BookmarkPanel 模块**：Options 页的书签图谱面板，三栏布局（搜索+图谱+详情）
+- **17 个书签功能模块**：BookmarkCollector、BookmarkIndexer、BookmarkGraphEngine、BookmarkVisualizer、BookmarkDetailPanel、BookmarkSearch、BookmarkRecommender、BookmarkClusterer、BookmarkStatusManager、BookmarkTagger、BookmarkDedup、BookmarkFolderAnalyzer、BookmarkGapDetector、BookmarkImportExport、BookmarkTagEditor、BookmarkLearningPath、BookmarkLinkChecker
+
+### 测试
+
+- 书签相关测试：478 个测试用例，全部通过
+- 测试文件：24 个书签测试文件
+- 测试覆盖：collector、indexer、graph、visualizer、detail-panel、search、recommender、clusterer、status、tagger、dedup、folder-analyzer、gap-detector、io、tag-editor、learning-path、overview、panel、panel-integration、options-tab、link-checker-e2e、graph-e2e、v1-e2e
+- 全量测试：2662/2680 通过（18 个预先存在的 KnowledgePanel E2E 失败，与 BookmarkGraph 无关）
+
+### 验收标准
+
+- ✅ 所有书签测试通过 (478/478)
+- ✅ Popup 有书签图谱按钮
+- ✅ Sidebar 有书签标签页
+- ✅ Options 页书签图谱可以正常显示
+- ✅ 点击节点可以显示详情
+- ✅ 搜索功能正常
+
+---
+
 ## [2.0.0] - 2026-04-30
 
 v2.0.0 里程碑版本 — 20 轮飞轮迭代，新增大量功能、性能优化与架构重构。
