@@ -2,6 +2,56 @@
 
 ---
 
+## 迭代 R65 — 语义搜索 BookmarkSemanticSearch
+
+> 日期: 2026-05-05
+> 任务: R65 语义搜索 BookmarkSemanticSearch — 书签库自然语言语义搜索
+
+### 新增文件
+
+1. **lib/bookmark-semantic-search.js** — 语义搜索引擎核心模块
+   - `BookmarkSemanticSearch.FIELD_WEIGHTS` — 书签域字段权重 (title: 3.0, tags: 2.0, contentPreview: 1.5, folderPath: 1.0, url: 0.5)
+   - `constructor(embeddingEngine?, bookmarkSearch?)` — 可选注入引擎
+   - `buildIndex(bookmarks[])` — 全量构建 TF-IDF 词汇表 + 文档向量
+   - `addBookmark(bookmark)` / `removeBookmark(bookmarkId)` — 增量更新
+   - `semanticSearch(query, opts?)` — 纯语义搜索 (TF-IDF 余弦相似度)
+   - `hybridSearch(query, opts?)` — 混合搜索 (关键词 0.6 + 语义 0.4)
+   - `findSimilar(bookmarkId, limit?)` — 以文搜文
+   - `invalidateCache(bookmarkId?)` — 缓存失效
+   - `getStats()` — 索引统计
+   - `_getWeightedText(bookmark)` — 生成带字段权重的文档文本
+   - `_generateBookmarkVector(bookmark)` — 生成书签 TF-IDF 向量
+   - `_idf(term)` — 计算逆文档频率
+   - `_mergeResults(keyword, semantic, ratio)` — 结果合并归一化
+
+2. **tests/test-bookmark-semantic-search.js** — 35 个单元测试
+
+### 设计决策
+
+- **复用 EmbeddingEngine**: 不重新实现 TF-IDF，直接复用迭代 #7 的 `EmbeddingEngine` 核心算法
+- **书签域独立字段权重**: 不同于知识库域的权重 (title: 3.0, summary: 2.0)，书签域使用 contentPreview 替代 summary
+- **归一化合并策略**: 关键词和语义结果各自先归一化到 [0, 1]，再按 0.6:0.4 权重混合
+- **增量更新**: addBookmark/removeBookmark 直接修改词汇表的 document frequency，无需全量重建
+- **可选依赖注入**: BookmarkSearch 可选注入，无注入时 hybridSearch 退化为纯语义搜索
+- **纯 ES Module**: 不依赖 DOM/Chrome API，可在 Node.js 环境测试
+
+### 依赖关系
+
+```
+BookmarkSemanticSearch (新建, R65)
+  ├── EmbeddingEngine (已存在, 迭代 #7) — TF-IDF 核心算法
+  ├── BookmarkSearch (已存在, R47)      — 关键词搜索结果输入 (可选)
+  ├── BookmarkContentPreview (已存在, R64) — contentPreview 字段作为向量化输入
+  └── BookmarkCollector (已存在, R43)    — 标准书签对象格式
+```
+
+### 测试结果
+
+- 新增: 35 个测试，全部通过
+- 总测试: 35 (本模块)
+
+---
+
 ## 迭代 R51 — 选项页集成 BookmarkOptionsPage
 
 > 日期: 2026-05-04

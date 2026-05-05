@@ -195,11 +195,16 @@
   - 测试: 31 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R65: 语义搜索 BookmarkSemanticSearch**
-  - 复用 `lib/embedding-engine.js`
-  - 自然语言查询
-  - 语义相似度排序
-  - 测试: 8+ 用例
+- [x] **R65: 语义搜索 BookmarkSemanticSearch** — `lib/bookmark-semantic-search.js`
+  - 复用 `lib/embedding-engine.js` TF-IDF 核心算法
+  - 自然语言查询: `semanticSearch(query, opts)`
+  - 语义相似度排序: TF-IDF 余弦相似度
+  - 混合搜索: `hybridSearch(query, opts)` — 关键词 0.6 + 语义 0.4
+  - 以文搜文: `findSimilar(bookmarkId, limit)`
+  - 增量更新: `addBookmark` / `removeBookmark`
+  - 缓存管理: `invalidateCache(bookmarkId?)`
+  - 书签域字段权重: title 3.0 / tags 2.0 / contentPreview 1.5 / folderPath 1.0 / url 0.5
+  - 测试: 35 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R66: 知识关联 BookmarkKnowledgeCorrelation** — `lib/bookmark-knowledge-link.js`

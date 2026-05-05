@@ -10,6 +10,39 @@
 
 ---
 
+## [v2.4.0] - 2026-05-05 — BookmarkSemanticSearch 语义搜索
+
+### 新增
+- **R65: BookmarkSemanticSearch 语义搜索引擎** — `lib/bookmark-semantic-search.js`
+  - `buildIndex(bookmarks[])`: 全量构建 TF-IDF 词汇表 + 文档向量，1000 条书签 < 5 秒
+  - `addBookmark(bookmark)`: 增量添加书签，更新词汇表和文档向量
+  - `removeBookmark(bookmarkId)`: 增量删除书签，减少文档频率
+  - `semanticSearch(query, opts?)`: 纯语义搜索，TF-IDF 余弦相似度排序，< 200ms
+  - `hybridSearch(query, opts?)`: 混合搜索（关键词 + 语义），默认权重 0.6:0.4
+  - `findSimilar(bookmarkId, limit?)`: 以文搜文，余弦相似度排序
+  - `invalidateCache(bookmarkId?)`: 缓存失效（单个/全部）
+  - `getStats()`: 索引统计（书签数/词汇表大小/文档数）
+  - `_mergeResults(keyword, semantic, ratio)`: 内部结果合并，支持归一化加权
+  - 书签域字段权重: title: 3.0, tags: 2.0, contentPreview: 1.5, folderPath: 1.0, url: 0.5
+  - 复用 `EmbeddingEngine` TF-IDF 核心算法，纯 ES Module 零外部依赖
+  - 排序策略: relevance / semantic-only / keyword-only
+  - 测试: 35 用例 ✅
+
+### 测试
+- **test-bookmark-semantic-search.js** — `tests/test-bookmark-semantic-search.js` — 35 用例
+  - 构造函数: 创建实例 / 默认引擎 / 自定义引擎
+  - buildIndex: 全量构建 / 空数组 / 重复构建
+  - 增量更新: addBookmark / removeBookmark / 不存在 ID
+  - semanticSearch: 基本搜索 / 空查询 / 降序排序 / limit
+  - hybridSearch: 合并结果 / 关键词优先 / 排序策略 / 空查询 / 无 BookmarkSearch / 默认权重
+  - findSimilar: 相似书签 / 排除自身 / 不存在 ID / limit / 降序排序
+  - invalidateCache: 单个 / 全部
+  - getStats: 统计 / 零值
+  - _mergeResults: 合并去重
+  - FIELD_WEIGHTS / 结果字段完整性 / 空库 / 增量生效 / 删除后不返回
+
+---
+
 ## [v2.3.0] - 2026-05-05 — BookmarkContentPreview 书签内容预览
 
 ### 新增
