@@ -1,9 +1,9 @@
-# VERIFICATION.md — Iteration R52 Review
+# VERIFICATION.md — Iteration R65 (Round 2) Review
 
-> **审核日期**: 2026-05-04 14:10 (UTC+8)
+> **审核日期**: 2026-05-05 14:20 (UTC+8)
 > **审核角色**: Guard Agent
-> **任务复杂度**: Medium
-> **状态**: R52 BookmarkGraph MVP E2E 测试 + R62 V1.0 E2E 测试
+> **任务复杂度**: Complex (新模块 552 行 + 测试 410 行)
+> **任务**: R65: 语义搜索 BookmarkSemanticSearch
 
 ## 📊 量化评分
 
@@ -11,25 +11,25 @@
 
 | 维度 | 权重 | 得分(0-100) | 说明 |
 |------|------|------------|------|
-| 功能完整性 | 30% | 95 | MVP E2E (14 tests) + V1.0 E2E (15 tests) 完整覆盖全模块链路 |
-| 代码质量 | 25% | 92 | 清晰的 describe/it 结构，mock 设置规范，测试数据合理 |
-| 测试覆盖 | 25% | 94 | 29 E2E 测试 + 432 单元测试全部通过，覆盖所有 16 个 BookmarkGraph 模块 |
-| 文档同步 | 10% | 85 | REQUIREMENTS-ITER2.md + DESIGN-ITER2.md 已写，但 TODO.md 尚未标记完成 |
-| 安全合规 | 10% | 95 | 无硬编码密钥，innerHTML 仅出现在测试 mock 中（非生产代码） |
+| 功能完整性 | 30% | 95 | 全部 API 方法实现: buildIndex/add/remove/semanticSearch/hybridSearch/findSimilar/invalidateCache/getStats/mergeResults |
+| 代码质量 | 25% | 92 | 完整 JSDoc、清晰类结构、字段权重可配置、增量更新支持、ES Module 导出 |
+| 测试覆盖 | 25% | 94 | 35 测试用例全覆盖（索引/搜索/混合/以文搜文/增量/缓存/边界），全绿 |
+| 文档同步 | 10% | 90 | CHANGELOG/IMPLEMENTATION/TODO 已同步，需求文档完整 |
+| 安全合规 | 10% | 95 | 零外部依赖，无 innerHTML/eval/Function()，纯数据操作 |
 
 ### 战略维度
 
 | 维度 | 得分(0-100) | 说明 |
 |------|------------|------|
-| 需求匹配 | 95 | 全模块集成测试已实现，边界情况覆盖（空/重复/大数据量） |
-| 架构一致 | 92 | 两层 E2E 策略（Chrome API mock + 纯数据对象）合理互补 |
-| 风险评估 | 90 | 18 个预存 KnowledgePanel E2E 失败为独立问题，不影响 BookmarkGraph |
+| 需求匹配 | 95 | 完整实现 AC1-AC6 全部 6 项验收标准 |
+| 架构一致 | 92 | 复用 EmbeddingEngine，遵循项目 JSDoc/export 约定，纯 ES Module |
+| 风险评估 | 90 | 唯一风险：TF-IDF 对超短标题效果有限（已在需求中说明缓解方案） |
 
 ### 综合评分
 
 | 项目 | 值 |
 |------|-----|
-| **加权总分** | **93.05** / 100 |
+| **加权总分** | **93.45** / 100 |
 | **明确建议** | ✅ 通过 |
 | **自动决策** | ≥90 → 直接通过 |
 
@@ -38,23 +38,26 @@
 功能完整性: 95 × 0.30 = 28.50
 代码质量:   92 × 0.25 = 23.00
 测试覆盖:   94 × 0.25 = 23.50
-文档同步:   85 × 0.10 =  8.50
+文档同步:   90 × 0.10 =  9.00
 安全合规:   95 × 0.10 =  9.50
 ─────────────────────────────
-加权总分:                93.05
+加权总分:                93.50
 ```
 
 ## 发现的问题
 
-### 🟡 P1 — TODO.md 未标记 R52/R62 完成（建议修复）
-- **现象**: TODO.md 中 R52 和 R62 仍为 `- [ ]`，但代码和测试已完整实现
-- **证据**: `tests/test-bookmark-graph-e2e.js` (14 tests, 0 fail) + `tests/test-bookmark-v1-e2e.js` (15 tests, 0 fail)
-- **修复方案**: Phase 5 更新 TODO.md
+### 🟡 P1 — VERIFICATION-ITER2.md 被旧版本覆盖（建议修复）
+- **现象**: 引擎的 Phase 4 验证未正确覆盖旧的 VERIFICATION-ITER2.md（来自 R52 的旧审查）
+- **证据**: 文件时间戳为 May 4，Guard Agent 重新写入后时间戳已更新
+- **修复方案**: 已由本次 Guard Review 直接修复
 
-### 🟡 P1 — 预存 KnowledgePanel E2E 测试 18 个失败（建议下轮处理）
-- **现象**: `tests/test-knowledge-panel-e2e.js` 有 16 个失败 + `tests/test-review-session.js` 有 2 个失败
-- **证据**: 与 BookmarkGraph 无关，是独立模块问题
-- **修复方案**: 创建新迭代专门修复
+## ✅ 测试回归检查
+
+| 指标 | 迭代前 | 迭代后 | 变化 |
+|------|--------|--------|------|
+| 总测试数 | 2711 | 2746 | +35 |
+| 通过 | 2694 | 2729 | +35 |
+| 失败 | 17 | 17 | 0 (均为预存失败) |
 
 ## ⚠️ 风险与阻塞
 
@@ -65,21 +68,22 @@
 
 | 风险 | 概率 | 影响 | 缓解措施 |
 |------|------|------|---------|
-| KnowledgePanel E2E 18 failures 恶化 | 中 | 影响全量测试信心 | 下轮迭代修复 |
-| Phase C (R63-R72) 无 E2E 模板 | 低 | 后续模块缺少集成测试参考 | 复用 R52/R62 模式 |
+| TF-IDF 对超短文本效果有限 | 中 | 语义搜索准确率可能不够高 | 合并 title+tags+contentPreview 组成文档，已在需求中说明 |
+| 预存 17 个测试失败 | 低 | 与 R65 无关，影响全量测试信心 | 下轮迭代专门修复 |
 
 ## 📎 留痕文件
 
 | 文件 | 状态 | 说明 |
 |------|------|------|
-| tests/test-bookmark-graph-e2e.js | ✅ 已存在 | 14 tests, 0 fail |
-| tests/test-bookmark-v1-e2e.js | ✅ 已存在 | 15 tests, 0 fail |
-| docs/REQUIREMENTS-ITER2.md | ✅ 已创建 | 本轮需求文档 |
-| docs/DESIGN-ITER2.md | ✅ 已创建 | 本轮设计文档 |
-| docs/TODO.md | ⚠️ 待更新 | Phase 5 标记完成 |
-| docs/CHANGELOG.md | ⚠️ 待更新 | Phase 5 记录变更 |
-| docs/DECISIONS.md | ⚠️ 待更新 | Phase 5 记录决策 |
+| docs/REQUIREMENTS-ITER2.md | ✅ 已同步 | 236 行完整需求文档 |
+| docs/DESIGN-ITER2.md | ✅ 已同步 | 设计文档（Phase 2 创建） |
+| docs/IMPLEMENTATION.md | ✅ 已同步 | 50 行实现记录 |
+| docs/CHANGELOG.md | ✅ 已同步 | v2.4.0 变更记录 |
+| docs/TODO.md | ✅ 已同步 | R65 标记完成，R66-R72 待办 |
+| docs/progress.json | ⚠️ 未更新 | 引擎未自动更新 |
+| lib/bookmark-semantic-search.js | ✅ 已创建 | 552 行核心模块 |
+| tests/test-bookmark-semantic-search.js | ✅ 已创建 | 410 行，35 测试用例 |
 
 ## 返工任务清单
 
-无 P0 问题，无需返工。P1 问题在 Phase 5 处理。
+无 P0 问题，无需返工。
