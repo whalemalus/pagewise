@@ -10,6 +10,30 @@
 
 ---
 
+## [v2.3.0] - 2026-05-05 — BookmarkContentPreview 书签内容预览
+
+### 新增
+- **R64: BookmarkContentPreview 书签内容预览** — `lib/bookmark-preview.js`
+  - `extractUrlInfo(url)`: 从 URL 提取域名/路径/协议/favicon 结构化信息
+  - `generateTextPreview(bookmark, opts)`: 纯文本预览（标题 + 域名 + 文件夹 + 标签 + 状态）
+  - `generateHtmlPreview(bookmark, opts)`: HTML 卡片预览，含 XSS 转义
+  - `generateSnapshotPreview(bookmark, snapshotContent, opts)`: 从页面快照生成内容摘要
+  - `_truncate(text, maxLen)`: 文本截断（字符数，中文兼容）
+  - `_escapeHtml(str)`: HTML 特殊字符转义 `< > & " '`
+  - 纯数据模块，无状态，无 I/O，性能 < 5ms
+  - 测试: 31 用例 ✅
+
+### 测试
+- **test-bookmark-preview.js** — `tests/test-bookmark-preview.js` — 31 用例
+  - extractUrlInfo: 正常 URL / 查询参数 / http 协议 / 无效 URL
+  - generateTextPreview: 完整 / 最小 / 空标题 / 截断 / 选项禁用 / null 输入
+  - generateHtmlPreview: 结构元素 / XSS 转义 / 安全 href / null 输入
+  - generateSnapshotPreview: 有快照 / 无快照 / 超长截断 / null 输入
+  - _truncate: 短文本 / 长文本 / 中文 / 非字符串 / 零值 / 恰好相等
+  - _escapeHtml: script 标签 / 引号 / & 符号 / 无特殊字符 / 非字符串
+
+---
+
 ## [v2.2.1] - 2026-05-04 — BookmarkGraph Phase 1 核心功能修复
 
 ### 修复

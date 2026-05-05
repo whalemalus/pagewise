@@ -188,10 +188,11 @@
   - 测试: 8+ 用例
   - 复杂度: Medium
 
-- [ ] **R64: 书签内容预览 BookmarkContentPreview** — `lib/bookmark-preview.js`
-  - 提取页面标题+摘要
-  - 缓存预览数据
-  - 测试: 6+ 用例
+- [x] **R64: 书签内容预览 BookmarkContentPreview** — `lib/bookmark-preview.js`
+  - extractUrlInfo / generateTextPreview / generateHtmlPreview / generateSnapshotPreview
+  - _truncate (中文字符数截断) / _escapeHtml (XSS 安全转义)
+  - 纯数据模块，无状态，无 I/O
+  - 测试: 31 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R65: 语义搜索 BookmarkSemanticSearch**
