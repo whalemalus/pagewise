@@ -10,6 +10,40 @@
 
 ---
 
+## [v2.5.0] - 2026-05-05 — BookmarkKnowledgeCorrelation 知识关联
+
+### 新增
+- **R66: BookmarkKnowledgeCorrelation 知识关联引擎** — `lib/bookmark-knowledge-link.js`
+  - `buildIndex(bookmarks[], entries[])`: 全量构建关联索引，多维关联度计算
+  - `addEntry(entry)`: 增量添加知识条目，实时更新关联缓存
+  - `removeEntry(entryId)`: 增量删除知识条目，清理关联缓存
+  - `getRelatedEntries(bookmarkId, opts?)`: 书签→知识条目关联查询
+  - `getRelatedBookmarks(entryId, opts?)`: 知识条目→书签关联查询（双向）
+  - `getCorrelationStrength(bookmarkId, entryId): { urlMatch, titleSimilarity, tagOverlap, total }` — 指定对关联强度详情
+  - `suggestCorrelations(opts?)`: 推荐未建立但高相似度的书签-条目对
+  - `getCorrelationSummary(bookmarkId)`: 书签关联摘要（条目列表/总数/平均分）
+  - `getStats()`: 统计信息（关联数/已关联书签/已关联条目/平均关联）
+  - 多维关联: URL 精确匹配 (0.4) + 标题 TF-IDF 语义相似 (0.3) + 标签 Jaccard 重叠 (0.3)
+  - URL 匹配分层: 精确 (1.0) > 路径包含 (0.7) > 同域名 (0.3)
+  - 复用 `EmbeddingEngine` TF-IDF 核心算法，纯 ES Module 零外部依赖
+  - 测试: 30 用例 ✅
+
+### 测试
+- **test-bookmark-knowledge-link.js** — `tests/test-bookmark-knowledge-link.js` — 30 用例
+  - 构造函数: 创建实例 / 默认引擎 / 自定义引擎
+  - buildIndex: 全量构建 / 空数组 / 重复构建
+  - getRelatedEntries: URL 匹配优先 / 无关联 / limit / 返回字段
+  - getRelatedBookmarks: 基本查询 / 无关联
+  - getCorrelationStrength: URL 匹配强度 / 不存在 / 分项得分
+  - addEntry/removeEntry: 增量添加 / 增量删除
+  - suggestCorrelations: 建议列表 / limit
+  - getCorrelationSummary: 摘要 / 不存在书签
+  - getStats: 统计完整 / 零值
+  - 综合关联度: URL+标签叠加 / 双向关联一致性
+  - 边界: 只有书签 / 只有条目 / 增量后可查 / 降序排序
+
+---
+
 ## [v2.4.0] - 2026-05-05 — BookmarkSemanticSearch 语义搜索
 
 ### 新增

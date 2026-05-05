@@ -207,11 +207,14 @@
   - 测试: 35 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R66: 知识关联 BookmarkKnowledgeCorrelation** — `lib/bookmark-knowledge-link.js`
-  - 书签与 Q&A 记录关联
-  - 双向跳转
-  - 关联强度可视化
-  - 测试: 8+ 用例
+- [x] **R66: 知识关联 BookmarkKnowledgeCorrelation** — `lib/bookmark-knowledge-link.js`
+  - 多维关联: URL 精确匹配 (0.4) + 标题 TF-IDF 语义相似 (0.3) + 标签 Jaccard 重叠 (0.3)
+  - 双向查询: `getRelatedEntries(bookmarkId)` + `getRelatedBookmarks(entryId)`
+  - 关联强度可视化: `getCorrelationStrength()` 返回 URL/标题/标签 分项得分
+  - 关联建议: `suggestCorrelations()` 推荐未关联但高相似度对
+  - 增量更新: `addEntry()` / `removeEntry()`
+  - 关联摘要: `getCorrelationSummary(bookmarkId)` 返回书签关联概览
+  - 测试: 30 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R67: 学习进度追踪 BookmarkLearningProgress**

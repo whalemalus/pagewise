@@ -2,6 +2,62 @@
 
 ---
 
+## 迭代 R66 — 知识关联 BookmarkKnowledgeCorrelation
+
+> 日期: 2026-05-05
+> 任务: R66 知识关联 BookmarkKnowledgeCorrelation — 书签与知识库 Q&A 条目的双向关联
+
+### 新增文件
+
+1. **lib/bookmark-knowledge-link.js** — 知识关联引擎核心模块
+   - `BookmarkKnowledgeCorrelation.FIELD_WEIGHTS` — 多维关联权重常量 (URL: 0.4, title: 0.3, tag: 0.3)
+   - `constructor(embeddingEngine?)` — 可选注入引擎
+   - `buildIndex(bookmarks[], entries[])` — 全量构建关联索引 (URL 倒排 + 标签倒排 + 语义向量)
+   - `addEntry(entry)` — 增量添加知识条目
+   - `removeEntry(entryId)` — 增量删除知识条目
+   - `getRelatedEntries(bookmarkId, opts?)` — 书签→知识条目 关联查询
+   - `getRelatedBookmarks(entryId, opts?)` — 知识条目→书签 关联查询 (双向)
+   - `getCorrelationStrength(bookmarkId, entryId)` — 指定对关联强度详情
+   - `suggestCorrelations(opts?)` — 未关联高相似度对建议
+   - `getCorrelationSummary(bookmarkId)` — 书签关联摘要
+   - `getStats()` — 统计信息 (关联数/已关联书签/已关联条目/平均关联)
+   - `_normalizeUrl(url)` — URL 规范化 (移除协议/www/尾斜杠/fragment)
+   - `_normalizeTag(tag)` — 标签规范化
+   - `_buildUrlIndex()` / `_buildTagIndex()` — URL 和标签倒排索引构建
+   - `_computeAllCorrelations()` — 全量关联度计算
+   - `_computeCorrelation(bookmark, entry)` — 单对关联度计算
+   - `_computeUrlMatch(bookmark, entry)` — URL 匹配 (精确/包含/同域名)
+   - `_computeTitleSimilarity(bookmark, entry)` — TF-IDF 余弦相似度
+   - `_computeTagOverlap(bookmark, entry)` — Jaccard 系数
+
+2. **tests/test-bookmark-knowledge-link.js** — 30 个单元测试
+
+### 设计决策
+
+- **复用 EmbeddingEngine**: 不重新实现 TF-IDF，直接复用迭代 #7 的核心算法计算标题语义相似度
+- **多维关联度**: URL 精确匹配 (0.4) + 标题语义相似 (0.3) + 标签重叠 (0.3)，三个维度各自独立计算
+- **URL 匹配分层**: 精确匹配 (1.0) > 路径包含 (0.7) > 同域名 (0.3) > 无匹配 (0)
+- **关联阈值 0.15**: 低于此值不认为有关联，避免噪声
+- **双向查询**: 基于同一关联缓存实现书签→条目和条目→书签双向查询
+- **增量更新**: addEntry/removeEntry 直接修改缓存，无需全量重建
+- **纯 ES Module**: 不依赖 DOM/Chrome API，可在 Node.js 环境测试
+
+### 依赖关系
+
+```
+BookmarkKnowledgeCorrelation (新建, R66)
+  ├── EmbeddingEngine (已存在, 迭代 #7)  — TF-IDF 核心算法
+  ├── BookmarkCollector 标准格式 (R43)    — 书签对象输入
+  └── KnowledgeBase 条目格式 (现有)       — 知识条目对象输入
+```
+
+### 测试结果
+
+- 新增: 30 个测试，全部通过
+- 总测试: 30 (本模块)
+
+---
+
 ## 迭代 R65 — 语义搜索 BookmarkSemanticSearch
 
 > 日期: 2026-05-05
