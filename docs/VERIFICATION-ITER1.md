@@ -1,9 +1,9 @@
-# VERIFICATION.md — Iteration R51 Review
+# VERIFICATION.md — 2026-05-06 R1 Guard Review
 
-> **审核日期**: 2026-05-04 09:01 (UTC+8)
-> **审核角色**: Guard Agent
-> **任务复杂度**: Medium (3 文件修改 + 2 测试文件)
-> **迭代**: R51 — BookmarkOptionsPage Tab Integration
+> **审核日期**: 2026-05-06 14:20 (UTC+8)
+> **审核角色**: Guard Agent (Hermes)
+> **任务复杂度**: Complex (2 new modules)
+> **实际执行**: R67 BookmarkLearningProgress + R68 BookmarkAIRecommendations
 
 ---
 
@@ -13,19 +13,19 @@
 
 | 维度 | 权重 | 得分(0-100) | 说明 |
 |------|------|------------|------|
-| 功能完整性 | 30% | 92 | Tab 导航、懒初始化、destroy 释放、hash 路由全部实现；AC-1~AC-5 全覆盖 |
-| 代码质量 | 25% | 88 | JSDoc 完整、错误处理到位（init().catch）、代码结构清晰；TabManager 函数可独立测试 |
-| 测试覆盖 | 25% | 90 | 13 单元测试 + 15 E2E 测试全部通过；覆盖 Tab 切换、生命周期、边界情况 |
-| 文档同步 | 10% | 85 | CHANGELOG ✅、IMPLEMENTATION ✅、REQUIREMENTS ✅、TODO ✅；缺少 DESIGN-ITER1.md |
-| 安全合规 | 10% | 95 | 无硬编码密钥、无 XSS 风险（纯 DOM 操作）、权限最小化 |
+| 功能完整性 | 30% | 92 | R67: 9 个公共 API 全部实现；R68: analyzeProfile/recommend/explain 三件套完整 |
+| 代码质量 | 25% | 88 | JSDoc 完整，错误处理到位，ES Module 规范。扣分: R68 部分方法较长 |
+| 测试覆盖 | 25% | 90 | R67: 27 tests, R68: 36 tests, 全部通过。边界条件覆盖充分 |
+| 文档同步 | 10% | 75 | REQUIREMENTS/DESIGN/IMPLEMENTATION 存在但命名不规范 (ITER1 vs ITER68) |
+| 安全合规 | 10% | 90 | 无硬编码密钥，IndexedDB 本地存储，无 XSS 风险 |
 
 ### 战略维度
 
 | 维度 | 得分(0-100) | 说明 |
 |------|------------|------|
-| 需求匹配 | 93 | 5 个验收标准全部实现，与 REQUIREMENTS-ITER1.md 高度一致 |
-| 架构一致 | 90 | 遵循项目现有模式（ES Module、Chrome API Promise 风格）；TabManager 为纯函数可测试 |
-| 风险评估 | 88 | Canvas display:none 时 resize 问题需关注（已在代码中处理 destroy/re-init） |
+| 需求匹配 | 88 | R68 实现与 REQUIREMENTS 文档高度一致 |
+| 架构一致 | 92 | 遵循项目现有模式 (IndexedDB + ES Module + JSDoc) |
+| 风险评估 | 85 | 引入 LLM 调用依赖，需关注 API 成本 |
 
 ### 综合评分
 
@@ -33,45 +33,55 @@
 功能完整性: 92 × 0.30 = 27.60
 代码质量:   88 × 0.25 = 22.00
 测试覆盖:   90 × 0.25 = 22.50
-文档同步:   85 × 0.10 =  8.50
-安全合规:   95 × 0.10 =  9.50
+文档同步:   75 × 0.10 =  7.50
+安全合规:   90 × 0.10 =  9.00
 ─────────────────────────────
-加权总分:               90.10 / 100
+加权总分:              88.60 → "需讨论"
 ```
 
-| 项目 | 值 |
-|------|-----|
-| **加权总分** | **90.10** / 100 |
-| **明确建议** | ✅ 通过 |
-| **自动决策** | ≥90 → 直接通过 |
+**明确建议**: 需讨论 (88.60 在 80-89 区间)
+**自动决策**: 80-89 → 人工复审后决策
 
 ---
 
 ## 发现的问题
 
-### 🟡 P1 — 缺少 DESIGN-ITER1.md（建议补充，可下轮处理）
-- **现象**: 脚本超时导致 Phase 2 (Design) 未生成设计文档
-- **影响**: 不影响功能，但文档链不完整
-- **修复方案**: 下轮迭代补充设计文档
+### 🟡 P1 — 文档命名不规范（建议修复，可下轮处理）
 
-### 🟡 P1 — options.css 使用硬编码颜色值
-- **现象**: Tab 样式使用 `#e5e7eb`, `#6b7280`, `#374151` 等硬编码颜色
-- **影响**: 不支持暗色主题（与 PageWise 已有的暗色主题能力不一致）
-- **修复方案**: 后续迭代改用 CSS 变量 `var(--border-color)`, `var(--text-secondary)` 等
+- **现象**: REQUIREMENTS-ITER1.md / DESIGN-ITER1.md 使用 "ITER1" 而非 "ITER68"
+- **证据**: `docs/REQUIREMENTS-ITER1.md` 内容标题为 "R68: BookmarkAIRecommendations"
+- **影响**: 后续迭代的文档会覆盖 ITER1 文件
+- **修复方案**: 重命名为 REQUIREMENTS-ITER68.md / DESIGN-ITER68.md
+
+### 🟡 P1 — 引擎执行异常（已修复）
+
+- **现象**: 引擎的 `run_claude_code()` 因 `/tmp/claude-runner-pagewise.sh` 权限拒绝而失败
+- **证据**: 日志 `[Errno 13] Permission denied`
+- **修复方案**: 已清理残留文件，后续运行应无此问题
+
+### 🟡 P1 — 预存 KnowledgePanel E2E 测试 17 个失败
+
+- **现象**: `test-knowledge-panel-e2e.js` 17/30 tests fail
+- **证据**: commit `a2907b3` 引入，非本次迭代导致
+- **影响**: 与 R67/R68 无关，但影响全量测试通过率
+- **修复方案**: 需单独迭代修复
 
 ---
 
 ## ⚠️ 风险与阻塞
 
 ### 当前阻塞
-无
+
+| 阻塞项 | 影响范围 | 解除条件 |
+|--------|---------|---------|
+| 无 | — | — |
 
 ### 遗留风险
 
 | 风险 | 概率 | 影响 | 缓解措施 |
 |------|------|------|---------|
-| Canvas display:none 后 resize 异常 | 中 | 图谱变形 | destroy() 已清除事件，re-init 时会重新渲染 |
-| 硬编码颜色不支持暗色主题 | 低 | 视觉不一致 | 后续迭代改用 CSS 变量 |
+| R68 LLM API 成本 | 中 | 用户使用推荐功能时产生 API 费用 | 已有 cost-estimator 集成 |
+| April 30 僵尸测试进程 | 低 | 阻塞全量测试 | 已 kill 清理 |
 
 ---
 
@@ -79,30 +89,41 @@
 
 | 文件 | 状态 | 说明 |
 |------|------|------|
-| docs/REQUIREMENTS.md | ✅ 已同步 | REQUIREMENTS-ITER1.md 存在 |
-| docs/DESIGN.md | ❌ 未同步 | DESIGN-ITER1.md 缺失（脚本超时） |
-| docs/IMPLEMENTATION.md | ✅ 已同步 | R51 实现记录已追加 |
-| docs/CHANGELOG.md | ✅ 已同步 | R51 变更已记录 |
-| docs/TODO.md | ✅ 已同步 | R51 已标记 [x] |
-| docs/DECISIONS.md | ❌ 未同步 | 本轮无 DECISIONS.md |
+| docs/REQUIREMENTS-ITER1.md | ⚠️ 命名不规范 | 内容完整，应重命名为 ITER68 |
+| docs/DESIGN-ITER1.md | ⚠️ 命名不规范 | R67 设计文档，应重命名为 ITER67 |
+| docs/IMPLEMENTATION.md | ✅ 已同步 | R68 实现记录 |
+| docs/CHANGELOG.md | ✅ 已同步 | R67+R68 变更已记录 |
+| docs/TODO.md | ✅ 已同步 | R67+R68 已标记完成 |
+| docs/progress.json | ❌ 未找到 | 引擎未生成 |
 
 ---
 
 ## 返工任务清单
 
-无 P0 问题，无需返工。P1 问题可在后续迭代中修复。
+- [ ] TASK-1: 重命名 docs/REQUIREMENTS-ITER1.md → REQUIREMENTS-ITER68.md (P1)
+- [ ] TASK-2: 重命名 docs/DESIGN-ITER1.md → DESIGN-ITER67.md (P1)
+- [ ] TASK-3: 创建 docs/progress.json (P1)
 
 ---
 
-## 测试统计
+## 代码变更统计
 
-| 指标 | 值 |
-|------|-----|
-| 总测试数 | 2634 |
-| 通过 | 2616 |
-| 失败 | 18 (均为预存失败，非本轮引入) |
-| 新增测试 | 28 (13 单元 + 15 E2E) |
+| 文件 | 行数 | 模块 |
+|------|------|------|
+| lib/bookmark-ai-recommender.js | 558 | R68 |
+| tests/test-bookmark-ai-recommender.js | 657 | R68 |
+| lib/bookmark-learning-progress.js | 551 | R67 |
+| tests/test-bookmark-learning-progress.js | 497 | R67 |
+| **总计** | **2263** | **+63 tests** |
+
+## 测试结果
+
+- 新增测试: 63 (R67: 27, R68: 36)
+- 全部通过: ✅
+- 全量测试: 2822 pass / 17 fail (pre-existing KnowledgePanel E2E)
+- 回归: 无
 
 ---
 
-*Guard Agent 审核完成 — 评分 90.10，建议通过*
+*Guard Agent 审核完成于 2026-05-06 14:25 (UTC+8)*
+*遵循 flywheel-iteration 技能文档 v1.2.0*
