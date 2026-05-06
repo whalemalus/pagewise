@@ -17,6 +17,15 @@
   - 依赖反转：AIClient 通过构造函数注入，便于测试
   - 测试: 36 用例 ✅
 
+- **R69: BookmarkStatistics 统计仪表盘** — `lib/bookmark-stats.js`
+  - `getTrend(granularity?)`: 按日/周/月聚合收藏趋势，ISO 8601 周算法
+  - `getDistribution()`: 按 folderPath[0] 分组的领域分布，含百分比
+  - `getHeatmap()`: 7×24 活跃度热力图矩阵 (Sun=0..Sat=6)
+  - `getSummary()`: 总览摘要（总数、独立域名、Top-5 文件夹、日均、连续天数 streak）
+  - 纯函数设计，不依赖 DOM/Chrome API
+  - UTC 一致性，空数组优雅降级
+  - 测试: 19 用例 ✅
+
 ### 测试
 - **test-bookmark-ai-recommender.js** — `tests/test-bookmark-ai-recommender.js` — 36 用例
   - 构造函数: 正常创建 / 缺少 aiClient 抛错 / 自定义 cacheTtl / 注入多依赖

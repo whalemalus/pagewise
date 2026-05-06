@@ -232,7 +232,7 @@
   - 测试: 36 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R69: 统计仪表盘 BookmarkStatistics** — `lib/bookmark-stats.js`
+- [x] **R69: 统计仪表盘 BookmarkStatistics** — `lib/bookmark-stats.js`
   - 收藏趋势图
   - 领域分布饼图
   - 活跃度热力图
