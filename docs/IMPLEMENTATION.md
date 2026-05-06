@@ -2,6 +2,65 @@
 
 ---
 
+## 迭代 R68 — AI 推荐 BookmarkAIRecommendations
+
+> 日期: 2026-05-06
+> 任务: R68 AI 推荐 BookmarkAIRecommendations — 基于 LLM 的智能学习推荐
+
+### 新增文件
+
+1. **lib/bookmark-ai-recommender.js** — AI 智能推荐核心模块
+   - `constructor(options)` — 接受 aiClient/recommender/clusterer/gapDetector/learningPath/progress/cacheTtl
+   - `analyzeProfile(bookmarks[], context?)` — 纯本地画像分析 (< 50ms/500 书签)
+     - topDomains: 高频域名 Top-5
+     - topCategories: 领域分布 Top-5
+     - strengths: 知识强项领域 (覆盖率 ≥ moderate)
+     - gaps: 知识盲区领域 (覆盖率 ≤ weak)
+     - recentFocus: 近 30 天收藏焦点
+     - readingProgress: 已读/在读/未读统计
+     - difficultyDistribution: 入门/进阶/高级分布
+   - `getRecommendations(context?)` — AI 智能推荐 (3 种类型: pattern/gap-filling/depth)
+   - `clearCache()` — 手动清除推荐缓存
+   - `getLastSource()` — 获取推荐来源 ('ai' | 'fallback' | 'cache')
+   - `_getAIRecommendations(profile)` — 调用 AIClient 获取 AI 推荐
+   - `_buildPrompt(profile)` — 构建推荐 prompt (只含统计摘要，≤ 1500 tokens)
+   - `_parseAIResponse(content)` — 解析 AI JSON 响应 (含 markdown 代码块处理 + 字段校验)
+   - `_fallbackRecommend(profile, context)` — AI 不可用时降级到规则推荐
+   - `_isCacheValid()` — 缓存 TTL 检查 (默认 30 分钟)
+   - `_extractDomain(url)` / `_inferCategory(bookmark)` / `_judgeDifficulty(bookmark)` — 内部工具
+
+2. **tests/test-bookmark-ai-recommender.js** — 36 个单元测试
+
+### 设计决策
+
+- **依赖反转**: AIClient 通过构造函数注入，不硬编码 import，便于测试 mock
+- **画像纯本地计算**: analyzeProfile 不调用 AI，基于书签元数据统计
+- **Prompt 只含统计摘要**: 不发送原始书签全文，保护隐私 + 控制 token 量
+- **3 种推荐类型**: pattern (收藏模式) / gap-filling (盲区入门) / depth (深度进阶)
+- **30 分钟缓存 TTL**: 同一时间窗口内重复调用返回缓存，减少 API 消耗
+- **降级策略**: AI 不可用时自动生成基于规则的推荐，标注 source='fallback'
+- **JSON 容错**: 支持 markdown 代码块包裹、字段缺失、类型错误等异常情况
+- **复用难度规则**: 与 BookmarkLearningPath 保持一致的难度判定逻辑
+
+### 依赖关系
+
+```
+BookmarkAIRecommendations (新建, R68)
+  ├── AIClient (已存在, 迭代 #2)           — AI 推荐核心调用
+  ├── BookmarkRecommender (已存在, R48)     — 降级规则推荐 (可选)
+  ├── BookmarkClusterer (已存在, R53)       — 领域聚类 (可选)
+  ├── BookmarkGapDetector (已存在, R57)     — 知识盲区 (可选)
+  ├── BookmarkLearningPath (已存在, R54)    — 难度判定 (可选)
+  └── BookmarkLearningProgress (已存在, R67) — 学习进度 (可选)
+```
+
+### 测试结果
+
+- 新增: 36 个测试，全部通过
+- 总测试: 36 (本模块)
+
+---
+
 ## 迭代 R66 — 知识关联 BookmarkKnowledgeCorrelation
 
 > 日期: 2026-05-05

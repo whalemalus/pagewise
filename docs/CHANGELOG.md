@@ -6,7 +6,28 @@
 
 ## [Unreleased]
 
-（开发中）
+### 新增
+- **R68: BookmarkAIRecommendations AI 智能推荐** — `lib/bookmark-ai-recommender.js`
+  - `analyzeProfile(bookmarks[], context?)`: 纯本地收藏模式分析，生成结构化用户画像
+  - `getRecommendations(context?)`: AI 智能推荐（pattern/gap-filling/depth 三种类型）
+  - `clearCache()` / `getLastSource()`: 缓存管理与来源追踪
+  - 30 分钟 TTL 缓存，AI 不可用时自动降级到规则推荐
+  - Prompt 只含统计摘要（≤ 1500 tokens），保护用户隐私
+  - JSON 容错：支持 markdown 代码块包裹、字段校验、类型过滤
+  - 依赖反转：AIClient 通过构造函数注入，便于测试
+  - 测试: 36 用例 ✅
+
+### 测试
+- **test-bookmark-ai-recommender.js** — `tests/test-bookmark-ai-recommender.js` — 36 用例
+  - 构造函数: 正常创建 / 缺少 aiClient 抛错 / 自定义 cacheTtl / 注入多依赖
+  - analyzeProfile: 完整画像 / 空书签零值 / topDomains 排序 / topCategories 比例
+  - readingProgress: 正确统计状态 / difficultyDistribution 分布
+  - 上下文: clusters / gapResult / 非数组抛错 / 性能 500 书签 < 50ms
+  - getRecommendations: AI 推荐 / 条目结构 / profile 快照
+  - 缓存: 缓存命中 / TTL 过期 / clearCache / getLastSource
+  - 降级: AI 不可用 / gap-filling 类型 / 网络错误
+  - JSON 容错: 非 JSON / markdown 包裹 / 缺字段 / 短 reason / 无效 type / 空数组
+  - 边界: 未调用 analyzeProfile / confidence 超范围 / summary 截断 / topics 截断
 
 ---
 

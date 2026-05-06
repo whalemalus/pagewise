@@ -217,19 +217,19 @@
   - 测试: 30 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R67: 学习进度追踪 BookmarkLearningProgress**
+- [x] **R67: 学习进度追踪 BookmarkLearningProgress**
   - 记录学习时间
   - 进度百分比
   - 学习统计图表
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R68: AI 推荐 BookmarkAIRecommendations** — `lib/bookmark-ai-recommender.js`
+- [x] **R68: AI 推荐 BookmarkAIRecommendations** — `lib/bookmark-ai-recommender.js`
   - 复用 `lib/ai-client.js`
   - 分析收藏模式
   - 推荐相关领域资料
   - 推荐理由说明
-  - 测试: 6+ 用例
+  - 测试: 36 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R69: 统计仪表盘 BookmarkStatistics** — `lib/bookmark-stats.js`
