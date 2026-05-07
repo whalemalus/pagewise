@@ -239,11 +239,12 @@
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R70: 暗色主题 BookmarkDarkTheme**
-  - 跟随系统/手动切换
-  - 图谱节点/边颜色适配
-  - 所有面板暗色适配
-  - 测试: 6+ 用例
+- [x] **R70: 暗色主题 BookmarkDarkTheme** — `lib/bookmark-dark-theme.js`
+  - 三种模式: light/dark/system (matchMedia 检测)
+  - 图谱节点/边颜色适配 (含 15 色分组明暗方案)
+  - 面板暗色适配 (背景/文字/边框/输入框)
+  - 18 个 CSS 变量，主题变更回调
+  - 测试: 43 用例 ✅
   - 复杂度: Simple
 
 - [ ] **R71: 快捷键 BookmarkKeyboardShortcuts**

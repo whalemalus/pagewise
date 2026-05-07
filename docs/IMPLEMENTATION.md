@@ -2,6 +2,56 @@
 
 ---
 
+## 迭代 R70 — 暗色主题 BookmarkDarkTheme
+
+> 日期: 2026-05-07
+> 任务: R70 暗色主题 BookmarkDarkTheme — 图谱及面板暗色模式
+
+### 新增文件
+
+1. **lib/bookmark-dark-theme.js** — 暗色主题管理模块
+   - `constructor(mode)` — 接受 'light' | 'dark' | 'system' 模式，默认 'system'
+   - `getMode()` — 获取当前模式设置
+   - `setMode(mode)` — 设置主题模式，相同模式不触发回调
+   - `toggle()` — 切换明暗（system 模式下切换为与当前相反的显式模式）
+   - `getTheme()` — 获取实际生效的主题名称（解析 system 模式）
+   - `getColors()` — 获取完整主题色板（含 graph + panel 子对象）
+   - `getGraphColors()` — 图谱专用颜色（背景/边/高亮/标签/节点边框/淡化边）
+   - `getPanelColors()` — 面板通用颜色（背景/边框/文字/强调色/输入框）
+   - `getGroupColors()` — 15 色分组方案（明暗各一，暗色亮度更高适配深色背景）
+   - `getCSSVariables()` — CSS 变量键值对（可注入 <style> 或 documentElement）
+   - `onThemeChange(callback)` — 注册主题变更回调
+   - `destroy()` — 清理所有回调
+   - `_detectSystemTheme()` — 检测系统 prefers-color-scheme（matchMedia 不可用时降级 light）
+   - 导出: `LIGHT_THEME`, `DARK_THEME`, `THEME_MODES` 常量
+
+2. **tests/test-bookmark-dark-theme.js** — 43 个单元测试
+
+### 设计决策
+
+- **纯 ES Module**: 不依赖 DOM/Chrome API，可在任意环境使用
+- **三层颜色架构**: 全局色 → 图谱色 → 面板色，分层管理避免耦合
+- **system 模式**: 通过 matchMedia('prefers-color-scheme: dark') 检测，不可用时降级 light
+- **toggle 智能切换**: system 模式下 toggle 设置与当前生效主题相反的显式模式
+- **不可变返回**: getColors/getGraphColors/getPanelColors/getGroupColors 返回浅拷贝，防止外部变异
+- **深色色板设计**: 背景 '#1a1a2e'/'#16213e'，文字 '#e0e0e0'/'#c8c8e0'，节点分组色提亮适配
+- **回调安全**: 回调异常不影响主题切换逻辑
+- **CSS 变量**: 18 个变量覆盖全局、图谱、面板三个维度
+
+### 依赖关系
+
+```
+BookmarkDarkTheme (新建, R70)
+  └── 无外部依赖 (纯数据 + 颜色方案)
+```
+
+### 测试结果
+
+- 新增: 43 个测试，全部通过
+- 总测试: 43 (本模块)
+
+---
+
 ## 迭代 R68 — AI 推荐 BookmarkAIRecommendations
 
 > 日期: 2026-05-06

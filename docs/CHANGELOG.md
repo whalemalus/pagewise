@@ -7,6 +7,17 @@
 ## [Unreleased]
 
 ### 新增
+- **R70: BookmarkDarkTheme 暗色主题** — `lib/bookmark-dark-theme.js`
+  - `constructor(mode)`: 接受 'light' | 'dark' | 'system' 模式，默认 'system'
+  - `getMode()` / `setMode(mode)` / `toggle()`: 模式管理
+  - `getTheme()`: 实际生效主题（解析 system 模式，matchMedia 检测）
+  - `getColors()` / `getGraphColors()` / `getPanelColors()`: 分层色板
+  - `getGroupColors()`: 15 色分组方案（明暗各一）
+  - `getCSSVariables()`: 18 个 CSS 变量覆盖全局/图谱/面板
+  - `onThemeChange(callback)`: 主题变更回调
+  - 纯 ES Module，不依赖 DOM/Chrome API
+  - 测试: 43 用例 ✅
+
 - **R68: BookmarkAIRecommendations AI 智能推荐** — `lib/bookmark-ai-recommender.js`
   - `analyzeProfile(bookmarks[], context?)`: 纯本地收藏模式分析，生成结构化用户画像
   - `getRecommendations(context?)`: AI 智能推荐（pattern/gap-filling/depth 三种类型）
