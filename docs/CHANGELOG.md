@@ -7,6 +7,18 @@
 ## [Unreleased]
 
 ### 新增
+- **R71: BookmarkKeyboardShortcuts 快捷键管理** — `lib/bookmark-keyboard-shortcuts.js`
+  - `constructor(options?)` — 初始化，可选禁用
+  - `matchAction(event)` — 匹配 keydown 事件
+  - `handleEvent(event)` — 匹配 + 分发回调
+  - `on(action, cb)` / `off(action, cb)` / `dispatch(action)` — 回调管理
+  - `getBindings()` / `setBinding()` / `resetBindings()` — 自定义绑定 (chrome.storage.sync)
+  - `detectConflict()` — 冲突检测
+  - `formatBinding()` / `getShortcutsSummary()` — 格式化显示
+  - 5 个默认快捷键: 搜索 (Ctrl+F) / 放大 (=) / 缩小 (-) / 重置 (0) / 刷新 (F5)
+  - 纯 ES Module，回调驱动架构
+  - 测试: 48 用例 ✅
+
 - **R70: BookmarkDarkTheme 暗色主题** — `lib/bookmark-dark-theme.js`
   - `constructor(mode)`: 接受 'light' | 'dark' | 'system' 模式，默认 'system'
   - `getMode()` / `setMode(mode)` / `toggle()`: 模式管理

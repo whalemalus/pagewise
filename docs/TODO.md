@@ -247,11 +247,13 @@
   - 测试: 43 用例 ✅
   - 复杂度: Simple
 
-- [ ] **R71: 快捷键 BookmarkKeyboardShortcuts**
+- [x] **R71: 快捷键 BookmarkKeyboardShortcuts** — `lib/bookmark-keyboard-shortcuts.js`
   - 搜索: Ctrl+F
-  - 缩放: +/-/0
+  - 缩放: +/=/−/0
   - 刷新: F5
-  - 测试: 6+ 用例
+  - 自定义绑定 (chrome.storage.sync) + 冲突检测
+  - 回调驱动 on/off/dispatch 架构
+  - 测试: 48 用例 ✅
   - 复杂度: Simple
 
 - [ ] **R72: BookmarkGraph V2.0 E2E 测试**

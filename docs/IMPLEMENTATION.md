@@ -2,6 +2,62 @@
 
 ---
 
+## 迭代 R71 — 快捷键 BookmarkKeyboardShortcuts
+
+> 日期: 2026-05-07
+> 任务: R71 快捷键 BookmarkKeyboardShortcuts — 书签图谱面板键盘快捷操作
+
+### 新增文件
+
+1. **lib/bookmark-keyboard-shortcuts.js** — 书签图谱快捷键管理模块
+   - `constructor(options?)` — 初始化，可选 `{ enabled: false }` 禁用
+   - `isEnabled()` / `enable()` / `disable()` — 启用/禁用控制
+   - `matchAction(event)` — 匹配 keydown 事件，返回 action 名称或 null
+   - `handleEvent(event)` — 匹配 + 自动分发回调，返回匹配的 action
+   - `on(action, callback)` / `off(action, callback)` — 注册/移除回调
+   - `dispatch(action)` — 手动分发 action
+   - `getBindings()` / `setBinding(action, binding)` / `resetBindings()` — 绑定管理 (chrome.storage.sync 持久化)
+   - `detectConflict(excludeAction, newBinding)` — 冲突检测
+   - `formatBinding(binding)` — 格式化快捷键显示
+   - `getShortcutsSummary()` — 获取摘要 (action + label + display + category)
+   - `destroy()` — 清理资源
+   - 导出: `DEFAULT_GRAPH_SHORTCUTS`, `GRAPH_SHORTCUT_LABELS`, `GRAPH_SHORTCUT_CATEGORIES` 常量
+
+2. **tests/test-bookmark-keyboard-shortcuts.js** — 48 个单元测试
+
+### 默认快捷键
+
+| Action     | 默认绑定 | 说明         |
+|------------|----------|-------------|
+| search     | Ctrl+F   | 搜索聚焦     |
+| zoomIn     | = (含 +) | 图谱放大     |
+| zoomOut    | -        | 图谱缩小     |
+| resetZoom  | 0        | 重置缩放     |
+| refresh    | F5       | 刷新图谱     |
+
+### 设计决策
+
+- **纯 ES Module**: 不依赖 DOM，通过回调分发事件
+- **回调驱动**: 使用 on/off/dispatch 模式，UI 层注册具体操作
+- **zoomIn 特殊处理**: 默认 `=` 键，但 `+` 也自动匹配（用户按 Shift+= 产生 +）
+- **精确修饰键匹配**: 多余修饰键不算匹配（避免快捷键劫持）
+- **缓存优化**: 自定义绑定加载后缓存在内存中，避免重复读 storage
+- **Chrome API 可选**: 无 chrome.storage.sync 时降级使用默认绑定
+- **异常安全**: 回调异常不影响其他回调
+
+### 依赖关系
+
+```
+BookmarkKeyboardShortcuts (新建, R71)
+  └── chrome.storage.sync (可选, 用于持久化自定义绑定)
+```
+
+### 测试结果
+
+- 新增: 48 个测试，全部通过
+
+---
+
 ## 迭代 R70 — 暗色主题 BookmarkDarkTheme
 
 > 日期: 2026-05-07
