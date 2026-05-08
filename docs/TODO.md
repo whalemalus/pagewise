@@ -277,7 +277,7 @@
   - 测试: 42 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R74: 自动分类 BookmarkAutoCategorize**
+- [x] **R74: 自动分类 BookmarkAutoCategorize**
   - 新增书签自动分类
   - 基于历史分类学习
   - 分类规则可配置
