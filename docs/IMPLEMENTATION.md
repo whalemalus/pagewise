@@ -2,6 +2,58 @@
 
 ---
 
+## 迭代 R73 — 书签-知识库联动 BookmarkKnowledgeIntegration
+
+> 日期: 2026-05-08
+> 任务: R73 书签-知识库联动 BookmarkKnowledgeIntegration — 书签与 PageWise 知识库双向关联
+
+### 新增文件
+
+1. **lib/bookmark-knowledge-integration.js** — 书签-知识库联动编排模块
+   - `constructor(options?)` — 接受 correlationEngine / correlationThreshold / maxResults
+   - `init(bookmarks, entries)` — 初始化联动引擎，全量构建关联索引
+   - `sync(bookmarks?, entries?)` — 同步/刷新数据（支持增量或全量）
+   - `isReady()` — 引擎就绪状态检查
+   - `getKnowledgeForBookmark(bookmarkId, opts?)` — 书签→知识条目（带导航提示）
+   - `getBookmarksForEntry(entryId, opts?)` — 知识条目→书签（带导航提示）
+   - `buildNavigationLinks(bookmarkId)` — 构建书签→知识条目导航链接
+   - `buildEntryNavLinks(entryId)` — 构建知识条目→书签导航链接
+   - `getBookmarkKnowledgeSummary(bookmarkId)` — 书签知识摘要（条目数/平均分/Top/类型分布）
+   - `getEntryKnowledgeSummary(entryId)` — 条目书签摘要
+   - `enrichBookmark(bookmarkId)` — 为书签附加知识上下文
+   - `enrichEntry(entryId)` — 为条目附加书签上下文
+   - `getIntegrationStats()` — 联动统计（含覆盖率 coverageRate）
+   - `getDashboard()` — 仪表盘数据（Top 关联书签/建议/孤立节点）
+   - `destroy()` — 清理资源
+   - `_buildNavHint(score, matchTypes)` — 导航提示生成
+
+2. **tests/test-bookmark-knowledge-integration.js** — 42 个单元测试
+
+### 设计决策
+
+- **编排层模式**: BookmarkKnowledgeIntegration 作为编排层，桥接 BookmarkKnowledgeCorrelation (R66) 与实际数据源，不重复实现关联算法
+- **导航提示**: 每条关联结果附带 navigationHint 文本（强/中/弱），基于关联度阈值 (≥0.6 强、≥0.3 中、<0.3 弱)
+- **知识增强**: enrichBookmark/enrichEntry 为原始数据附加跨域上下文，包含 enrichmentScore 量化增强程度
+- **仪表盘聚合**: getDashboard 一站式返回 Top 关联书签、关联建议、孤立书签/条目，用于 UI 展示
+- **安全降级**: destroy 后所有 API 返回空结果，不抛异常
+- **依赖注入**: correlationEngine 通过构造函数注入，便于测试和扩展
+- **纯 ES Module**: 不依赖 DOM/Chrome API
+
+### 依赖关系
+
+```
+BookmarkKnowledgeIntegration (新建, R73)
+  └── BookmarkKnowledgeCorrelation (已存在, R66)  — 关联引擎核心
+       └── EmbeddingEngine (已存在, 迭代 #7)      — TF-IDF 算法
+```
+
+### 测试结果
+
+- 新增: 42 个测试，全部通过
+- 总测试: 42 (本模块)
+
+---
+
 ## 迭代 R71 — 快捷键 BookmarkKeyboardShortcuts
 
 > 日期: 2026-05-07

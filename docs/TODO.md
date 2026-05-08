@@ -268,11 +268,13 @@
 
 ### 集成：与 PageWise 核心功能联动
 
-- [ ] **R73: 书签-知识库联动 BookmarkKnowledgeIntegration**
-  - 书签与 PageWise 知识库双向关联
-  - 从知识库跳转到相关书签
-  - 从书签跳转到相关知识
-  - 测试: 8+ 用例
+- [x] **R73: 书签-知识库联动 BookmarkKnowledgeIntegration** — `lib/bookmark-knowledge-integration.js`
+  - 书签与 PageWise 知识库双向关联（编排层，桥接 R66 关联引擎）
+  - 从知识库跳转到相关书签 (getBookmarksForEntry / buildEntryNavLinks)
+  - 从书签跳转到相关知识 (getKnowledgeForBookmark / buildNavigationLinks)
+  - 知识增强: enrichBookmark / enrichEntry 附加跨域上下文
+  - 仪表盘: getDashboard (Top 关联书签/建议/孤立节点)
+  - 测试: 42 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R74: 自动分类 BookmarkAutoCategorize**

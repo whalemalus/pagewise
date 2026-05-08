@@ -7,6 +7,21 @@
 ## [Unreleased]
 
 ### 新增
+- **R73: BookmarkKnowledgeIntegration 书签-知识库联动** — `lib/bookmark-knowledge-integration.js`
+  - `init(bookmarks, entries)`: 初始化联动引擎，全量构建关联索引
+  - `sync(bookmarks?, entries?)`: 同步/刷新数据（支持增量或全量）
+  - `getKnowledgeForBookmark(bookmarkId, opts?)`: 书签→知识条目（带导航提示）
+  - `getBookmarksForEntry(entryId, opts?)`: 知识条目→书签（带导航提示）
+  - `buildNavigationLinks(bookmarkId)` / `buildEntryNavLinks(entryId)`: 双向导航链接构建
+  - `getBookmarkKnowledgeSummary(bookmarkId)` / `getEntryKnowledgeSummary(entryId)`: 知识摘要
+  - `enrichBookmark(bookmarkId)` / `enrichEntry(entryId)`: 跨域知识上下文增强
+  - `getIntegrationStats()`: 联动统计（含覆盖率 coverageRate）
+  - `getDashboard()`: 仪表盘（Top 关联书签/建议/孤立节点）
+  - 编排层模式：桥接 BookmarkKnowledgeCorrelation (R66) 与数据源
+  - 导航提示：强/中/弱三级关联度文字提示
+  - 纯 ES Module，依赖注入设计
+  - 测试: 42 用例 ✅
+
 - **R71: BookmarkKeyboardShortcuts 快捷键管理** — `lib/bookmark-keyboard-shortcuts.js`
   - `constructor(options?)` — 初始化，可选禁用
   - `matchAction(event)` — 匹配 keydown 事件
