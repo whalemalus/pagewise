@@ -511,3 +511,33 @@ BookmarkSemanticSearch (新建, R65)
 
 ---
 *自动生成于 2026-04-30*
+
+---
+
+## R76: BookmarkSharing 书签分享
+
+### 实现概要
+- **文件**: `lib/bookmark-sharing.js` (230 行)
+- **测试**: `tests/test-bookmark-sharing.js` (60 用例)
+- **纯数据模块**: 不依赖 DOM 或 Chrome API
+
+### 核心功能
+1. **createShareableCollection(options)** — 从书签数组创建可分享集合
+2. **exportShareJSON(options)** — 导出 JSON 字符串
+3. **exportShareText(options)** — 导出人类可读的文本摘要
+4. **exportShareBase64(options)** — 导出 Base64 编码
+5. **generateShareLink(options)** — 生成 data: URI 分享链接
+6. **importSharedCollection(data)** — 从 JSON/Base64/data:URI 导入
+
+### 隐私控制
+- `stripPersonalData`: 移除 folderPath / tags / status
+- `anonymizeUrls`: URL 替换为域名+哈希摘要
+- `includeFields`: 白名单控制导出字段
+
+### 设计决策
+- 复用 BookmarkImportExport 的 JSON/Base64 编码模式
+- importSharedCollection 为静态方法 (无需实例化即可导入)
+- 进度回调复用 onProgress 模式
+- URL 匿名化使用简单哈希 (非加密)，保留域名可识别性
+
+*自动生成于 2026-05-11*

@@ -293,11 +293,13 @@
   - 测试: 40 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R76: 书签分享 BookmarkSharing**
-  - 导出可分享集合
-  - 生成分享链接
-  - 隐私控制
-  - 测试: 6+ 用例
+- [x] **R76: 书签分享 BookmarkSharing** — `lib/bookmark-sharing.js`
+  - 创建可分享集合 (createShareableCollection)
+  - 多格式导出: JSON / 文本 / Base64 / data: URI
+  - 隐私控制: stripPersonalData / anonymizeUrls / includeFields
+  - 导入分享数据: 支持 JSON / Base64 / data: URI 三种格式
+  - 进度回调支持
+  - 测试: 60 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R77: 高级分析 BookmarkAdvancedAnalytics**

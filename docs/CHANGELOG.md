@@ -7,6 +7,15 @@
 ## [Unreleased]
 
 ### 新增
+- **R76: BookmarkSharing 书签分享** — `lib/bookmark-sharing.js`
+  - 创建可分享集合: createShareableCollection
+  - 多格式导出: JSON / 人类可读文本 / Base64 / data: URI 分享链接
+  - 隐私控制: stripPersonalData / anonymizeUrls / includeFields 白名单
+  - 导入分享数据: 支持 JSON / Base64 / data: URI 三种输入
+  - 元数据统计: 书签数量/域名数/标签数
+  - 进度回调支持
+  - 测试: 60 用例 ✅
+
 - **R75: BookmarkSmartCollections 智能集合** — `lib/bookmark-smart-collections.js`
   - 6 种规则类型: tags/domain/folder/status/dateRange/category
   - 多规则 AND 组合匹配
