@@ -284,7 +284,7 @@
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R75: 智能集合 BookmarkSmartCollections**
+- [x] **R75: 智能集合 BookmarkSmartCollections**
   - 基于规则的动态集合
   - 规则: 标签/领域/时间/状态
   - 集合自动更新
