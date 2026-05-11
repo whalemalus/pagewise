@@ -2,6 +2,54 @@
 
 ---
 
+## 迭代 R75 — 智能集合 BookmarkSmartCollections
+
+> 日期: 2026-05-11
+> 任务: R75 智能集合 BookmarkSmartCollections — 基于规则的动态集合引擎
+
+### 新增文件
+
+1. **lib/bookmark-smart-collections.js** — 智能集合引擎
+   - `constructor(bookmarks?, savedCollections?)` — 初始化，加载内置+已保存集合
+   - `createCollection(name, rules)` — 创建自定义集合
+   - `deleteCollection(collectionId)` — 删除自定义集合（内置不可删）
+   - `updateCollection(collectionId, updates)` — 更新名称/规则
+   - `getCollection(collectionId)` — 获取单个集合
+   - `listCollections()` — 列出所有集合
+   - `getCollectionBookmarks(collectionId)` — 获取集合匹配的书签
+   - `getBookmarkCollections(bookmarkId)` — 获取书签所属的所有集合
+   - `getCollectionStats()` — 获取所有集合及书签数
+   - `addBookmark(bookmark)` / `removeBookmark(id)` / `setBookmarks(list)` — 书签动态更新
+   - `exportCollections()` — 导出自定义集合（序列化）
+   - `#validateRule(rule)` — 规则格式校验
+   - `#evaluateRules(rules)` / `#bookmarkMatchesRules(bm, rules)` — 规则评估引擎
+   - `#matchesRule(bm, rule)` — 单规则匹配分发
+   - `#matchesTags` / `#matchesDomain` / `#matchesFolder` / `#matchesDateRange` / `#matchesCategory` — 6 种匹配器
+
+2. **tests/test-bookmark-smart-collections.js** — 40 个单元测试
+   - 构造与内置集合 (3)
+   - 自定义集合创建 — 6 种规则类型 (7)
+   - 多规则 AND 组合 (2)
+   - 集合管理 CRUD (4)
+   - 书签动态更新 (3)
+   - 书签所属集合查询 (1)
+   - 集合统计 (1)
+   - 序列化/反序列化 (2)
+   - 规则验证异常 (6)
+   - 边界情况 (4)
+   - 导出常量 (3)
+   - 域名/时间细节 (4)
+
+### 设计决策
+
+1. **AND 逻辑**: 多规则全部匹配才归入集合（简单、可预测）
+2. **纯数据模块**: 不依赖 DOM 或 Chrome API，易于测试和复用
+3. **内置集合保护**: `builtin: true` 标记，不可删除/修改
+4. **惰性评估**: 每次查询遍历全部书签评估规则（无缓存，数据量小时足够快）
+5. **序列化兼容**: exportCollections() 导出 JSON，构造函数第二参数恢复
+
+---
+
 ## 迭代 R73 — 书签-知识库联动 BookmarkKnowledgeIntegration
 
 > 日期: 2026-05-08

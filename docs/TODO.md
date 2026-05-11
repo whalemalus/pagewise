@@ -284,11 +284,13 @@
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [x] **R75: 智能集合 BookmarkSmartCollections**
-  - 基于规则的动态集合
-  - 规则: 标签/领域/时间/状态
-  - 集合自动更新
-  - 测试: 6+ 用例
+- [x] **R75: 智能集合 BookmarkSmartCollections** — `lib/bookmark-smart-collections.js`
+  - 6 种规则类型: tags/domain/folder/status/dateRange/category
+  - 多规则 AND 组合
+  - 内置集合: 未读/正在阅读/最近添加
+  - 自定义集合 CRUD + 序列化/反序列化
+  - 书签增删后集合自动更新
+  - 测试: 40 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R76: 书签分享 BookmarkSharing**

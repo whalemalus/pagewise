@@ -7,6 +7,18 @@
 ## [Unreleased]
 
 ### 新增
+- **R75: BookmarkSmartCollections 智能集合** — `lib/bookmark-smart-collections.js`
+  - 6 种规则类型: tags/domain/folder/status/dateRange/category
+  - 多规则 AND 组合匹配
+  - 内置集合: 未读/正在阅读/最近添加 (3 个)
+  - 自定义集合 CRUD: createCollection / deleteCollection / updateCollection
+  - 查询: getCollectionBookmarks / getBookmarkCollections / getCollectionStats
+  - 书签动态更新: addBookmark / removeBookmark / setBookmarks
+  - 序列化: exportCollections + 构造函数反序列化
+  - 规则验证: 完整的类型/值校验 + 友好错误信息
+  - 纯数据模块，不依赖 DOM 或 Chrome API
+  - 测试: 40 用例 ✅
+
 - **R73: BookmarkKnowledgeIntegration 书签-知识库联动** — `lib/bookmark-knowledge-integration.js`
   - `init(bookmarks, entries)`: 初始化联动引擎，全量构建关联索引
   - `sync(bookmarks?, entries?)`: 同步/刷新数据（支持增量或全量）
