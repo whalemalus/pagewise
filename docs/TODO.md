@@ -302,7 +302,7 @@
   - 测试: 60 用例 ✅
   - 复杂度: Medium
 
-- [x] **R77: 高级分析 BookmarkAdvancedAnalytics**
+- [ ] **R77: 高级分析 BookmarkAdvancedAnalytics**
   - 收藏模式分析
   - 学习效率分析
   - 知识覆盖度分析

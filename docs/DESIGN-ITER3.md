@@ -1,53 +1,82 @@
-# DESIGN — Iteration #3 (R69: BookmarkStatistics)
+# DESIGN — Iteration #3 (R77: BookmarkAdvancedAnalytics)
 
-> **日期**: 2026-05-06 20:00 (UTC+8)
-> **任务**: R69: 统计仪表盘 BookmarkStatistics
+## 架构
 
-## 架构概述
-
-纯数据计算模块，输入书签数组，输出结构化统计数据。遵循现有 BookmarkGraph 模块模式（ES Module, JSDoc, 无外部依赖）。
-
-## 类设计
+`BookmarkAdvancedAnalytics` 是一个纯数据编排模块，组合现有模块的输出，计算高级分析指标。
 
 ```
-BookmarkStatistics
-├── getTrend(bookmarks, granularity?)    → [{period, count}]
-├── getDistribution(bookmarks)           → [{name, count, percentage}]
-├── getHeatmap(bookmarks)                → number[7][24]
-└── getSummary(bookmarks)                → {total, uniqueDomains, topFolders, avgPerDay, streakDays}
+输入: bookmarks[], options{clusters?, tags?, learningRecords?, statusMap?}
+                ↓
+┌───────────────────────────────────────────────────┐
+│         BookmarkAdvancedAnalytics                  │
+│                                                    │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────┐ │
+│  │ Collection   │  │ Learning     │  │ Knowledge │ │
+│  │ Patterns     │  │ Efficiency   │  │ Coverage  │ │
+│  └──────┬──────┘  └──────┬───────┘  └─────┬─────┘ │
+│         │                │                │        │
+│  内部方法:                │                │        │
+│  _analyzeTimePattern     │                │        │
+│  _detectBursts           │                │        │
+│  _analyzeDomainShift     │                │        │
+│                          │                │        │
+│  _calcEfficiencyScore    │                │        │
+│  _analyzeDomainProgress  │                │        │
+│                          │                │        │
+│  _assessCoverage         │                │        │
+│  _analyzeDepthBreadth    │                │        │
+│  _detectKnowledgeGaps    │                │        │
+└───────────────────────────────────────────────────┘
+                ↓
+         generateReport() → 完整分析报告
 ```
 
-## 数据流
+## 公开 API
 
+### 构造函数
+```javascript
+constructor(bookmarks, options)
 ```
-Chrome Bookmark Tree
-    ↓ BookmarkCollector.collect()
-[{id, title, url, folderPath, dateAdded}]
-    ↓ BookmarkStatistics.getTrend/getDistribution/getHeatmap/getSummary
-结构化统计数据
-    ↓ UI 层 (future: BookmarkStatsPanel)
-Canvas 图表渲染
-```
+- `bookmarks`: Array — 书签数组
+- `options.clusters`: Map — 聚类结果 (可选)
+- `options.tags`: Map — 标签频率 (可选)
+- `options.statusMap`: Map<string, string> — bookmarkId → 'unread'|'reading'|'read' (可选)
+- `options.learningStats`: Object — 学习统计 {totalTime, studiedBookmarks, ...} (可选)
+
+### 公开方法
+
+| 方法 | 返回 | 说明 |
+|------|------|------|
+| `getCollectionPatterns()` | `{timePattern, bursts, domainTrend, summary}` | 收藏模式分析 |
+| `getLearningEfficiency()` | `{score, readRatio, domainProgress, neglected}` | 学习效率分析 |
+| `getKnowledgeCoverage()` | `{coverage, depth, breadth, gaps, overview}` | 知识覆盖度分析 |
+| `generateReport()` | 完整报告对象 | 整合三个维度 |
+
+## 内部方法
+
+### 收藏模式
+- `_analyzeTimePattern()`: 按 weekday/weekend + morning/afternoon/evening 分桶
+- `_detectBursts(threshold)`: 找到日均 2 倍以上的爆发日
+- `_analyzeDomainShift()`: 按月统计领域分布变化
+
+### 学习效率
+- `_calcEfficiencyScore()`: 综合评分 (readRatio 40% + domainCoverage 30% + consistency 30%)
+- `_analyzeDomainProgress()`: 各领域已读/未读比
+- `_findNeglected(threshold)`: 识别收藏但未学的领域
+
+### 知识覆盖
+- `_assessCoverage()`: 基于聚类/标签/文件夹的覆盖度
+- `_analyzeDepthBreadth()`: 深度 = 最大领域占比, 广度 = 领域分布均匀度 (Shannon entropy)
+- `_detectKnowledgeGaps()`: 有高级内容但缺基础的领域
 
 ## 设计决策
 
-| ID | 决策 | 原因 |
-|----|------|------|
-| D001 | 纯函数设计，不维护内部状态 | 统计是无副作用的计算，每次传入书签数组即可 |
-| D002 | folderPath[0] 作为领域分类 | 复用现有书签数据结构，第一级文件夹即"领域" |
-| D003 | dateAdded 字段用于时间统计 | 书签对象已有 dateAdded (Unix ms)，无需额外字段 |
-| D004 | heatmap 用 7×24 矩阵 | 行=星期(0=Sun..6=Sat)，列=小时(0..23)，标准热力图格式 |
+1. **组合而非继承** — 不继承 BookmarkStatistics 等模块，而是在构造函数中接收数据，内部计算
+2. **无状态** — 不持有 IndexedDB 连接，所有数据通过构造函数传入
+3. **可选依赖** — clusters, tags, statusMap, learningStats 均为可选，缺失时降级处理
+4. **Shannon entropy** — 用于计算广度，值越高表示分布越均匀
 
-## 文件变更清单
+## 文件
 
-| 文件 | 操作 | 说明 |
-|------|------|------|
-| `lib/bookmark-stats.js` | 新增 | BookmarkStatistics 类 |
-| `tests/test-bookmark-stats.js` | 新增 | 8+ 测试用例 |
-
-## 测试策略
-
-- 每个公开方法至少 2 个测试（正常 + 边界）
-- 空数组测试
-- 单元素数组测试
-- 大数据量性能测试（1000 条）
+- `lib/bookmark-advanced-analytics.js` — 主模块 (~300 行)
+- `tests/test-bookmark-advanced-analytics.js` — 测试 (~400 行, 30+ 用例)
