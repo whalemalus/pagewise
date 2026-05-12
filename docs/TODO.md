@@ -302,18 +302,20 @@
   - 测试: 60 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R77: 高级分析 BookmarkAdvancedAnalytics**
+- [x] **R77: 高级分析 BookmarkAdvancedAnalytics**
   - 收藏模式分析
   - 学习效率分析
   - 知识覆盖度分析
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R78: 性能优化 BookmarkPerformanceOptimization**
-  - 10000+ 书签支持
-  - 懒加载/虚拟滚动
-  - Web Worker 计算
-  - 测试: 6+ 用例
+- [x] **R78: 性能优化 BookmarkPerformanceOptimization** — `lib/bookmark-performance.js`
+  - 分批处理引擎: buildGraphBatched / buildIndexBatched / computeSimilarityBatched
+  - LRU 缓存淘汰: trimCache (Map 插入序实现)
+  - 视口裁剪: getVisibleNodes (padding 扩展)
+  - Worker 卸载: createWorker / runInWorker (主线程降级)
+  - 性能统计: getPerformanceStats (buildTime/cacheHits/totalProcessed)
+  - 测试: 20 用例 ✅
   - 复杂度: Complex
 
 - [ ] **R79: 无障碍 BookmarkAccessibility**
