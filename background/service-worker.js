@@ -4,6 +4,7 @@
  */
 
 import { logInfo, logError, logWarn } from '../lib/log-store.js';
+import { PW, openSidePanel, closeSidePanel, setSidePanelBehavior, createContextMenu, onContextMenuClicked } from '../lib/browser-compat.js';
 
 // ==================== 全局错误捕获 ====================
 self.onerror = function (message, source, lineno, colno, error) {
@@ -17,14 +18,14 @@ self.addEventListener('unhandledrejection', function (event) {
 
 // ==================== 初始化 ====================
 
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.contextMenus.create({
+PW.runtime.onInstalled.addListener(() => {
+  createContextMenu({
     id: 'askAI',
     title: '用 智阅 提问',
     contexts: ['selection']
   });
 
-  chrome.contextMenus.create({
+  createContextMenu({
     id: 'summarizePage',
     title: '用 AI 总结此页面',
     contexts: ['page']
@@ -35,7 +36,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // ==================== 右键菜单 ====================
 
-chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+onContextMenuClicked(async (info, tab) => {
   const action = info.menuItemId === 'askAI' ? 'contextMenuAsk' : 'contextMenuSummarize';
   const selection = info.selectionText || '';
   
@@ -56,7 +57,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   try {
     // 方式1：写入 session storage
-    await chrome.storage.session.set({ pendingAction: data });
+    await PW.storage.session.set({ pendingAction: data });
     logInfo('context-menu', 'pendingAction 已写入 session storage');
   } catch (e) {
     logError('context-menu', '写入 session storage 失败', { error: e.message });
@@ -64,7 +65,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 
   try {
     // 打开侧边栏
-    await chrome.sidePanel.open({ tabId: tab.id });
+    await openSidePanel(tab.id);
     logInfo('context-menu', '侧边栏已打开');
   } catch (e) {
     logError('context-menu', '打开侧边栏失败', { error: e.message });
@@ -82,7 +83,7 @@ function sendMessageWithRetry(data, maxRetries, interval) {
   const timer = setInterval(async () => {
     attempts++;
     try {
-      await chrome.runtime.sendMessage(data);
+      await PW.runtime.sendMessage(data);
       logInfo('context-menu', `消息发送成功 (第 ${attempts} 次)`);
       clearInterval(timer);
     } catch (e) {
@@ -103,25 +104,25 @@ function sendMessageWithRetry(data, maxRetries, interval) {
 
 // ==================== Side Panel 配置 ====================
 
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.open({ tabId: tab.id });
+PW.action.onClicked.addListener(async (tab) => {
+  await openSidePanel(tab.id);
 });
 
-chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch(() => {});
+setSidePanelBehavior({ openPanelOnActionClick: true });
 
 // ==================== 快捷键 ====================
 
 const openSidePanels = new Set();
 
-chrome.commands.onCommand.addListener(async (command) => {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+PW.commands.onCommand.addListener(async (command) => {
+  const [tab] = await PW.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
 
   logInfo('shortcut', `快捷键触发: ${command}`, { tabId: tab.id });
 
   switch (command) {
     case 'summarize-page': {
-      await chrome.sidePanel.open({ tabId: tab.id });
+      await openSidePanel(tab.id);
       openSidePanels.add(tab.id);
       const data = {
         action: 'shortcutSummarize',
@@ -137,11 +138,11 @@ chrome.commands.onCommand.addListener(async (command) => {
     case 'toggle-sidebar': {
       if (openSidePanels.has(tab.id)) {
         try {
-          await chrome.sidePanel.close({ tabId: tab.id });
+          await closeSidePanel(tab.id);
         } catch (e) {}
         openSidePanels.delete(tab.id);
       } else {
-        await chrome.sidePanel.open({ tabId: tab.id });
+        await openSidePanel(tab.id);
         openSidePanels.add(tab.id);
       }
       break;
@@ -151,10 +152,10 @@ chrome.commands.onCommand.addListener(async (command) => {
 
 // ==================== 消息路由 ====================
 
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+PW.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.action) {
     case 'extractFromTab':
-      chrome.tabs.sendMessage(request.tabId, { action: 'extractContent' })
+      PW.tabs.sendMessage(request.tabId, { action: 'extractContent' })
         .then(sendResponse)
         .catch(err => {
           logError('message-router', 'extractFromTab 失败', { tabId: request.tabId, error: err.message });
@@ -163,7 +164,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
 
     case 'getCurrentTab':
-      chrome.tabs.query({ active: true, currentWindow: true })
+      PW.tabs.query({ active: true, currentWindow: true })
         .then(([tab]) => sendResponse(tab))
         .catch(err => {
           logError('message-router', 'getCurrentTab 失败', { error: err.message });
@@ -172,7 +173,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       return true;
 
     case 'collectAllTabs':
-      chrome.tabs.query({})
+      PW.tabs.query({})
         .then(tabs => {
           const tabInfos = tabs.map(t => ({
             id: t.id,
@@ -197,7 +198,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const limitedIds = tabIds.slice(0, 5);
       const promises = limitedIds.map(async (tabId) => {
         try {
-          const response = await chrome.tabs.sendMessage(tabId, { action: 'extractContent' });
+          const response = await PW.tabs.sendMessage(tabId, { action: 'extractContent' });
           if (response && response.content) {
             return {
               tabId,
@@ -247,7 +248,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     case 'openSettings':
-      chrome.runtime.openOptionsPage();
+      PW.runtime.openOptionsPage();
       break;
   }
 });

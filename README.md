@@ -96,21 +96,35 @@
 
 ## 安装
 
-### 从源码安装（开发者模式）
+### Chrome
 
-1. 克隆或下载本仓库
-2. 打开 Chrome，访问 `chrome://extensions/`
-3. 开启右上角「开发者模式」
-4. 点击「加载已解压的扩展程序」，选择项目目录
-5. 点击扩展图标，打开侧边栏
-
-### 从打包文件安装
-
-1. 从 Releases 页面下载 `pagewise-v1.0.0.zip`
+1. 从 Releases 页面下载 `pagewise-v*-chrome.zip`
 2. 解压到本地目录
 3. 打开 Chrome，访问 `chrome://extensions/`
 4. 开启右上角「开发者模式」
 5. 点击「加载已解压的扩展程序」，选择解压后的目录
+
+### Microsoft Edge
+
+1. 从 Releases 页面下载 `pagewise-v*-edge.zip`
+2. 解压到本地目录
+3. 打开 Edge，访问 `edge://extensions/`
+4. 开启左侧「开发人员模式」
+5. 点击「加载解压缩」，选择解压后的目录
+
+### Firefox
+
+1. 从 Releases 页面下载 `pagewise-v*-firefox.zip`
+2. 打开 Firefox，访问 `about:debugging#/runtime/this-firefox`
+3. 点击「临时加载附加组件」
+4. 选择解压后目录中的 `manifest.json`
+
+> ⚠️ Firefox 使用临时加载方式，重启后需要重新加载。正式发布后可通过 [AMO](https://addons.mozilla.org) 安装。
+
+### 从源码安装
+
+1. 克隆或下载本仓库
+2. 按上述步骤加载扩展目录（Chrome 选择根目录，Firefox 需使用 `manifest.firefox.json`）
 
 ---
 
@@ -156,7 +170,8 @@
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                    Chrome Extension (Manifest V3)          │
+│              Browser Extension (Manifest V3)                │
+│              Chrome / Firefox / Edge / Brave                │
 │                                                            │
 │  ┌─────────────┐  ┌─────────────┐  ┌──────────────────┐ │
 │  │ Content      │  │ Sidebar     │  │ Background       │ │
@@ -209,7 +224,8 @@
 
 | 模块 | 方案 | 理由 |
 |------|------|------|
-| 扩展规范 | Manifest V3 | Chrome 最新规范 |
+| 扩展规范 | Manifest V3 | 跨浏览器标准规范 (Chrome/Firefox/Edge) |
+| 浏览器兼容 | browser-compat.js | 统一 API 层，Feature Detection |
 | 构建工具 | 无（原生 JS ES Modules） | 零依赖，直接加载 |
 | UI | 原生 HTML/CSS/JS | 轻量，无框架开销 |
 | AI API | Claude / OpenAI 兼容 | 支持任意兼容接口 |
@@ -224,7 +240,9 @@
 
 ```
 pagewise/
-├── manifest.json                 # 扩展配置
+├── manifest.json                 # Chrome 扩展配置
+├── manifest.firefox.json         # Firefox 扩展配置
+├── manifest.edge.json            # Edge 扩展配置
 ├── background/
 │   └── service-worker.js         # 后台服务：右键菜单、消息路由
 ├── content/
@@ -242,7 +260,8 @@ pagewise/
 │   ├── options.html              # 设置页面
 │   ├── options.css
 │   └── options.js
-├── lib/                          # 核心库（20 个模块）
+├── lib/                          # 核心库（20+ 个模块）
+│   ├── browser-compat.js         # 浏览器兼容层（Chrome/Firefox/Edge）
 │   ├── ai-client.js              # AI API 封装（Claude + OpenAI 双协议）
 │   ├── skill-engine.js           # 技能引擎
 │   ├── page-sense.js             # 页面感知
@@ -309,17 +328,30 @@ node --test tests/test-utils.js
 ## 打包
 
 ```bash
-# 生成 Chrome Web Store 上传用的 zip
+# Chrome 打包（默认）
 bash scripts/build.sh
+bash scripts/build.sh chrome
 
-# 输出：dist/pagewise-v1.0.0.zip
+# Firefox 打包
+bash scripts/build.sh firefox
+
+# Edge 打包
+bash scripts/build.sh edge
+
+# 全部浏览器打包
+bash scripts/build.sh all
+
+# 输出：
+#   dist/pagewise-v2.3.0-chrome.zip
+#   dist/pagewise-v2.3.0-firefox.zip
+#   dist/pagewise-v2.3.0-edge.zip
 ```
 
 ---
 
 ## 隐私与安全
 
-- **API Key**：仅存储在 Chrome 本地同步存储中，不上传任何服务器
+- **API Key**：仅存储在浏览器本地同步存储中（chrome.storage / browser.storage），不上传任何服务器
 - **知识库**：存储在浏览器 IndexedDB，完全本地
 - **页面内容**：仅在用户主动操作时提取，发送到用户自己配置的 AI API
 - **无追踪**：不收集任何使用数据或分析信息
@@ -333,10 +365,12 @@ bash scripts/build.sh
 
 | 浏览器 | 最低版本 | 状态 |
 |--------|---------|------|
-| Chrome | 114+ | 完整支持（Side Panel API） |
-| Edge | 114+ | 完整支持（Chromium 内核） |
-| Brave | 114+ | 完整支持 |
-| Firefox | - | 不支持（无 Side Panel API） |
+| Chrome | 114+ | ✅ 完整支持（Side Panel API） |
+| Edge | 114+ | ✅ 完整支持（Chromium 内核） |
+| Brave | 114+ | ✅ 完整支持 |
+| Firefox | 128+ | ✅ 支持（sidebar_action 替代 Side Panel） |
+
+多浏览器兼容详情见 [docs/MULTI_BROWSER.md](docs/MULTI_BROWSER.md)。
 
 ---
 
