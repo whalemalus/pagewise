@@ -11,7 +11,7 @@
 
   --text-primary: #18181b;
   --text-secondary: #71717a;
-  --text-muted: #a1a1aa;
+  --text-muted: #70707b; /* WCAG AA on #fafafa (4.69:1) */
   --text-inverse: #ffffff;
 
   --border-color: #e4e4e7;
@@ -6160,7 +6160,7 @@ body.dark ::selection {
     --bg-elevated: #1e1e22;
     --text-primary: #fafafa;
     --text-secondary: #a1a1aa;
-    --text-muted: #71717a;
+    --text-muted: #8b8b96; /* WCAG AA on #0f0f11 (5.68:1) */
     --border-color: #2e2e33;
     --border-subtle: #222226;
     --accent: #818cf8;
@@ -6787,4 +6787,173 @@ body.dark ::selection {
 
 [dir="rtl"] .backup-actions {
   flex-direction: row-reverse;
+}
+
+/* ==================== R79: 无障碍 — 书签面板 (BookmarkAccessibility) ==================== */
+
+/* 屏幕阅读器专用隐藏元素（保留可访问性） */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* 书签列表项 — 可聚焦 */
+.bk-item[role="listitem"] {
+  cursor: pointer;
+  outline: none;
+}
+
+.bk-item[role="listitem"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: var(--bg-hover);
+}
+
+.bk-item[role="listitem"][aria-selected="true"] {
+  background: var(--accent-light);
+  border-color: var(--accent);
+}
+
+/* 书签标题链接可聚焦 */
+.bk-item-title:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: 3px;
+}
+
+/* 文件夹导航按钮可聚焦 */
+.folder-nav-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+/* 详情面板焦点陷阱 — 活跃状态 */
+.bookmarks-detail[aria-modal="true"]:not(.hidden) {
+  /* 当焦点陷阱激活时，阻止背景滚动 */
+  position: relative;
+  z-index: 10;
+}
+
+/* 详情面板返回按钮可聚焦 */
+.bookmarks-detail .btn-back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 详情面板按钮可聚焦 */
+.bk-detail-actions .btn-sm:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 统计区域可聚焦 */
+.bk-stat-item {
+  outline: none;
+}
+
+.bk-stat-item:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* 搜索框增强焦点（搜索角色） */
+[role="search"] input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+
+/* 书签状态徽章 — 确保足够对比度 */
+.bk-status-unread {
+  background: var(--info-light);
+  color: #2563eb; /* 比 var(--info) 更深，确保 ≥ 4.5:1 */
+}
+
+.bk-status-reading {
+  background: var(--warning-light);
+  color: #b45309; /* 比 var(--warning) 更深，确保 ≥ 4.5:1 */
+}
+
+.bk-status-read {
+  background: var(--success-light);
+  color: #15803d; /* 比 var(--success) 更深，确保 ≥ 4.5:1 */
+}
+
+/* 暗色主题无障碍增强 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    .bk-item[role="listitem"]:focus-visible {
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+    }
+
+    .folder-nav-item:focus-visible {
+      box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+    }
+
+    .bk-status-unread {
+      color: #60a5fa;
+    }
+
+    .bk-status-reading {
+      color: #fbbf24;
+    }
+
+    .bk-status-read {
+      color: #4ade80;
+    }
+  }
+}
+
+/* 跳转链接（Skip Navigation） */
+.skip-nav {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: white;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  border: none;
+  border-radius: 0 0 var(--radius-sm) 0;
+  cursor: pointer;
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-nav:focus {
+  top: 0;
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+/* 高对比度模式支持 */
+@media (forced-colors: active) {
+  .bk-item[role="listitem"]:focus-visible {
+    outline: 2px solid Highlight;
+    forced-color-adjust: none;
+  }
+
+  .folder-nav-item:focus-visible {
+    outline: 2px solid Highlight;
+  }
+
+  .bookmarks-detail .btn-back:focus-visible {
+    outline: 2px solid Highlight;
+  }
 }

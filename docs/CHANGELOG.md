@@ -7,6 +7,18 @@
      7|## [Unreleased]
 
 ### 新增
+- **R79: BookmarkAccessibility 无障碍支持** — `lib/bookmark-accessibility.js`
+  - 键盘导航: Arrow Up/Down/Left/Right/Home/End 在书签列表中导航，Enter 打开详情，Escape 关闭
+  - 屏幕阅读器: ARIA role=list/listitem/status/toolbar/dialog/live region 全面覆盖
+  - 焦点管理: createFocusTrap 详情面板焦点陷阱（Tab 循环），Escape 释放并恢复焦点
+  - Live Region 公告: 书签加载/搜索结果/详情开关自动通知屏幕阅读器
+  - 颜色对比度: WCAG AA 审计工具（auditContrast），修复 `--text-muted` (3.3:1→4.69:1)
+  - 状态徽章对比度: unread/reading/read 三色全部 ≥ 4.5:1
+  - CSS 增强: `.sr-only` 工具类, `focus-visible` 焦点环, `forced-colors` 高对比度模式支持
+  - Skip Navigation: `.skip-nav` 跳转链接样式
+  - 纯 ES Module，回调驱动架构，不依赖 DOM/Chrome API
+  - 测试: 49 用例 ✅
+
 - **R78: BookmarkPerformanceOptimization 性能优化器** — `lib/bookmark-performance.js`
   - 分批处理引擎: 将图谱构建、索引构建、相似度计算分批执行，避免主线程阻塞
   - LRU 缓存淘汰: trimCache 基于 Map 插入序保留最新条目

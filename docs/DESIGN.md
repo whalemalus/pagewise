@@ -80,7 +80,7 @@
 - **Mock 策略**:
   - Chrome API: 自定义 mock (tests/helpers/chrome-mock.js)
   - IndexedDB: 自定义 mock (tests/helpers/indexeddb-mock.js)
-- **测试覆盖**: 144 个测试，覆盖 utils/page-sense/skill-engine/knowledge-base/conversation-store/highlight-store
+- **测试覆盖**: 3336+ 个测试，覆盖全部模块（含无障碍模块 49 用例）
 
 ### D005: ES Module 测试适配
 - **决策日期**: 2026-04-26
@@ -200,6 +200,24 @@
 - **设计决策 D019b**: 公式优先保留 LaTeX 源码而非渲染后的 MathML — LaTeX 更紧凑、AI 理解更好
 - **设计决策 D019c**: 表格行数限制 200 行 — 避免大表格（如数据集）撑爆 context
 - **设计决策 D019d**: 代码块保留上下文标题（前一个 `<h1>`-`<h6>` 或 `<summary>`）— 帮助 AI 理解代码属于哪个章节
+
+### D020: 书签面板无障碍 — 纯逻辑模块 vs DOM 操作
+- **决策日期**: 2026-05-13
+- **问题**: BookmarkAccessibility 应该直接操作 DOM 还是提供纯逻辑？
+- **方案选择**: **纯逻辑模块 + 回调/属性驱动**
+- **原因**: 与 BookmarkKeyboardShortcuts (R71) 模式一致；测试无需 DOM mock；UI 层（sidebar.js）负责 DOM 操作，a11y 模块负责键盘匹配/ARIA 属性生成/焦点逻辑
+
+### D021: 焦点陷阱实现 — 手写 vs 第三方库
+- **决策日期**: 2026-05-13
+- **问题**: 焦点陷阱（focus trap）是否引入 focus-trap 等第三方库？
+- **方案选择**: **手写轻量实现**（~60 行）
+- **原因**: 不引入外部依赖（项目约束）；书签详情面板场景简单（只需 Tab 循环 + Escape 关闭）；手写实现支持 mock 容器对象便于测试
+
+### D022: --text-muted 对比度修复 — 单值 vs 主题分离
+- **决策日期**: 2026-05-13
+- **问题**: `--text-muted: #a1a1aa` (light) / `#71717a` (dark) 均未通过 WCAG AA ≥ 4.5:1
+- **方案选择**: **主题分离值** — light: `#70707b` (4.69:1), dark: `#8b8b96` (5.68:1)
+- **原因**: 无法用单一颜色同时满足 light/dark 对比度；CSS 变量天然支持主题切换；保持设计语言一致性
 
 ## 已知技术债务
 

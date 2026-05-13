@@ -44,6 +44,7 @@ import { BookmarkFolderAnalyzer } from '../lib/bookmark-folder-analyzer.js';
 import { BookmarkGapDetector } from '../lib/bookmark-gap-detector.js';
 import { BookmarkImportExport } from '../lib/bookmark-io.js';
 import { BookmarkDetailPanel } from '../lib/bookmark-detail-panel.js';
+import { BookmarkAccessibility } from '../lib/bookmark-accessibility.js';
 
 // ==================== 提供商预设 ====================
 
@@ -143,6 +144,9 @@ class SidebarApp {
     this._bookmarkFolderAnalyzer = null;
     this._bookmarkGapDetector = null;
     this._bookmarkDetailPanel = new BookmarkDetailPanel();
+    this._bookmarkA11y = new BookmarkAccessibility({ enabled: true });
+    this._bookmarkActiveIndex = -1
+    this._bookmarkDetailTrap = null
 
     // 引导流程状态
     this.onboardingStep = 0;
@@ -516,6 +520,7 @@ class SidebarApp {
     this.bookmarksList = document.getElementById('bookmarksList');
     this.emptyBookmarks = document.getElementById('emptyBookmarks');
     this.bookmarksDetail = document.getElementById('bookmarksDetail');
+    this.bookmarksLiveRegion = document.getElementById('bookmarksLiveRegion');
     // Phase 4 新元素
     this.bookmarksSubTabs = document.getElementById('bookmarksSubTabs');
     this.bookmarksSortSelect = document.getElementById('bookmarksSortSelect');
@@ -6342,6 +6347,19 @@ ${sendContent}
     }, 3000);
   }
 
+  /**
+   * R79: 向屏幕阅读器公告消息 (aria-live region)
+   * @param {string} message
+   */
+  _announceToScreenReader(message) {
+    if (!this.bookmarksLiveRegion) return
+    // 清空再设置，确保屏幕阅读器会重新读
+    this.bookmarksLiveRegion.textContent = ''
+    requestAnimationFrame(() => {
+      this.bookmarksLiveRegion.textContent = message
+    })
+  }
+
   // ==================== 间隔复习 ====================
 
   /**
@@ -7090,14 +7108,19 @@ ${sendContent}
       this.bookmarksList.innerHTML = this._bookmarkSearchQuery
         ? '<div class="empty-state"><div class="empty-icon">🔍</div><p>未找到匹配的书签</p></div>'
         : '<div class="empty-state"><div class="empty-icon">🔖</div><p>暂无书签</p><p class="text-muted">Chrome 中的书签将显示在这里</p></div>';
+      this._announceToScreenReader('没有找到书签')
       return;
     }
 
     // 限制显示数量（性能）
     const display = bookmarks.slice(0, 100);
 
-    let html = '<div class="bk-list">';
-    for (const bm of display) {
+    const listAttrs = this._bookmarkA11y.getBookmarkListAriaAttrs({ count: display.length })
+    const listAttrStr = this._bookmarkA11y.getBookmarkListAttrString({ count: display.length })
+
+    let html = `<div class="bk-list" ${listAttrStr}>`;
+    for (let i = 0; i < display.length; i++) {
+      const bm = display[i]
       const domain = this._getDomain(bm.url);
       const folderStr = bm.folderPath && bm.folderPath.length > 0
         ? this._escapeHtml(bm.folderPath.join(' / '))
@@ -7106,16 +7129,32 @@ ${sendContent}
       const statusLabel = { unread: '待读', reading: '阅读中', read: '已读' }[status] || status;
       const title = this._highlightMatch(bm.title || bm.url, this._bookmarkSearchQuery);
 
-      html += `<div class="bk-item" data-bookmark-id="${this._escapeHtml(bm.id)}">
+      // R79: 无障碍 ARIA 属性
+      const itemAttrs = this._bookmarkA11y.getBookmarkItemAriaAttrs({
+        title: bm.title || bm.url,
+        url: bm.url,
+        status,
+        index: i,
+        total: display.length,
+      })
+      const itemAttrStr = this._bookmarkA11y.getBookmarkItemAttrString({
+        title: bm.title || bm.url,
+        url: bm.url,
+        status,
+        index: i,
+        total: display.length,
+      })
+
+      html += `<div class="bk-item" data-bookmark-id="${this._escapeHtml(bm.id)}" ${itemAttrStr}>
         <div class="bk-item-icon">
           <img class="bk-favicon" src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=16" alt="" onerror="this.style.display='none'">
         </div>
         <div class="bk-item-info">
-          <a class="bk-item-title" href="#" title="${this._escapeHtml(bm.url)}">${title}</a>
+          <a class="bk-item-title" href="#" title="${this._escapeHtml(bm.url)}" tabindex="-1">${title}</a>
           <div class="bk-item-meta">
             ${folderStr ? `<span class="bk-item-folder">📁 ${folderStr}</span>` : ''}
             <span class="bk-item-domain">${this._escapeHtml(domain)}</span>
-            <span class="bk-item-status bk-status-${status}">${statusLabel}</span>
+            <span class="bk-item-status bk-status-${status}" role="status" aria-label="${statusLabel}">${statusLabel}</span>
           </div>
         </div>
       </div>`;
@@ -7128,8 +7167,12 @@ ${sendContent}
 
     this.bookmarksList.innerHTML = html;
 
-    // 绑定点击事件
-    this.bookmarksList.querySelectorAll('.bk-item').forEach(item => {
+    // R79: 重置活跃索引
+    this._bookmarkActiveIndex = -1
+
+    // 绑定点击事件 + 键盘导航
+    const items = this.bookmarksList.querySelectorAll('.bk-item')
+    items.forEach((item, idx) => {
       const id = item.dataset.bookmarkId;
       const bm = this._bookmarks.find(b => b.id === id);
 
@@ -7147,7 +7190,53 @@ ${sendContent}
         if (e.target.closest('.bk-item-title')) return;
         if (bm) this._showBookmarkDetail(bm);
       });
-    });
+
+      // R79: 键盘导航 — Enter/Space 触发详情
+      item.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          if (bm) this._showBookmarkDetail(bm)
+        }
+      })
+
+      // R79: 聚焦时更新活跃索引
+      item.addEventListener('focus', () => {
+        this._bookmarkActiveIndex = idx
+      })
+    })
+
+    // R79: 列表级键盘导航 (Arrow Up/Down/Home/End)
+    this._bookmarkKeyHandler = this._bookmarkA11y.createKeyHandler({
+      items: Array.from(items),
+      getActiveIndex: () => this._bookmarkActiveIndex,
+      setActiveIndex: (i) => { this._bookmarkActiveIndex = i },
+      onSelect: (i) => {
+        const el = items[i]
+        if (el) {
+          const id = el.dataset.bookmarkId
+          const bm = this._bookmarks.find(b => b.id === id)
+          if (bm) this._showBookmarkDetail(bm)
+        }
+      },
+      onEscape: () => {
+        this._bookmarkActiveIndex = -1
+        if (this.bookmarksSearchInput) this.bookmarksSearchInput.focus()
+      },
+      onNavigate: (i) => {
+        // 屏幕阅读器公告当前位置
+        const bm = display[i]
+        if (bm) {
+          this._announceToScreenReader(`${bm.title || bm.url}, ${i + 1} / ${display.length}`)
+        }
+      },
+    })
+
+    if (this.bookmarksList) {
+      this.bookmarksList.addEventListener('keydown', this._bookmarkKeyHandler)
+    }
+
+    // 公告加载完成
+    this._announceToScreenReader(`已加载 ${display.length} 个书签`)
   }
 
   /**
@@ -7228,17 +7317,57 @@ ${sendContent}
     if (this.bookmarksSearchInput) this.bookmarksSearchInput.parentElement.style.display = 'none';
     if (this.bookmarksFolderNav) this.bookmarksFolderNav.style.display = 'none';
     if (this.bookmarksStats) this.bookmarksStats.style.display = 'none';
+
+    // R79: 焦点陷阱 + ARIA
+    this.bookmarksDetail.setAttribute('aria-label', `书签详情: ${bm.title || bm.url}`)
+    if (this._bookmarkDetailTrap) {
+      this._bookmarkDetailTrap.deactivate()
+    }
+    this._bookmarkDetailTrap = this._bookmarkA11y.createFocusTrap(this.bookmarksDetail)
+    this._bookmarkDetailTrap.activate()
+
+    // R79: Escape 关闭详情
+    this._bookmarkDetailKeyHandler = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        this._hideBookmarkDetail()
+      }
+    }
+    this.bookmarksDetail.addEventListener('keydown', this._bookmarkDetailKeyHandler)
+
+    // 公告
+    this._announceToScreenReader(`已打开书签详情: ${bm.title || bm.url}`)
   }
 
   /**
    * 隐藏书签详情
    */
   _hideBookmarkDetail() {
+    // R79: 释放焦点陷阱
+    if (this._bookmarkDetailTrap) {
+      this._bookmarkDetailTrap.deactivate()
+      this._bookmarkDetailTrap = null
+    }
+    if (this._bookmarkDetailKeyHandler && this.bookmarksDetail) {
+      this.bookmarksDetail.removeEventListener('keydown', this._bookmarkDetailKeyHandler)
+      this._bookmarkDetailKeyHandler = null
+    }
+
     if (this.bookmarksDetail) this.bookmarksDetail.classList.add('hidden');
     if (this.bookmarksList) this.bookmarksList.style.display = '';
     if (this.bookmarksSearchInput) this.bookmarksSearchInput.parentElement.style.display = '';
     if (this.bookmarksFolderNav) this.bookmarksFolderNav.style.display = '';
     if (this.bookmarksStats) this.bookmarksStats.style.display = '';
+
+    // R79: 焦点恢复到书签列表
+    if (this.bookmarksList) {
+      const items = this.bookmarksList.querySelectorAll('.bk-item')
+      if (items.length > 0 && this._bookmarkActiveIndex >= 0) {
+        items[Math.min(this._bookmarkActiveIndex, items.length - 1)]?.focus()
+      }
+    }
+
+    this._announceToScreenReader('已关闭书签详情')
   }
 
   /**

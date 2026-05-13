@@ -141,10 +141,29 @@
   - 安全：Blob URL 隔离，iframe 隐藏，postMessage 通信
   - 约束：只支持 HTML 和 JavaScript 代码块，不引入外部依赖
 
+### ✅ R79: BookmarkAccessibility 无障碍支持
+- **描述**: 书签面板无障碍功能支持
+- **优先级**: P1
+- **验收标准**:
+  - 键盘导航支持（Tab/Enter/Escape/Arrow）
+  - 屏幕阅读器支持（aria-label, role, live regions）
+  - 焦点管理（焦点环、焦点陷阱）
+  - 颜色对比度 ≥ 4.5:1
+- **实现**:
+  - `lib/bookmark-accessibility.js` — 纯逻辑模块
+  - 键盘导航: Arrow Up/Down/Home/End 导航列表，Enter 打开详情，Escape 关闭
+  - 焦点陷阱: createFocusTrap 限制 Tab 焦点在详情面板内循环
+  - ARIA: role=list/listitem/status/toolbar/dialog/live region
+  - Live Region: 书签加载/搜索/详情开关自动公告屏幕阅读器
+  - 对比度审计: auditContrast() 检测 WCAG AA ≥ 4.5:1
+  - CSS: --text-muted 修复 (3.3:1→4.69:1), 状态徽章对比度, focus-visible, .sr-only, forced-colors
+  - 测试: 49 用例
+
 ---
 
 ## 需求变更记录
 
 | 日期 | 需求 | 变更内容 |
 |------|------|----------|
+| 2026-05-13 | R79 | 新增 BookmarkAccessibility 无障碍支持需求 |
 | 2026-04-26 | 全部 | 初始化需求文档，从 product-spec.md 提取 |

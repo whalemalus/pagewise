@@ -532,7 +532,7 @@
         <div class="bookmarks-header">
           <div class="bookmarks-header-left">
             <h3 class="bookmarks-title">🔖 书签图谱</h3>
-            <span class="bookmarks-count" id="bookmarksCount"></span>
+            <span class="bookmarks-count" id="bookmarksCount" aria-live="polite"></span>
           </div>
           <div class="bookmarks-header-actions">
             <button class="btn-sm" id="btnOpenFullGraph" aria-label="查看完整图谱">📊 完整图谱</button>
@@ -540,21 +540,24 @@
           </div>
         </div>
 
+        <!-- 无障碍 Live Region 通知 -->
+        <div id="bookmarksLiveRegion" class="sr-only" aria-live="polite" aria-atomic="true" role="status"></div>
+
         <!-- 搜索框 -->
-        <div class="bookmarks-search-box">
-          <input type="text" id="bookmarksSearchInput" placeholder="搜索书签..." aria-label="搜索书签">
+        <div class="bookmarks-search-box" role="search">
+          <input type="text" id="bookmarksSearchInput" placeholder="搜索书签..." aria-label="搜索书签" role="searchbox">
         </div>
 
         <!-- 统计概览 -->
-        <div class="bookmarks-stats" id="bookmarksStats"></div>
+        <div class="bookmarks-stats" id="bookmarksStats" aria-label="书签统计概览"></div>
 
         <!-- 文件夹导航 -->
-        <div class="bookmarks-folder-nav" id="bookmarksFolderNav">
+        <div class="bookmarks-folder-nav" id="bookmarksFolderNav" role="toolbar" aria-label="书签文件夹导航">
           <button class="folder-nav-item active" data-folder="*" aria-label="全部文件夹">📁 全部</button>
         </div>
 
         <!-- 书签列表 -->
-        <div class="bookmarks-list" id="bookmarksList">
+        <div class="bookmarks-list" id="bookmarksList" role="list" aria-label="书签列表">
           <div class="empty-state" id="emptyBookmarks">
             <div class="empty-icon">🔖</div>
             <p>暂无书签</p>
@@ -563,7 +566,7 @@
         </div>
 
         <!-- 书签详情面板 -->
-        <div class="bookmarks-detail hidden" id="bookmarksDetail">
+        <div class="bookmarks-detail hidden" id="bookmarksDetail" role="dialog" aria-label="书签详情" aria-modal="true">
           <div class="bookmarks-detail-header">
             <button class="btn-back" id="btnBookmarksBack" aria-label="返回书签列表">← 返回列表</button>
           </div>
