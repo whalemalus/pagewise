@@ -65,6 +65,43 @@
         </div>
       </section>
 
+      <section class="section" id="aiGatewaySection">
+        <h2>DocMind AI 网关 <span class="badge-optional">可选</span></h2>
+        <small>复用 DocMind 的 AI 配置，只需配置一次。未连接 DocMind 时此功能不可用。</small>
+
+        <div id="aiGatewayStatus" class="gateway-status">
+          <span class="status-dot" id="gatewayDot"></span>
+          <span id="gatewayStatusText">未连接</span>
+        </div>
+
+        <div id="aiGatewayActions" class="gateway-actions" style="display:none;">
+          <button class="btn-secondary" id="btnSyncAIConfig">同步 DocMind 配置</button>
+          <button class="btn-secondary" id="btnShowModels">查看可用模型</button>
+          <button class="btn-secondary" id="btnViewUsage">查看用量统计</button>
+        </div>
+
+        <div id="aiGatewayConflict" class="gateway-conflict" style="display:none;">
+          <p class="conflict-title">⚠ 配置冲突</p>
+          <div id="conflictDetails"></div>
+          <div class="conflict-actions">
+            <button class="btn-primary btn-sm" id="btnUseRemote">使用 DocMind 配置</button>
+            <button class="btn-secondary btn-sm" id="btnKeepLocal">保留本地配置</button>
+          </div>
+        </div>
+
+        <div id="aiGatewayModels" class="gateway-models" style="display:none;">
+          <h3>DocMind 可用模型</h3>
+          <div id="modelsList" class="models-list"></div>
+          <button class="btn-secondary btn-sm" id="btnCloseModels">关闭</button>
+        </div>
+
+        <div id="aiGatewayUsage" class="gateway-usage" style="display:none;">
+          <h3>使用量统计（来自 DocMind）</h3>
+          <div id="usageStats" class="usage-stats"></div>
+          <button class="btn-secondary btn-sm" id="btnCloseUsage">关闭</button>
+        </div>
+      </section>
+
       <section class="section">
         <h2>行为设置</h2>
         <div class="form-group">

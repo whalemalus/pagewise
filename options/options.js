@@ -12,6 +12,8 @@
 import { KnowledgeBase } from '../lib/knowledge-base.js';
 import { AIClient } from '../lib/ai-client.js';
 import { getSettings, saveSettings } from '../lib/utils.js';
+import { DocMindClient } from '../lib/docmind-client.js';
+import { AIGateway } from '../lib/ai-gateway.js';
 import { BookmarkPanel } from './bookmark-panel.js';
 import { BookmarkCollector } from '../lib/bookmark-collector.js';
 import { BookmarkIndexer } from '../lib/bookmark-indexer.js';
@@ -194,6 +196,189 @@ document.addEventListener('DOMContentLoaded', async () => {
     alert('所有数据已清除');
   });
 
+  // --- DocMind AI 网关初始化 ---
+  const aiGatewaySection = document.getElementById('aiGatewaySection');
+  const gatewayDot = document.getElementById('gatewayDot');
+  const gatewayStatusText = document.getElementById('gatewayStatusText');
+  const aiGatewayActions = document.getElementById('aiGatewayActions');
+
+  // 初始化 DocMind 客户端和 AI 网关
+  let docMindClient = null;
+  let aiGateway = null;
+
+  try {
+    const dmConfig = await new Promise((resolve) => {
+      chrome.storage.sync.get({ pagewiseDocMind: { enabled: false, serverUrl: '', apiKey: '' } }, (result) => {
+        resolve(result.pagewiseDocMind);
+      });
+    });
+
+    if (dmConfig.enabled && dmConfig.serverUrl && dmConfig.apiKey) {
+      docMindClient = new DocMindClient({
+        serverUrl: dmConfig.serverUrl,
+        apiKey: dmConfig.apiKey,
+      });
+      docMindClient._connected = true;
+
+      aiGateway = new AIGateway({ client: docMindClient });
+      await aiGateway.loadConfig();
+
+      // 显示已连接状态
+      gatewayDot.classList.add('connected');
+      gatewayStatusText.textContent = 'DocMind 已连接';
+      aiGatewayActions.style.display = 'flex';
+    } else {
+      gatewayStatusText.textContent = 'DocMind 未连接（在 DocMind 设置中配置后可用）';
+    }
+  } catch (e) {
+    gatewayStatusText.textContent = '初始化失败: ' + e.message;
+  }
+
+  // 同步 DocMind 配置
+  const btnSyncAIConfig = document.getElementById('btnSyncAIConfig');
+  if (btnSyncAIConfig) {
+    btnSyncAIConfig.addEventListener('click', async () => {
+      if (!aiGateway) return;
+
+      const localSettings = {
+        apiProtocol: document.getElementById('apiProtocol').value,
+        model: document.getElementById('model').value.trim(),
+        apiBaseUrl: document.getElementById('apiBaseUrl').value.trim(),
+        maxTokens: parseInt(document.getElementById('maxTokens').value),
+      };
+
+      gatewayDot.className = 'status-dot syncing';
+      gatewayStatusText.textContent = '正在同步...';
+
+      const result = await aiGateway.fetchRemoteConfig(localSettings);
+
+      if (!result.success) {
+        gatewayDot.className = 'status-dot error';
+        gatewayStatusText.textContent = '同步失败: ' + result.error;
+        return;
+      }
+
+      if (result.conflict) {
+        // 显示冲突
+        gatewayDot.className = 'status-dot';
+        gatewayStatusText.textContent = '检测到配置冲突';
+        showConflict(result.conflict, aiGateway);
+        return;
+      }
+
+      // 无冲突，直接应用
+      const applyResult = await aiGateway.applyRemoteConfig({ skipConflictCheck: true });
+      if (applyResult.success && applyResult.settings) {
+        applySettingsToUI(applyResult.settings);
+        gatewayDot.className = 'status-dot connected';
+        gatewayStatusText.textContent = '配置已同步 ✓';
+      }
+    });
+  }
+
+  // 使用远程配置
+  const btnUseRemote = document.getElementById('btnUseRemote');
+  if (btnUseRemote) {
+    btnUseRemote.addEventListener('click', async () => {
+      if (!aiGateway) return;
+      const result = await aiGateway.forceSyncConfig();
+      if (result.success && result.settings) {
+        applySettingsToUI(result.settings);
+        hideConflict();
+        gatewayDot.className = 'status-dot connected';
+        gatewayStatusText.textContent = '配置已同步（使用 DocMind 配置）✓';
+      }
+    });
+  }
+
+  // 保留本地配置
+  const btnKeepLocal = document.getElementById('btnKeepLocal');
+  if (btnKeepLocal) {
+    btnKeepLocal.addEventListener('click', async () => {
+      if (!aiGateway) return;
+      await aiGateway.keepLocalConfig();
+      hideConflict();
+      gatewayDot.className = 'status-dot connected';
+      gatewayStatusText.textContent = '已保留本地配置';
+    });
+  }
+
+  // 查看可用模型
+  const btnShowModels = document.getElementById('btnShowModels');
+  if (btnShowModels) {
+    btnShowModels.addEventListener('click', async () => {
+      if (!aiGateway) return;
+      const modelsDiv = document.getElementById('aiGatewayModels');
+      const modelsList = document.getElementById('modelsList');
+
+      modelsList.innerHTML = '<em style="color:#9ca3af;">加载中...</em>';
+      modelsDiv.style.display = 'block';
+
+      const result = await aiGateway.getAvailableModels();
+      if (result.success && result.models.length > 0) {
+        modelsList.innerHTML = '';
+        const currentModel = document.getElementById('model').value.trim();
+        for (const m of result.models) {
+          const chip = document.createElement('span');
+          chip.className = 'model-chip' + (m.id === currentModel ? ' selected' : '') + (!m.available ? ' unavailable' : '');
+          chip.textContent = m.name || m.id;
+          chip.title = m.id + (m.family ? ' (' + m.family + ')' : '');
+          if (m.available) {
+            chip.addEventListener('click', () => {
+              document.getElementById('model').value = m.id;
+              modelsList.querySelectorAll('.model-chip').forEach(c => c.classList.remove('selected'));
+              chip.classList.add('selected');
+            });
+          }
+          modelsList.appendChild(chip);
+        }
+      } else {
+        modelsList.innerHTML = '<em style="color:#9ca3af;">无法获取模型列表: ' + (result.error || '未知错误') + '</em>';
+      }
+    });
+  }
+
+  const btnCloseModels = document.getElementById('btnCloseModels');
+  if (btnCloseModels) {
+    btnCloseModels.addEventListener('click', () => {
+      document.getElementById('aiGatewayModels').style.display = 'none';
+    });
+  }
+
+  // 查看用量统计
+  const btnViewUsage = document.getElementById('btnViewUsage');
+  if (btnViewUsage) {
+    btnViewUsage.addEventListener('click', async () => {
+      if (!aiGateway) return;
+      const usageDiv = document.getElementById('aiGatewayUsage');
+      const usageStats = document.getElementById('usageStats');
+
+      usageStats.innerHTML = '<em style="color:#9ca3af;">加载中...</em>';
+      usageDiv.style.display = 'block';
+
+      const result = await aiGateway.getUsageStats();
+      if (result.success && result.usage) {
+        const u = result.usage;
+        usageStats.innerHTML = [
+          usageStatRow('总请求数', u.requestCount.toLocaleString()),
+          usageStatRow('总 Token 数', u.totalTokens.toLocaleString()),
+          usageStatRow('输入 Token', u.inputTokens.toLocaleString()),
+          usageStatRow('输出 Token', u.outputTokens.toLocaleString()),
+          usageStatRow('估算费用', '$' + u.totalCostUsd.toFixed(2)),
+        ].join('');
+      } else {
+        usageStats.innerHTML = '<em style="color:#9ca3af;">无法获取用量: ' + (result.error || '未知错误') + '</em>';
+      }
+    });
+  }
+
+  const btnCloseUsage = document.getElementById('btnCloseUsage');
+  if (btnCloseUsage) {
+    btnCloseUsage.addEventListener('click', () => {
+      document.getElementById('aiGatewayUsage').style.display = 'none';
+    });
+  }
+
   // --- 书签图谱标签页初始化 ---
 
   // 创建 BookmarkPanel 实例 (懒初始化: 切换到图谱 Tab 时才 render/init)
@@ -252,6 +437,44 @@ function downloadFile(content, filename, type) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+function applySettingsToUI(settings) {
+  if (settings.apiProtocol) document.getElementById('apiProtocol').value = settings.apiProtocol;
+  if (settings.apiBaseUrl) document.getElementById('apiBaseUrl').value = settings.apiBaseUrl;
+  if (settings.model) document.getElementById('model').value = settings.model;
+  if (settings.maxTokens) document.getElementById('maxTokens').value = settings.maxTokens;
+}
+
+function showConflict(conflict, gateway) {
+  const conflictDiv = document.getElementById('aiGatewayConflict');
+  const detailsDiv = document.getElementById('conflictDetails');
+
+  if (!conflict || !conflict.differences) {
+    conflictDiv.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  for (const diff of conflict.differences) {
+    html += `<div class="conflict-field">` +
+      `<span class="field-name">${diff.field}</span>` +
+      `<span class="field-local">本地: ${diff.local}</span>` +
+      `<span>→</span>` +
+      `<span class="field-remote">DocMind: ${diff.remote}</span>` +
+      `</div>`;
+  }
+  detailsDiv.innerHTML = html;
+  conflictDiv.style.display = 'block';
+}
+
+function hideConflict() {
+  const conflictDiv = document.getElementById('aiGatewayConflict');
+  if (conflictDiv) conflictDiv.style.display = 'none';
+}
+
+function usageStatRow(label, value) {
+  return `<div class="usage-stat-row"><span class="usage-stat-label">${label}</span><span class="usage-stat-value">${value}</span></div>`;
 }
 
 export { createTabManager };
