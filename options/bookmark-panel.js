@@ -22,6 +22,29 @@
  *   点击相似书签 → 切换到该书签
  */
 
+import { t as i18nT, registerLocale } from '../lib/i18n.js'
+import { BOOKMARK_I18N_KEYS, bookmarkZhCN, bookmarkEnUS, getStatusLabel, getStatusLabels } from '../lib/bookmark-i18n.js'
+
+// 确保书签语言包已注册（幂等操作）
+let _bookmarkLocaleRegistered = false
+function _ensureLocale() {
+  if (!_bookmarkLocaleRegistered) {
+    registerLocale('zh-CN', bookmarkZhCN)
+    registerLocale('en-US', bookmarkEnUS)
+    _bookmarkLocaleRegistered = true
+  }
+}
+
+/**
+ * 书签模块翻译辅助函数
+ * 将短 key 映射到全局 i18n key
+ */
+function bt(key, params) {
+  _ensureLocale()
+  const i18nKey = BOOKMARK_I18N_KEYS[key]
+  return i18nKey ? i18nT(i18nKey, params) : key
+}
+
 /**
  * @typedef {Object} PanelDependencies
  * @property {import('../lib/bookmark-collector.js').BookmarkCollector}   [collector]
@@ -440,7 +463,7 @@ export class BookmarkPanel {
 
     const input = this._el('input');
     input.type = 'text';
-    input.placeholder = '搜索书签...';
+    input.placeholder = bt('search.placeholder');
     input.className = 'bookmark-panel-search-input';
     this._searchInput = input;
 
@@ -452,24 +475,24 @@ export class BookmarkPanel {
     panel.appendChild(searchBox);
 
     // 文件夹过滤器
-    const folderGroup = this._createFilterGroup('文件夹', 'folder');
+    const folderGroup = this._createFilterGroup(bt('filter.folder'), 'folder');
     this._folderFilter = folderGroup.querySelector('select');
     panel.appendChild(folderGroup);
 
     // 标签过滤器
-    const tagGroup = this._createFilterGroup('标签', 'tags');
+    const tagGroup = this._createFilterGroup(bt('filter.tag'), 'tags');
     this._tagFilter = tagGroup.querySelector('select');
     panel.appendChild(tagGroup);
 
     // 状态过滤器
-    const statusGroup = this._createFilterGroup('状态', 'status');
+    const statusGroup = this._createFilterGroup(bt('filter.status'), 'status');
     this._statusFilter = statusGroup.querySelector('select');
     panel.appendChild(statusGroup);
 
     // 统计栏
     const statsBar = this._el('div');
     statsBar.className = 'bookmark-panel-stats';
-    statsBar.textContent = `共 ${this._bookmarks.length} 个书签`;
+    statsBar.textContent = bt('stats.bookmarkCount', { count: this._bookmarks.length });
     this._statsBar = statsBar;
     panel.appendChild(statsBar);
 
@@ -498,7 +521,7 @@ export class BookmarkPanel {
     // 添加 "全部" 选项
     const allOption = this._el('option');
     allOption.value = '';
-    allOption.textContent = `全部${label}`;
+    allOption.textContent = bt('filter.all', { label });
     select.appendChild(allOption);
 
     // 根据类型填充选项
@@ -519,11 +542,11 @@ export class BookmarkPanel {
         select.appendChild(opt);
       }
     } else if (type === 'status') {
+      const statusLabels = getStatusLabels();
       for (const status of ['unread', 'reading', 'read']) {
         const opt = this._el('option');
         opt.value = status;
-        const labels = { unread: '待读', reading: '阅读中', read: '已读' };
-        opt.textContent = labels[status];
+        opt.textContent = statusLabels[status];
         select.appendChild(opt);
       }
     }
@@ -575,7 +598,7 @@ export class BookmarkPanel {
     // 初始提示
     const hint = this._el('div');
     hint.className = 'bookmark-panel-detail-hint';
-    hint.textContent = '点击图谱节点查看书签详情';
+    hint.textContent = bt('panel.detail.clickHint');
     detailContainer.appendChild(hint);
 
     panel.appendChild(detailContainer);
@@ -643,15 +666,14 @@ export class BookmarkPanel {
     // 状态
     const statusEl = this._el('div');
     statusEl.className = 'bookmark-panel-detail-status';
-    const statusLabels = { unread: '待读', reading: '阅读中', read: '已读' };
-    statusEl.textContent = `状态: ${statusLabels[data.status] || data.status}`;
+    statusEl.textContent = `${bt('panel.detail.status')}: ${getStatusLabel(data.status) || data.status}`;
     this._detailContainer.appendChild(statusEl);
 
     // 标签
     if (data.tags.length > 0) {
       const tagsEl = this._el('div');
       tagsEl.className = 'bookmark-panel-detail-tags';
-      tagsEl.textContent = `标签: ${data.tags.join(', ')}`;
+      tagsEl.textContent = `${bt('panel.detail.tags')}: ${data.tags.join(', ')}`;
       this._detailContainer.appendChild(tagsEl);
     }
 
@@ -659,7 +681,7 @@ export class BookmarkPanel {
     if (data.similarBookmarks.length > 0) {
       const similarHeader = this._el('div');
       similarHeader.className = 'bookmark-panel-detail-similar-header';
-      similarHeader.textContent = '相似书签:';
+      similarHeader.textContent = `${bt('panel.detail.similarBookmarks')}:`;
       this._detailContainer.appendChild(similarHeader);
 
       const similarList = this._el('ul');
@@ -674,7 +696,7 @@ export class BookmarkPanel {
         link.className = 'bookmark-panel-detail-similar-link';
         link.href = '#';
         link.textContent = similar.title;
-        link.title = `${(similar.score * 100).toFixed(0)}% 相似`;
+        link.title = bt('panel.detail.similarPercent', { percent: (similar.score * 100).toFixed(0) });
 
         link.addEventListener('click', (e) => {
           e.preventDefault();
@@ -699,7 +721,7 @@ export class BookmarkPanel {
     el.appendChild(this._renderLoadingSpinner());
     const text = this._el('span');
     text.className = 'bookmark-panel-loading-text';
-    text.textContent = '正在加载书签数据...';
+    text.textContent = bt('panel.loading');
     el.appendChild(text);
     container.appendChild(el);
   }
@@ -712,7 +734,7 @@ export class BookmarkPanel {
     const spinner = this._el('div');
     spinner.className = 'bookmark-panel-spinner';
     spinner.setAttribute('role', 'status');
-    spinner.setAttribute('aria-label', '加载中');
+    spinner.setAttribute('aria-label', bt('panel.loading'));
     return spinner;
   }
 
@@ -727,12 +749,12 @@ export class BookmarkPanel {
 
     const msg = this._el('div');
     msg.className = 'bookmark-panel-error-message';
-    msg.textContent = `加载失败: ${message}`;
+    msg.textContent = bt('panel.error.loadFailed', { message });
     el.appendChild(msg);
 
     const retryBtn = this._el('button');
     retryBtn.className = 'bookmark-panel-error-retry';
-    retryBtn.textContent = '重试';
+    retryBtn.textContent = bt('panel.error.retry');
     retryBtn.addEventListener('click', () => {
       this.refresh();
     });
@@ -751,24 +773,24 @@ export class BookmarkPanel {
 
     const title = this._el('div');
     title.className = 'bookmark-panel-empty-title';
-    title.textContent = '暂无书签数据';
+    title.textContent = bt('panel.empty.title');
     el.appendChild(title);
 
     const guide = this._el('div');
     guide.className = 'bookmark-panel-empty-guide';
     guide.innerHTML =
-      '<p>💡 您可以通过以下方式添加书签：</p>' +
+      `<p>${bt('panel.empty.hint')}</p>` +
       '<ul>' +
-      '  <li>在浏览器中按 <kbd>Ctrl+D</kbd> 收藏当前页面</li>' +
-      '  <li>右键点击页面 → "为此页面添加书签"</li>' +
-      '  <li>点击地址栏右侧的 ☆ 图标</li>' +
+      `  <li>${bt('panel.empty.addGuide1')}</li>` +
+      `  <li>${bt('panel.empty.addGuide2')}</li>` +
+      `  <li>${bt('panel.empty.addGuide3')}</li>` +
       '</ul>' +
-      '<p>添加书签后，点击下方按钮刷新。</p>';
+      `<p>${bt('panel.empty.addGuideTip')}</p>`;
     el.appendChild(guide);
 
     const refreshBtn = this._el('button');
     refreshBtn.className = 'bookmark-panel-empty-refresh';
-    refreshBtn.textContent = '刷新书签';
+    refreshBtn.textContent = bt('panel.empty.refresh');
     refreshBtn.addEventListener('click', () => {
       this.refresh();
     });

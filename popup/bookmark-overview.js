@@ -14,6 +14,29 @@
  *   - 点击书签 → 打开原网页
  */
 
+import { t as i18nT, registerLocale } from '../lib/i18n.js'
+import { BOOKMARK_I18N_KEYS, bookmarkZhCN, bookmarkEnUS, getStatusLabel, getStatusLabels } from '../lib/bookmark-i18n.js'
+
+// 确保书签语言包已注册（幂等操作）
+let _bookmarkLocaleRegistered = false
+function _ensureLocale() {
+  if (!_bookmarkLocaleRegistered) {
+    registerLocale('zh-CN', bookmarkZhCN)
+    registerLocale('en-US', bookmarkEnUS)
+    _bookmarkLocaleRegistered = true
+  }
+}
+
+/**
+ * 书签模块翻译辅助函数
+ * 将短 key 映射到全局 i18n key
+ */
+function bt(key, params) {
+  _ensureLocale()
+  const i18nKey = BOOKMARK_I18N_KEYS[key]
+  return i18nKey ? i18nT(i18nKey, params) : key
+}
+
 /**
  * @typedef {Object} Bookmark
  * @property {string}   id
@@ -126,7 +149,7 @@ export class BookmarkOverview {
     if (!this._initialized || this._bookmarks.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'overview-empty';
-      empty.textContent = '暂无书签数据';
+      empty.textContent = bt('panel.empty.title');
       container.appendChild(empty);
       return;
     }
@@ -143,14 +166,14 @@ export class BookmarkOverview {
 
     // ─── 领域分布 ───
     const domainSection = this._createDistributionSection(
-      '领域分布 Top-5',
+      bt('overview.domainDistribution'),
       stats.topDomains,
     );
     container.appendChild(domainSection);
 
     // ─── 文件夹分布 ───
     const folderSection = this._createDistributionSection(
-      '文件夹分布 Top-5',
+      bt('overview.folderDistribution'),
       stats.topFolders,
     );
     container.appendChild(folderSection);
@@ -306,7 +329,7 @@ export class BookmarkOverview {
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = '搜索书签...';
+    input.placeholder = bt('search.placeholder');
     input.className = 'overview-search-input';
     input.value = this._searchQuery;
 
@@ -332,7 +355,7 @@ export class BookmarkOverview {
     totalEl.innerHTML = '';
     const totalLabel = document.createElement('span');
     totalLabel.className = 'overview-stat-label';
-    totalLabel.textContent = '书签总数';
+    totalLabel.textContent = bt('stats.total');
     const totalValue = document.createElement('span');
     totalValue.className = 'overview-stat-value';
     totalValue.textContent = String(stats.totalCount);
@@ -343,7 +366,7 @@ export class BookmarkOverview {
     unreadEl.className = 'overview-stat-item';
     const unreadLabel = document.createElement('span');
     unreadLabel.className = 'overview-stat-label';
-    unreadLabel.textContent = '待读数量';
+    unreadLabel.textContent = bt('stats.unread');
     const unreadValue = document.createElement('span');
     unreadValue.className = 'overview-stat-value';
     unreadValue.textContent = String(stats.unreadCount);
@@ -374,7 +397,7 @@ export class BookmarkOverview {
     if (items.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'overview-distribution-empty';
-      empty.textContent = '暂无数据';
+      empty.textContent = bt('overview.noData');
       section.appendChild(empty);
       return section;
     }
@@ -411,13 +434,13 @@ export class BookmarkOverview {
 
     const header = document.createElement('h3');
     header.className = 'overview-section-title';
-    header.textContent = '最近添加';
+    header.textContent = bt('overview.recentlyAdded');
     section.appendChild(header);
 
     if (recentBookmarks.length === 0) {
       const empty = document.createElement('div');
       empty.className = 'overview-recent-empty';
-      empty.textContent = '暂无书签';
+      empty.textContent = bt('overview.recentBookmarks');
       section.appendChild(empty);
       return section;
     }
@@ -441,7 +464,7 @@ export class BookmarkOverview {
   _createGraphButton() {
     const btn = document.createElement('button');
     btn.className = 'overview-graph-btn';
-    btn.textContent = '📊 查看完整图谱';
+    btn.textContent = bt('overview.viewGraph');
 
     btn.addEventListener('click', () => {
       if (this._callbacks.openOptionsPage) {
@@ -465,7 +488,7 @@ export class BookmarkOverview {
     if (bookmarks.length === 0 && this._searchQuery) {
       const empty = document.createElement('div');
       empty.className = 'overview-no-results';
-      empty.textContent = '未找到匹配的书签';
+      empty.textContent = bt('overview.noResults');
       section.appendChild(empty);
       return section;
     }
@@ -486,7 +509,7 @@ export class BookmarkOverview {
     if (bookmarks.length > 20) {
       const more = document.createElement('div');
       more.className = 'overview-more-hint';
-      more.textContent = `显示 20/${bookmarks.length}，请使用搜索缩小范围`;
+      more.textContent = bt('overview.moreHint', { shown: 20, total: bookmarks.length });
       section.appendChild(more);
     }
 
@@ -529,8 +552,7 @@ export class BookmarkOverview {
     const status = bm.status || 'unread';
     const statusSpan = document.createElement('span');
     statusSpan.className = `overview-bookmark-status overview-bookmark-status--${status}`;
-    const statusLabels = { unread: '待读', reading: '阅读中', read: '已读' };
-    statusSpan.textContent = statusLabels[status] || status;
+    statusSpan.textContent = getStatusLabel(status) || status;
     meta.appendChild(statusSpan);
 
     li.appendChild(titleLink);

@@ -79,7 +79,7 @@ describe('BookmarkContentPreview', () => {
       assert.ok(text.includes('[react.dev]'));
       assert.ok(text.includes('📂 前端 > React'));
       assert.ok(text.includes('javascript'));
-      assert.ok(text.includes('(未读)'));
+      assert.ok(text.includes('(待读)'));
     });
 
     it('最小书签只有标题和域名', () => {
@@ -270,7 +270,7 @@ describe('BookmarkContentPreview', () => {
     });
 
     it('STATUS_LABELS 包含三种状态映射', () => {
-      assert.equal(STATUS_LABELS.unread, '未读');
+      assert.equal(STATUS_LABELS.unread, '待读');
       assert.equal(STATUS_LABELS.reading, '阅读中');
       assert.equal(STATUS_LABELS.read, '已读');
     });

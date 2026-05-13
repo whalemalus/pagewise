@@ -6,5 +6,57 @@
   "extDescription": {
     "message": "Ask AI questions while browsing technical pages, with automatic knowledge archiving. Supports Claude, OpenAI, DeepSeek and more.",
     "description": "Extension description for Chrome Web Store"
+  },
+  "bookmarkSearchPlaceholder": {
+    "message": "Search bookmarks...",
+    "description": "Search input placeholder in bookmark panel"
+  },
+  "bookmarkStatusUnread": {
+    "message": "Unread",
+    "description": "Bookmark status: unread"
+  },
+  "bookmarkStatusReading": {
+    "message": "Reading",
+    "description": "Bookmark status: reading"
+  },
+  "bookmarkStatusRead": {
+    "message": "Read",
+    "description": "Bookmark status: read"
+  },
+  "bookmarkFilterFolder": {
+    "message": "Folder",
+    "description": "Filter label: folder"
+  },
+  "bookmarkFilterTag": {
+    "message": "Tag",
+    "description": "Filter label: tag"
+  },
+  "bookmarkFilterStatus": {
+    "message": "Status",
+    "description": "Filter label: status"
+  },
+  "bookmarkStatsTotal": {
+    "message": "Total Bookmarks",
+    "description": "Statistics label: total bookmarks"
+  },
+  "bookmarkStatsUnread": {
+    "message": "Unread",
+    "description": "Statistics label: unread count"
+  },
+  "bookmarkPanelLoading": {
+    "message": "Loading bookmark data...",
+    "description": "Loading state text"
+  },
+  "bookmarkPanelRetry": {
+    "message": "Retry",
+    "description": "Retry button text"
+  },
+  "bookmarkPanelEmptyTitle": {
+    "message": "No bookmark data",
+    "description": "Empty state title"
+  },
+  "bookmarkOverviewViewGraph": {
+    "message": "📊 View Full Graph",
+    "description": "Button to open full graph view"
   }
 }

@@ -2,6 +2,84 @@
 
 ---
 
+## 迭代 R80 — 国际化 BookmarkI18n
+
+> 日期: 2026-05-13
+> 任务: R80 国际化 BookmarkI18n — 书签模块全面国际化，中英文界面切换，所有用户可见字符串外部化
+
+### 新增文件
+
+1. **lib/bookmark-i18n.js** — 书签国际化模块
+   - `BOOKMARK_I18N_KEYS` — 37 个 i18n key 映射表（短 key → 全局 bookmark.* key）
+   - `bookmarkZhCN` — 中文语言包（37 条翻译）
+   - `bookmarkEnUS` — 英文语言包（37 条翻译）
+   - `registerBookmarkLocale(options?)` — 注册语言包到全局 i18n 系统，支持 extraLocales 扩展
+   - `getStatusLabel(status, locale?)` — 获取本地化状态标签（unread/reading/read）
+   - `getStatusLabels(locale?)` — 获取状态标签映射对象
+   - `getLocaleDateOptions(locale?)` — 获取 Intl.DateTimeFormat options
+   - `formatDateByLocale(timestamp, locale?)` — 本地化日期格式化
+   - `createBookmarkT(locale?)` — 创建书签专用翻译函数（自动映射短 key）
+   - `getAllBookmarkKeys()` — 获取所有已定义的 i18n key
+   - `validateLocaleCompleteness(locale, messages)` — 检查语言包翻译完整性
+   - 模块自动注册：导入时自动将内置语言包注册到全局 i18n 系统
+
+2. **tests/test-bookmark-i18n.js** — 37 个单元测试
+   - 常量导出: BOOKMARK_I18N_KEYS 结构/搜索/面板/概览 key (4)
+   - 中文语言包: 对象类型/完整性/非空/翻译正确性 (4)
+   - 英文语言包: 对象类型/完整性/非空/翻译正确性/中英 key 一致 (5)
+   - registerBookmarkLocale: 注册/切换/支持语言列表 (3)
+   - createBookmarkT: 返回函数/中英文映射/参数插值/未知 key (5)
+   - getStatusLabel: 中文/英文/未知状态/null (4)
+   - formatDateByLocale: 有效时间戳/中文/英文/无效/默认 (5)
+   - getLocaleDateOptions: 返回对象/hour minute/默认 (3)
+   - 语言包完整性: key 格式/无重复/数量一致/插值占位符 (4)
+
+### 修改文件
+
+1. **lib/bookmark-detail-panel.js** — `_formatDate()` 改用 `formatDateByLocale()`
+2. **lib/bookmark-preview.js** — `STATUS_LABELS` 从硬编码中文改为 `Proxy` + `getStatusLabel()` 动态获取
+3. **lib/bookmark-core.js** — `STATUS_LABELS` 同样改为 `Proxy` + `getStatusLabel()` 代理
+4. **lib/bookmark-smart-collections.js** — 内置集合名称改用 `bt()` 翻译函数
+5. **options/bookmark-panel.js** — 搜索占位符、过滤器标签等 UI 字符串改用 `bt()` 翻译
+6. **popup/bookmark-overview.js** — 空状态、统计标签等 UI 字符串改用 `bt()` 翻译
+7. **_locales/en/messages.json** — 新增书签相关 Chrome Web Store 本地化消息
+8. **_locales/zh_CN/messages.json** — 新增书签相关 Chrome Web Store 本地化消息
+9. **tests/test-bookmark-panel-integration.js** — 集成测试适配 i18n
+10. **tests/test-bookmark-preview.js** — 预览测试适配 i18n
+
+### 设计决策
+
+- **命名空间隔离**: 所有书签 i18n key 以 `bookmark.` 前缀命名，避免与其他模块冲突
+- **短 key 映射**: 代码中使用 `bt('status.unread')` 简写，内部自动映射到 `bookmark.status.unread`
+- **自动注册**: `bookmark-i18n.js` 导入时自动注册语言包，消费方无需手动初始化
+- **Proxy 动态标签**: `STATUS_LABELS` 使用 ES6 Proxy 实现动态翻译，语言切换后自动生效
+- **全局 i18n 系统集成**: 复用 `lib/i18n.js` 基础设施，不重复造轮子
+- **Chrome Web Store 兼容**: `_locales/` 下的消息文件同步更新，满足 Chrome Web Store 审核要求
+- **向后兼容**: 未翻译的 key 返回原始 key，不会导致 UI 异常
+- **纯 ES Module**: 不引入外部 i18n 库，零依赖
+
+### 依赖关系
+
+```
+BookmarkI18n (新建, R80)
+  └── i18n.js (已存在) — 全局 i18n 基础设施 (registerLocale/t/setLocale/getCurrentLocale)
+
+消费者:
+  ├── BookmarkDetailPanel (R47) — formatDateByLocale
+  ├── BookmarkContentPreview (R64) — getStatusLabel (STATUS_LABELS Proxy)
+  ├── BookmarkCore (合并模块) — getStatusLabel (STATUS_LABELS Proxy)
+  ├── BookmarkSmartCollections (R75) — bt() 翻译内置集合名称
+  ├── BookmarkOptionsPage (R51) — bt() 翻译 UI 字符串
+  └── BookmarkPopup (R50) — bt() 翻译 UI 字符串
+```
+
+### 测试结果
+
+- 新增: 37 个测试，全部通过
+- 总测试: 37 (本模块)
+
+---
+
 ## 迭代 R78 — 性能优化 BookmarkPerformanceOptimization
 
 > 日期: 2026-05-12

@@ -6,5 +6,57 @@
   "extDescription": {
     "message": "浏览技术网页时即时向 AI 提问，回答自动归档到本地知识库。支持 Claude、OpenAI、DeepSeek 等多种模型。",
     "description": "Chrome 商店中的扩展描述"
+  },
+  "bookmarkSearchPlaceholder": {
+    "message": "搜索书签...",
+    "description": "书签搜索输入框占位符"
+  },
+  "bookmarkStatusUnread": {
+    "message": "待读",
+    "description": "书签状态: 待读"
+  },
+  "bookmarkStatusReading": {
+    "message": "阅读中",
+    "description": "书签状态: 阅读中"
+  },
+  "bookmarkStatusRead": {
+    "message": "已读",
+    "description": "书签状态: 已读"
+  },
+  "bookmarkFilterFolder": {
+    "message": "文件夹",
+    "description": "过滤器标签: 文件夹"
+  },
+  "bookmarkFilterTag": {
+    "message": "标签",
+    "description": "过滤器标签: 标签"
+  },
+  "bookmarkFilterStatus": {
+    "message": "状态",
+    "description": "过滤器标签: 状态"
+  },
+  "bookmarkStatsTotal": {
+    "message": "书签总数",
+    "description": "统计标签: 书签总数"
+  },
+  "bookmarkStatsUnread": {
+    "message": "待读数量",
+    "description": "统计标签: 待读数量"
+  },
+  "bookmarkPanelLoading": {
+    "message": "正在加载书签数据...",
+    "description": "加载中状态文本"
+  },
+  "bookmarkPanelRetry": {
+    "message": "重试",
+    "description": "重试按钮文本"
+  },
+  "bookmarkPanelEmptyTitle": {
+    "message": "暂无书签数据",
+    "description": "空状态标题"
+  },
+  "bookmarkOverviewViewGraph": {
+    "message": "📊 查看完整图谱",
+    "description": "查看完整图谱按钮"
   }
 }

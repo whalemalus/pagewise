@@ -7,6 +7,17 @@
      7|## [Unreleased]
 
 ### 新增
+- **R80: BookmarkI18n 国际化** — `lib/bookmark-i18n.js`
+  - 中英文界面切换: 与 `lib/i18n.js` 全局 i18n 系统集成
+  - 所有用户可见字符串外部化: 42+ 个 i18n key 覆盖搜索/过滤/状态/统计/面板/详情/概览等
+  - 语言偏好持久化: 通过 `chrome.storage.sync` 保存语言设置
+  - 新增语言支持: 调用 `registerBookmarkLocale({ extraLocales: { 'ja-JP': {...} } })` 即可
+  - 日期本地化: `formatDateByLocale()` 根据语言输出不同日期格式
+  - 状态标签: `getStatusLabel()` / `getStatusLabels()` 动态获取当前语言标签
+  - Chrome Web Store: `_locales/en/messages.json` 和 `_locales/zh_CN/messages.json` 同步更新
+  - 模块自动注册: 导入即用，无需手动初始化
+  - 测试: 37 用例 ✅
+
 - **R79: BookmarkAccessibility 无障碍支持** — `lib/bookmark-accessibility.js`
   - 键盘导航: Arrow Up/Down/Left/Right/Home/End 在书签列表中导航，Enter 打开详情，Escape 关闭
   - 屏幕阅读器: ARIA role=list/listitem/status/toolbar/dialog/live region 全面覆盖

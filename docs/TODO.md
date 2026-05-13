@@ -318,17 +318,21 @@
   - 测试: 20 用例 ✅
   - 复杂度: Complex
 
-- [ ] **R79: 无障碍 BookmarkAccessibility**
+- [x] **R79: 无障碍 BookmarkAccessibility**
   - 键盘导航
   - 屏幕阅读器支持
   - ARIA 标签
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R80: 国际化 BookmarkI18n**
-  - 中英文界面
+- [x] **R80: 国际化 BookmarkI18n** — `lib/bookmark-i18n.js`
+  - 42+ i18n key 覆盖所有用户可见字符串
+  - 中英文语言包 (zh-CN / en-US)
+  - 语言偏好持久化 (chrome.storage.sync)
   - 日期格式本地化
-  - 测试: 6+ 用例
+  - 状态标签本地化
+  - 新增语言只需传入翻译文件
+  - 测试: 37 用例 ✅
   - 复杂度: Simple
 
 - [ ] **R81: 引导向导 BookmarkOnboarding**

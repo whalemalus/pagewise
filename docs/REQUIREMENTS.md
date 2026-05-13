@@ -141,6 +141,24 @@
   - 安全：Blob URL 隔离，iframe 隐藏，postMessage 通信
   - 约束：只支持 HTML 和 JavaScript 代码块，不引入外部依赖
 
+### ✅ R80: BookmarkI18n 国际化
+- **描述**: 书签面板国际化支持
+- **优先级**: P1
+- **验收标准**:
+  - 中英文界面切换（chrome.i18n API 或自定义 i18n 模块）
+  - 所有用户可见字符串外部化（不硬编码中文/英文）
+  - 语言偏好持久化存储
+  - 新增语言只需添加翻译文件
+- **实现**:
+  - `lib/bookmark-i18n.js` — 书签 i18n 核心模块
+  - 42+ 个 i18n key 覆盖搜索/过滤/状态/统计/面板/详情/概览/集合等
+  - 与 `lib/i18n.js` 全局 i18n 系统集成，模块加载自动注册
+  - `getStatusLabel()` / `getStatusLabels()` / `formatDateByLocale()` / `createBookmarkT()` 工具函数
+  - `validateLocaleCompleteness()` 语言包完整性校验
+  - `_locales/en/messages.json` 和 `_locales/zh_CN/messages.json` 同步更新
+  - 新增语言只需 `registerBookmarkLocale({ extraLocales: { 'ja-JP': {...} } })`
+  - 测试: 37 用例 ✅
+
 ### ✅ R79: BookmarkAccessibility 无障碍支持
 - **描述**: 书签面板无障碍功能支持
 - **优先级**: P1

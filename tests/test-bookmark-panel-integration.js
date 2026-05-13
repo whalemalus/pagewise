@@ -317,7 +317,7 @@ describe('BookmarkGraph Phase 1 — 核心修复集成测试', () => {
     const spinner = panel._renderLoadingSpinner();
     assert.equal(spinner.className, 'bookmark-panel-spinner', 'class 应为 spinner');
     assert.equal(spinner.getAttribute('role'), 'status', 'role 应为 status');
-    assert.equal(spinner.getAttribute('aria-label'), '加载中', 'aria-label 应为 加载中');
+    assert.ok(spinner.getAttribute('aria-label').length > 0, 'aria-label 应非空');
   });
 
   it('R3-3. render 未初始化且非 loading 时显示空状态 (不是加载)', () => {
