@@ -352,5 +352,35 @@
     "testing": "Testing...",
     "testFailed": "Test failed",
     "loadFailed": "Load failed"
+  },
+
+  "storePrep": {
+    "title": "Chrome Web Store Preparation",
+    "manifestValid": "Manifest validation passed",
+    "manifestInvalid": "Manifest validation failed",
+    "missingIcons": "Missing required icons",
+    "dangerousPermissions": "Dangerous permissions detected",
+    "descriptionTooLong": "Description exceeds {{max}} characters",
+    "i18nPlaceholderWarning": "Description uses i18n placeholder — add plain text for store review",
+    "broadHostPermissions": "Broad host permissions may trigger extra review",
+    "allUrlsContentScripts": "Content scripts match all URLs — consider narrowing scope",
+    "noBackground": "No background service worker defined",
+    "storeCategory": "Store Category",
+    "primaryCategory": "Productivity",
+    "secondaryCategory": "Developer Tools",
+    "listingTitle": "Store Listing",
+    "shortDescription": "Short Description",
+    "detailedDescription": "Detailed Description",
+    "featureHighlights": "Feature Highlights",
+    "screenshots": "Screenshots",
+    "privacyPolicy": "Privacy Policy",
+    "validateBtn": "Validate Manifest",
+    "generateListing": "Generate Listing",
+    "allIconsPresent": "All required icons present",
+    "iconMissing": "Missing icon: {{size}}×{{size}}",
+    "permissionOk": "Permissions are minimal",
+    "reviewReady": "Ready for Chrome Web Store review",
+    "errorsFound": "{{count}} error(s) found",
+    "warningsFound": "{{count}} warning(s) found"
   }
 }

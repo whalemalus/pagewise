@@ -352,5 +352,35 @@
     "testing": "测试中...",
     "testFailed": "测试失败",
     "loadFailed": "加载失败"
+  },
+
+  "storePrep": {
+    "title": "Chrome Web Store 发布准备",
+    "manifestValid": "Manifest 校验通过",
+    "manifestInvalid": "Manifest 校验未通过",
+    "missingIcons": "缺少必要图标",
+    "dangerousPermissions": "检测到高危权限",
+    "descriptionTooLong": "描述超过 {{max}} 个字符",
+    "i18nPlaceholderWarning": "描述使用了 i18n 占位符 — 商店审核需要纯文本描述",
+    "broadHostPermissions": "宽泛的 host 权限可能触发额外审核",
+    "allUrlsContentScripts": "Content scripts 匹配所有 URL — 建议缩小范围",
+    "noBackground": "未定义 background service worker",
+    "storeCategory": "商店分类",
+    "primaryCategory": "效率工具",
+    "secondaryCategory": "开发者工具",
+    "listingTitle": "商店 Listing",
+    "shortDescription": "简短描述",
+    "detailedDescription": "详细描述",
+    "featureHighlights": "功能亮点",
+    "screenshots": "截图",
+    "privacyPolicy": "隐私政策",
+    "validateBtn": "校验 Manifest",
+    "generateListing": "生成 Listing",
+    "allIconsPresent": "所有必要图标齐全",
+    "iconMissing": "缺少图标：{{size}}×{{size}}",
+    "permissionOk": "权限最小化",
+    "reviewReady": "可以提交 Chrome Web Store 审核",
+    "errorsFound": "发现 {{count}} 个错误",
+    "warningsFound": "发现 {{count}} 个警告"
   }
 }
