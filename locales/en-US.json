@@ -1,0 +1,328 @@
+{
+  "app": {
+    "name": "PageWise",
+    "fullName": "PageWise",
+    "description": "Ask AI questions while browsing technical pages, with automatic knowledge archiving",
+    "version": "v2.4.0"
+  },
+
+  "tabs": {
+    "chat": "Chat",
+    "skills": "Skills",
+    "knowledge": "Knowledge",
+    "wiki": "Wiki",
+    "page": "Page",
+    "settings": "Settings",
+    "bookmarks": "Bookmarks",
+    "logs": "Logs"
+  },
+
+  "sidebar": {
+    "welcomeTitle": "Hello! I'm your tech knowledge assistant",
+    "welcomeDesc": "Don't understand something on a web page? Just ask me.",
+    "loading": "Loading...",
+    "screenshotBtn": "Screenshot Q&A",
+    "extractBtn": "Extract page content",
+    "refreshBtn": "Refresh",
+    "historyHeaderBtn": "Chat history",
+    "exportBtn": "Export chat as Markdown",
+    "clearBtn": "Clear chat",
+    "inputPlaceholder": "Type a question... (Shift+Enter for newline)",
+    "sendBtn": "Send",
+    "stopBtn": "Stop",
+    "attachedText": "Selected text attached",
+    "screenshotAttached": "📸 Screenshot attached",
+    "removeScreenshot": "Remove screenshot"
+  },
+
+  "quickActions": {
+    "summarize": "📋 Summarize page",
+    "explain": "💡 Explain selection",
+    "multiTab": "📑 Analyze all tabs",
+    "history": "🕐 Chat history"
+  },
+
+  "review": {
+    "title": "📚 Knowledge Review",
+    "showAnswer": "Show Answer",
+    "selectDifficulty": "Rate your understanding",
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "dayHint": "day",
+    "planHint": "On schedule",
+    "doubleHint": "Double",
+    "completed": "Review Complete!",
+    "done": "Done",
+    "daysStreak": "day streak",
+    "longest": "Best",
+    "startReview": "Start Review"
+  },
+
+  "history": {
+    "searchPlaceholder": "Search chat history...",
+    "clearAll": "Clear All",
+    "branchFrom": "Branched from: ...",
+    "returnMain": "Return to main"
+  },
+
+  "knowledge": {
+    "entries": "📚 Knowledge Entries",
+    "highlights": "📌 Highlights",
+    "graph": "🕸️ Graph",
+    "learningPath": "🗺️ Learning Path",
+    "searchPlaceholder": "Search knowledge base...",
+    "selectMode": "☑️ Select mode",
+    "import": "Import",
+    "exportMd": "Export MD",
+    "exportJson": "Export JSON",
+    "selectAll": "Select All",
+    "selectedCount": "{{count}} selected",
+    "batchTag": "🏷️ Batch tag",
+    "batchDelete": "🗑️ Batch delete",
+    "batchExport": "📤 Batch export",
+    "exitSelect": "Exit select",
+    "emptyTitle": "No knowledge entries yet",
+    "emptyDesc": "Click \"Save\" in a chat to add to your knowledge base",
+    "backToList": "← Back to list",
+    "edit": "Edit",
+    "delete": "Delete",
+    "relatedKnowledge": "🔗 Related Knowledge",
+    "highlightCount": "{{count}} highlights",
+    "clearAllHighlights": "Clear all",
+    "emptyHighlights": "No highlights yet",
+    "emptyHighlightsDesc": "Select text and use the highlight feature to save",
+    "graphSearch": "🔍 Search nodes...",
+    "backToFull": "↩️ Full view",
+    "exportImage": "📸 Export image",
+    "refreshGraph": "🔄 Refresh graph",
+    "generateLearningPath": "🤖 Generate Learning Path",
+    "emptyLearningPath": "Click the button above to generate a personalized learning path based on your knowledge base",
+    "viewDetail": "View details"
+  },
+
+  "wiki": {
+    "searchPlaceholder": "Search Wiki...",
+    "all": "📋 All",
+    "entity": "🏷️ Entity",
+    "concept": "💡 Concept",
+    "qa": "❓ Knowledge",
+    "emptyTitle": "Wiki is empty",
+    "emptyDesc": "Entities and concepts will appear here after using the auto-classify feature",
+    "backToList": "← Back to list",
+    "backlinks": "🔗 Backlinks",
+    "prevPage": "← Previous",
+    "nextPage": "Next →"
+  },
+
+  "skills": {
+    "summary": "Loading...",
+    "all": "All",
+    "code": "Code",
+    "debug": "Debug",
+    "doc": "Docs",
+    "learning": "Learn",
+    "export": "Export",
+    "custom": "Custom",
+    "store": "Store",
+    "importBtn": "📥 Import",
+    "createSkill": "➕ Create Skill",
+    "editorTitle": "Create Custom Skill",
+    "skillName": "Skill Name",
+    "skillNamePlaceholder": "e.g. Code Translator",
+    "description": "Description",
+    "descPlaceholder": "Briefly describe what this skill does",
+    "category": "Category",
+    "promptTemplate": "Prompt Template",
+    "promptPlaceholder": "Use {{variableName}} as placeholders, e.g.:\nTranslate the following code to {{targetLanguage}}:\n\n{{code}}",
+    "triggerMethod": "Trigger Method",
+    "manualTrigger": "Manual",
+    "autoTrigger": "Auto",
+    "cancel": "Cancel",
+    "save": "Save",
+    "hint1": "Skills are recommended automatically based on page content, or can be triggered manually.",
+    "hint2": "AI can auto-invoke skills using [SKILL:id] in responses."
+  },
+
+  "page": {
+    "title": "Page Content",
+    "multiTab": "📑 Analyze all tabs",
+    "emptyTitle": "Page content is extracted when the sidebar opens"
+  },
+
+  "bookmarks": {
+    "title": "🔖 Bookmark Graph",
+    "fullGraph": "📊 Full Graph",
+    "refresh": "Refresh bookmarks",
+    "searchPlaceholder": "Search bookmarks...",
+    "allFolders": "📁 All",
+    "emptyTitle": "No bookmarks",
+    "emptyDesc": "Chrome bookmarks will appear here",
+    "backToList": "← Back to list",
+    "similarBookmarks": "🔗 Similar Bookmarks"
+  },
+
+  "logs": {
+    "allLevels": "All Levels",
+    "allModules": "All Modules",
+    "refresh": "Refresh logs",
+    "clear": "Clear logs",
+    "export": "Export logs",
+    "empty": "No log entries"
+  },
+
+  "settings": {
+    "apiConfig": "API Configuration",
+    "aiProvider": "AI Provider",
+    "profile": "Default Config",
+    "saveProfile": "Save",
+    "deleteProfile": "Delete",
+    "apiUrl": "API URL",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "sk-ant-... or sk-...",
+    "apiKeyNote": "Data is stored locally only, never uploaded to any server",
+    "model": "Model",
+    "selectModel": "Select model...",
+    "manualModel": "Or enter model name manually",
+    "fetchModels": "Fetch Models",
+    "testConnection": "Test Connection",
+    "maxTokens": "Max Output Length",
+    "autoExtract": "Auto-extract page content when sidebar opens",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeAuto": "System",
+    "saveSettings": "Save Settings",
+    "saved": "Saved ✓",
+    "evolutionTitle": "Assistant Evolution Status",
+    "resetEvolution": "Reset Evolution Data",
+    "statsTitle": "📊 Usage Statistics",
+    "resetStats": "Reset Statistics",
+    "onboardingTitle": "🚀 Onboarding",
+    "onboardingDesc": "Click the button below to re-watch the first-time tutorial.",
+    "retriggerOnboarding": "Retrigger Onboarding",
+    "backupTitle": "💾 Data Backup",
+    "backupDesc": "Export or import all settings and knowledge base data for migration or backup.",
+    "exportBackup": "📦 Export Backup",
+    "importBackup": "📥 Import Backup",
+    "commonSkills": "🏆 Top 5 Skills",
+    "hotTags": "🏷️ Top 5 Tags",
+    "knowledgeGrowth": "📈 Knowledge Growth (Weekly)",
+    "usageTrend": "📊 Last 7 Days Usage",
+    "wordCloud": "☁️ Knowledge Word Cloud",
+    "streakDays": "day streak",
+    "qaKnowledge": "Q&A entries",
+    "noData": "No data"
+  },
+
+  "options": {
+    "subtitle": "Configuration & Bookmark Graph",
+    "tabSettings": "⚙ Settings",
+    "tabBookmarks": "🕸 Bookmark Graph",
+    "apiProtocol": "API Protocol",
+    "openaiCompat": "OpenAI Compatible (ChatGPT / DeepSeek / Local Proxy etc.)",
+    "claudeOfficial": "Claude (Anthropic Official)",
+    "protocolNote": "Most third-party services and local proxies use OpenAI-compatible protocol",
+    "apiUrlPlaceholder": "https://api.openai.com",
+    "apiKeyNote": "Data stored securely in Chrome local storage, never uploaded to any server",
+    "modelPlaceholder": "gpt-4o",
+    "modelNote": "e.g. claude-sonnet-4-6, gpt-4o, deepseek-chat, etc.",
+    "behaviorSettings": "Behavior",
+    "autoExtractLabel": "Auto-extract page content when sidebar opens",
+    "autoExtractNote": "Disable to manually click the extract button",
+    "autoSaveLabel": "Auto-save AI responses to knowledge base",
+    "autoSaveNote": "Auto-save after each response (can be disabled in sidebar)",
+    "appearance": "Appearance",
+    "dataManagement": "Data Management",
+    "exportMd": "Export Knowledge Base (Markdown)",
+    "exportJson": "Export Knowledge Base (JSON)",
+    "clearData": "Clear All Data",
+    "clearDataConfirm": "Are you sure you want to clear all knowledge base data? This action cannot be undone.",
+    "clearDataConfirm2": "Confirm again: This will permanently delete all saved knowledge entries.",
+    "dataCleared": "All data cleared",
+    "exportNote": "Exported knowledge base files can be backed up or imported into other tools",
+    "shortcutsTitle": "Keyboard Shortcuts",
+    "shortcutsHint": "Customize shortcuts within the sidebar. Click a shortcut and press a new key combination to change it.",
+    "resetShortcuts": "Reset to Default",
+    "chromeShortcutsGuide": "To modify browser-wide shortcuts (e.g. open sidebar), go to",
+    "saveBtn": "Save Settings",
+    "savedStatus": "Settings saved ✓",
+    "docmindGateway": "DocMind AI Gateway",
+    "optional": "Optional",
+    "docmindNote": "Reuse DocMind's AI configuration. Not available when DocMind is not connected.",
+    "notConnected": "Not connected",
+    "connected": "DocMind connected",
+    "syncConfig": "Sync DocMind Config",
+    "showModels": "Show Available Models",
+    "viewUsage": "View Usage Stats",
+    "configConflict": "⚠ Config Conflict",
+    "useRemote": "Use DocMind Config",
+    "keepLocal": "Keep Local Config"
+  },
+
+  "popup": {
+    "openSidebar": "Open Sidebar",
+    "startChat": "Start Q&A",
+    "quickSummary": "Summarize Page",
+    "quickSummaryDesc": "Extract key points instantly",
+    "knowledgeBase": "Knowledge Base",
+    "knowledgeBaseDesc": "View saved knowledge",
+    "bookmarkGraph": "Bookmark Graph",
+    "bookmarkGraphDesc": "Browse and manage bookmarks",
+    "settings": "⚙️ Settings",
+    "statsFormat": "{{entries}} entries · {{tags}} tags",
+    "bookmarkCount": "{{count}} bookmarks"
+  },
+
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "welcome": "Welcome"
+  },
+
+  "toasts": {
+    "saved": "Saved",
+    "deleted": "Deleted",
+    "copied": "Copied to clipboard",
+    "error": "Operation failed",
+    "networkError": "Network error, please check your connection"
+  },
+
+  "tabSelector": {
+    "title": "📑 Select tabs to analyze",
+    "hint": "Up to 5 tabs can be analyzed simultaneously. Content will be merged for AI analysis.",
+    "selectedCount": "{{count}} selected",
+    "cancel": "Cancel",
+    "confirm": "Analyze"
+  },
+
+  "templates": {
+    "title": "Prompt Templates",
+    "new": "➕ New",
+    "name": "Template Name",
+    "namePlaceholder": "e.g. Code Review",
+    "content": "Template Content",
+    "contentPlaceholder": "Use {{variableName}} as placeholders",
+    "category": "Category",
+    "code": "Code",
+    "debug": "Debug",
+    "learning": "Learn",
+    "custom": "Custom"
+  },
+
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{{n}} min ago",
+    "hoursAgo": "{{n}} hr ago",
+    "daysAgo": "{{n}} days ago",
+    "weeksAgo": "{{n}} weeks ago"
+  },
+
+  "errors": {
+    "apiKeyRequired": "Please enter an API Key first",
+    "testing": "Testing...",
+    "testFailed": "Test failed",
+    "loadFailed": "Load failed"
+  }
+}

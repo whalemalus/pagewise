@@ -6628,3 +6628,163 @@ body.dark ::selection {
   font-weight: 600;
   flex-shrink: 0;
 }
+
+/* ==================== RTL / 逻辑属性支持 ==================== */
+
+[dir="rtl"] .header {
+  direction: rtl;
+}
+
+[dir="rtl"] .tabs {
+  direction: rtl;
+}
+
+[dir="rtl"] .page-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .input-wrapper {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .input-hint {
+  text-align: right;
+}
+
+[dir="rtl"] .welcome-message {
+  text-align: right;
+}
+
+[dir="rtl"] .quick-actions {
+  direction: rtl;
+}
+
+[dir="rtl"] .history-toolbar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .template-popup-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .knowledge-toolbar {
+  direction: rtl;
+}
+
+[dir="rtl"] .knowledge-actions {
+  direction: rtl;
+}
+
+[dir="rtl"] .detail-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .detail-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .settings-form {
+  direction: rtl;
+  text-align: right;
+}
+
+[dir="rtl"] .settings-form label {
+  text-align: right;
+}
+
+[dir="rtl"] .branch-bar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .branch-bar-actions {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+[dir="rtl"] .review-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .review-rating .rating-buttons {
+  direction: rtl;
+}
+
+[dir="rtl"] .batch-toolbar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .batch-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .graph-toolbar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .bookmarks-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .bookmarks-header-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .wiki-toolbar {
+  direction: rtl;
+}
+
+[dir="rtl"] .wiki-pagination {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .wiki-detail-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tab-selector-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .tab-selector-footer {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .onboarding-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .skills-filter {
+  direction: rtl;
+}
+
+[dir="rtl"] .skills-create-bar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .skill-editor-header {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .skill-editor-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .provider-cards {
+  direction: rtl;
+}
+
+[dir="rtl"] .profile-bar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .logs-toolbar {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .logs-actions {
+  flex-direction: row-reverse;
+}
+
+[dir="rtl"] .backup-actions {
+  flex-direction: row-reverse;
+}

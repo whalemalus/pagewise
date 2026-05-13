@@ -1,0 +1,328 @@
+{
+  "app": {
+    "name": "智阅",
+    "fullName": "智阅 PageWise",
+    "description": "浏览技术网页时即时向 AI 提问，回答自动归档到本地知识库",
+    "version": "v2.4.0"
+  },
+
+  "tabs": {
+    "chat": "问答",
+    "skills": "技能",
+    "knowledge": "知识",
+    "wiki": "Wiki",
+    "page": "页面",
+    "settings": "设置",
+    "bookmarks": "书签",
+    "logs": "日志"
+  },
+
+  "sidebar": {
+    "welcomeTitle": "你好！我是你的技术知识助手",
+    "welcomeDesc": "浏览网页时遇到不懂的技术内容，直接问我就好。",
+    "loading": "加载中...",
+    "screenshotBtn": "截图提问",
+    "extractBtn": "提取页面内容",
+    "refreshBtn": "刷新",
+    "historyHeaderBtn": "历史对话",
+    "exportBtn": "导出对话为 Markdown",
+    "clearBtn": "清空对话",
+    "inputPlaceholder": "输入问题... (Shift+Enter 换行)",
+    "sendBtn": "发送",
+    "stopBtn": "停止回答",
+    "attachedText": "已附带选中文本",
+    "screenshotAttached": "📸 截图已附加",
+    "removeScreenshot": "移除截图"
+  },
+
+  "quickActions": {
+    "summarize": "📋 总结当前页面",
+    "explain": "💡 解释选中内容",
+    "multiTab": "📑 分析所有标签页",
+    "history": "🕐 历史对话"
+  },
+
+  "review": {
+    "title": "📚 知识复习",
+    "showAnswer": "显示答案",
+    "selectDifficulty": "请选择你的掌握程度",
+    "again": "重来",
+    "hard": "困难",
+    "good": "良好",
+    "easy": "简单",
+    "dayHint": "天",
+    "planHint": "按计划",
+    "doubleHint": "加倍",
+    "completed": "复习完成！",
+    "done": "完成",
+    "daysStreak": "天连续复习",
+    "longest": "最长",
+    "startReview": "开始复习"
+  },
+
+  "history": {
+    "searchPlaceholder": "搜索历史对话...",
+    "clearAll": "清空全部",
+    "branchFrom": "分支自: ...",
+    "returnMain": "返回主对话"
+  },
+
+  "knowledge": {
+    "entries": "📚 知识条目",
+    "highlights": "📌 高亮标注",
+    "graph": "🕸️ 图谱",
+    "learningPath": "🗺️ 学习路径",
+    "searchPlaceholder": "搜索知识库...",
+    "selectMode": "☑️ 选择模式",
+    "import": "导入",
+    "exportMd": "导出 MD",
+    "exportJson": "导出 JSON",
+    "selectAll": "全选",
+    "selectedCount": "已选 {{count}} 条",
+    "batchTag": "🏷️ 批量打标签",
+    "batchDelete": "🗑️ 批量删除",
+    "batchExport": "📤 批量导出",
+    "exitSelect": "退出选择",
+    "emptyTitle": "还没有保存的知识条目",
+    "emptyDesc": "在问答中点击「保存」即可添加到知识库",
+    "backToList": "← 返回列表",
+    "edit": "编辑",
+    "delete": "删除",
+    "relatedKnowledge": "🔗 相关知识",
+    "highlightCount": "{{count}} 条高亮",
+    "clearAllHighlights": "清空全部",
+    "emptyHighlights": "还没有高亮标注",
+    "emptyHighlightsDesc": "选中文本后使用高亮功能保存",
+    "graphSearch": "🔍 搜索节点...",
+    "backToFull": "↩️ 返回全景",
+    "exportImage": "📸 导出图片",
+    "refreshGraph": "🔄 刷新图谱",
+    "generateLearningPath": "🤖 生成学习路径",
+    "emptyLearningPath": "点击上方按钮，AI 将基于你的知识库生成个性化学习路径",
+    "viewDetail": "查看详情"
+  },
+
+  "wiki": {
+    "searchPlaceholder": "搜索 Wiki...",
+    "all": "📋 全部",
+    "entity": "🏷️ 实体",
+    "concept": "💡 概念",
+    "qa": "❓ 知识",
+    "emptyTitle": "Wiki 还没有内容",
+    "emptyDesc": "使用知识库的自动分类功能后，实体和概念会自动出现在这里",
+    "backToList": "← 返回列表",
+    "backlinks": "🔗 反向链接",
+    "prevPage": "← 上一页",
+    "nextPage": "下一页 →"
+  },
+
+  "skills": {
+    "summary": "加载中...",
+    "all": "全部",
+    "code": "代码",
+    "debug": "调试",
+    "doc": "文档",
+    "learning": "学习",
+    "export": "导出",
+    "custom": "自定义",
+    "store": "商店",
+    "importBtn": "📥 导入",
+    "createSkill": "➕ 创建技能",
+    "editorTitle": "创建自定义技能",
+    "skillName": "技能名称",
+    "skillNamePlaceholder": "例如：代码翻译",
+    "description": "描述",
+    "descPlaceholder": "简要描述技能的功能",
+    "category": "分类",
+    "promptTemplate": "Prompt 模板",
+    "promptPlaceholder": "使用 {{变量名}} 作为变量占位符，例如：\n请将以下代码翻译为 {{targetLanguage}}：\n\n{{code}}",
+    "triggerMethod": "触发方式",
+    "manualTrigger": "手动触发",
+    "autoTrigger": "自动触发",
+    "cancel": "取消",
+    "save": "保存",
+    "hint1": "技能会根据页面内容自动推荐，也可以手动触发。",
+    "hint2": "AI 在回答时可通过 [SKILL:id] 指令自动调用技能。"
+  },
+
+  "page": {
+    "title": "页面内容",
+    "multiTab": "📑 分析所有标签页",
+    "emptyTitle": "打开侧边栏后自动提取页面内容"
+  },
+
+  "bookmarks": {
+    "title": "🔖 书签图谱",
+    "fullGraph": "📊 完整图谱",
+    "refresh": "刷新书签",
+    "searchPlaceholder": "搜索书签...",
+    "allFolders": "📁 全部",
+    "emptyTitle": "暂无书签",
+    "emptyDesc": "Chrome 中的书签将显示在这里",
+    "backToList": "← 返回列表",
+    "similarBookmarks": "🔗 相似书签"
+  },
+
+  "logs": {
+    "allLevels": "全部级别",
+    "allModules": "全部模块",
+    "refresh": "刷新日志",
+    "clear": "清除日志",
+    "export": "导出日志",
+    "empty": "暂无日志记录"
+  },
+
+  "settings": {
+    "apiConfig": "API 配置",
+    "aiProvider": "AI 服务商",
+    "profile": "默认配置",
+    "saveProfile": "保存",
+    "deleteProfile": "删除",
+    "apiUrl": "API 地址",
+    "apiKey": "API Key",
+    "apiKeyPlaceholder": "sk-ant-... 或 sk-...",
+    "apiKeyNote": "数据仅存储在本地，不会上传到任何服务器",
+    "model": "模型",
+    "selectModel": "选择模型...",
+    "manualModel": "或手动输入模型名称",
+    "fetchModels": "获取模型",
+    "testConnection": "测试连接",
+    "maxTokens": "最大输出长度",
+    "autoExtract": "打开侧边栏时自动提取页面内容",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeAuto": "跟随系统",
+    "saveSettings": "保存设置",
+    "saved": "已保存 ✓",
+    "evolutionTitle": "助手进化状态",
+    "resetEvolution": "重置进化数据",
+    "statsTitle": "📊 使用统计",
+    "resetStats": "重置统计数据",
+    "onboardingTitle": "🚀 新手引导",
+    "onboardingDesc": "如果你想重新查看首次使用引导，点击下方按钮。",
+    "retriggerOnboarding": "重新触发引导",
+    "backupTitle": "💾 数据备份",
+    "backupDesc": "导出或导入所有设置和知识库数据，方便迁移或备份恢复。",
+    "exportBackup": "📦 导出备份",
+    "importBackup": "📥 导入备份",
+    "commonSkills": "🏆 常用技能 Top 5",
+    "hotTags": "🏷️ 热门标签 Top 5",
+    "knowledgeGrowth": "📈 知识增长趋势（按周）",
+    "usageTrend": "📊 最近 7 天使用趋势",
+    "wordCloud": "☁️ 知识词云",
+    "streakDays": "天连续学习",
+    "qaKnowledge": "条 Q&A 知识",
+    "noData": "暂无数据"
+  },
+
+  "options": {
+    "subtitle": "配置与书签图谱",
+    "tabSettings": "⚙ 设置",
+    "tabBookmarks": "🕸 书签图谱",
+    "apiProtocol": "API 协议",
+    "openaiCompat": "OpenAI 兼容 (ChatGPT / DeepSeek / 本地代理等)",
+    "claudeOfficial": "Claude (Anthropic 官方)",
+    "protocolNote": "大多数第三方服务和本地代理都使用 OpenAI 兼容协议",
+    "apiUrlPlaceholder": "https://api.openai.com",
+    "apiKeyNote": "数据安全存储在 Chrome 本地，不会上传到任何服务器",
+    "modelPlaceholder": "gpt-4o",
+    "modelNote": "如 claude-sonnet-4-6、gpt-4o、deepseek-chat 等",
+    "behaviorSettings": "行为设置",
+    "autoExtractLabel": "打开侧边栏时自动提取页面内容",
+    "autoExtractNote": "关闭后需要手动点击提取按钮",
+    "autoSaveLabel": "自动保存 AI 回答到知识库",
+    "autoSaveNote": "每次回答后自动保存（可在侧边栏中关闭）",
+    "appearance": "外观",
+    "dataManagement": "数据管理",
+    "exportMd": "导出知识库 (Markdown)",
+    "exportJson": "导出知识库 (JSON)",
+    "clearData": "清除所有数据",
+    "clearDataConfirm": "确定要清除所有知识库数据吗？此操作不可恢复。",
+    "clearDataConfirm2": "再次确认：这将永久删除所有保存的知识条目。",
+    "dataCleared": "所有数据已清除",
+    "exportNote": "导出的知识库文件可以备份或导入到其他工具中",
+    "shortcutsTitle": "快捷键",
+    "shortcutsHint": "自定义侧边栏内的快捷键。点击快捷键后按新的组合键即可修改。",
+    "resetShortcuts": "恢复默认",
+    "chromeShortcutsGuide": "如需修改浏览器全局快捷键（如打开侧边栏），请前往",
+    "saveBtn": "保存设置",
+    "savedStatus": "设置已保存 ✓",
+    "docmindGateway": "DocMind AI 网关",
+    "optional": "可选",
+    "docmindNote": "复用 DocMind 的 AI 配置，只需配置一次。未连接 DocMind 时此功能不可用。",
+    "notConnected": "未连接",
+    "connected": "DocMind 已连接",
+    "syncConfig": "同步 DocMind 配置",
+    "showModels": "查看可用模型",
+    "viewUsage": "查看用量统计",
+    "configConflict": "⚠ 配置冲突",
+    "useRemote": "使用 DocMind 配置",
+    "keepLocal": "保留本地配置"
+  },
+
+  "popup": {
+    "openSidebar": "打开侧边栏",
+    "startChat": "开始问答",
+    "quickSummary": "总结当前页面",
+    "quickSummaryDesc": "一键提取要点",
+    "knowledgeBase": "知识库",
+    "knowledgeBaseDesc": "查看已保存的知识",
+    "bookmarkGraph": "书签图谱",
+    "bookmarkGraphDesc": "浏览和管理书签",
+    "settings": "⚙️ 设置",
+    "statsFormat": "{{entries}} 条知识 · {{tags}} 个标签",
+    "bookmarkCount": "{{count}} 个书签"
+  },
+
+  "onboarding": {
+    "skip": "跳过",
+    "next": "下一步",
+    "welcome": "欢迎"
+  },
+
+  "toasts": {
+    "saved": "已保存",
+    "deleted": "已删除",
+    "copied": "已复制到剪贴板",
+    "error": "操作失败",
+    "networkError": "网络错误，请检查连接"
+  },
+
+  "tabSelector": {
+    "title": "📑 选择要分析的标签页",
+    "hint": "最多同时分析 5 个标签页，内容将合并后交给 AI 联合分析",
+    "selectedCount": "已选 {{count}} 个",
+    "cancel": "取消",
+    "confirm": "确认分析"
+  },
+
+  "templates": {
+    "title": "Prompt 模板",
+    "new": "➕ 新建",
+    "name": "模板名称",
+    "namePlaceholder": "例如：代码审查",
+    "content": "模板内容",
+    "contentPlaceholder": "使用 {{变量名}} 作为占位符",
+    "category": "分类",
+    "code": "代码",
+    "debug": "调试",
+    "learning": "学习",
+    "custom": "自定义"
+  },
+
+  "time": {
+    "justNow": "刚刚",
+    "minutesAgo": "{{n}} 分钟前",
+    "hoursAgo": "{{n}} 小时前",
+    "daysAgo": "{{n}} 天前",
+    "weeksAgo": "{{n}} 周前"
+  },
+
+  "errors": {
+    "apiKeyRequired": "请先填写 API Key",
+    "testing": "测试中...",
+    "testFailed": "测试失败",
+    "loadFailed": "加载失败"
+  }
+}

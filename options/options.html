@@ -9,65 +9,65 @@
 <body>
   <div class="options-container">
     <header class="options-header">
-      <h1>智阅 PageWise</h1>
-      <p class="subtitle">配置与书签图谱</p>
+      <h1 data-i18n="app.fullName">智阅 PageWise</h1>
+      <p class="subtitle" data-i18n="options.subtitle">配置与书签图谱</p>
     </header>
 
     <!-- Tab 导航 -->
     <nav class="tab-nav" id="tabNav">
-      <button class="tab-btn active" data-tab="settings">⚙ 设置</button>
-      <button class="tab-btn" data-tab="bookmark">🕸 书签图谱</button>
+      <button class="tab-btn active" data-tab="settings"data-i18n="options.tabSettings">⚙ 设置</button>
+      <button class="tab-btn" data-tab="bookmark"data-i18n="options.tabBookmarks">🕸 书签图谱</button>
     </nav>
 
     <!-- 设置标签页 -->
     <div id="settings-panel">
     <main class="options-main">
       <section class="section">
-        <h2>API 配置</h2>
+        <h2 data-i18n="options.apiConfig">API 配置</h2>
 
         <div class="form-group">
-          <label for="apiProtocol">API 协议</label>
+          <label for="apiProtocol" data-i18n="options.apiProtocol">API 协议</label>
           <select id="apiProtocol">
             <option value="openai">OpenAI 兼容 (ChatGPT / DeepSeek / 本地代理等)</option>
             <option value="claude">Claude (Anthropic 官方)</option>
           </select>
-          <small>大多数第三方服务和本地代理都使用 OpenAI 兼容协议</small>
+          <small data-i18n="options.protocolNote">大多数第三方服务和本地代理都使用 OpenAI 兼容协议</small>
         </div>
 
         <div class="form-group">
-          <label for="apiBaseUrl">API 地址</label>
-          <input type="text" id="apiBaseUrl" placeholder="https://api.openai.com">
+          <label for="apiBaseUrl" data-i18n="options.apiUrl">API 地址</label>
+          <input type="text" id="apiBaseUrl" data-i18n-placeholder="options.apiUrlPlaceholder" placeholder="https://api.openai.com">
           <small>Claude: https://api.anthropic.com&nbsp;&nbsp;|&nbsp;&nbsp;OpenAI: https://api.openai.com&nbsp;&nbsp;|&nbsp;&nbsp;也支持第三方兼容接口</small>
         </div>
 
         <div class="form-group">
-          <label for="apiKey">API Key</label>
-          <input type="password" id="apiKey" placeholder="sk-ant-... 或 sk-...">
-          <small>数据安全存储在 Chrome 本地，不会上传到任何服务器</small>
+          <label for="apiKey" data-i18n="options.apiKey">API Key</label>
+          <input type="password" id="apiKey" data-i18n-placeholder="options.apiKeyPlaceholder" placeholder="sk-ant-... 或 sk-...">
+          <small data-i18n="options.apiKeyNote">数据安全存储在 Chrome 本地，不会上传到任何服务器</small>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="model">模型名称</label>
-            <input type="text" id="model" placeholder="gpt-4o">
-            <small>如 claude-sonnet-4-6、gpt-4o、deepseek-chat 等</small>
+            <label for="model" data-i18n="settings.model">模型名称</label>
+            <input type="text" id="model" data-i18n-placeholder="options.modelPlaceholder" placeholder="gpt-4o">
+            <small data-i18n="options.modelNote">如 claude-sonnet-4-6、gpt-4o、deepseek-chat 等</small>
           </div>
 
           <div class="form-group">
-            <label for="maxTokens">最大输出长度</label>
+            <label for="maxTokens" data-i18n="settings.maxTokens">最大输出长度</label>
             <input type="number" id="maxTokens" value="4096" min="256" max="16384" step="256">
           </div>
         </div>
 
         <div class="test-row">
-          <button class="btn-secondary" id="btnTestConnection">测试连接</button>
+          <button class="btn-secondary" id="btnTestConnection"data-i18n="options.testConnection">测试连接</button>
           <span id="testResult" class="test-result hidden"></span>
         </div>
       </section>
 
       <section class="section" id="aiGatewaySection">
-        <h2>DocMind AI 网关 <span class="badge-optional">可选</span></h2>
-        <small>复用 DocMind 的 AI 配置，只需配置一次。未连接 DocMind 时此功能不可用。</small>
+        <h2 data-i18n="options.docmindGateway">DocMind AI 网关</h2> <span class="badge-optional" data-i18n="options.optional">可选</span>
+        <small data-i18n="options.docmindNote">复用 DocMind 的 AI 配置，只需配置一次。未连接 DocMind 时此功能不可用。</small>
 
         <div id="aiGatewayStatus" class="gateway-status">
           <span class="status-dot" id="gatewayDot"></span>
@@ -103,13 +103,13 @@
       </section>
 
       <section class="section">
-        <h2>行为设置</h2>
+        <h2 data-i18n="options.behaviorSettings">行为设置</h2>
         <div class="form-group">
           <label class="checkbox-label">
             <input type="checkbox" id="autoExtract">
             打开侧边栏时自动提取页面内容
           </label>
-          <small>关闭后需要手动点击提取按钮</small>
+          <small data-i18n="options.autoExtractNote">关闭后需要手动点击提取按钮</small>
         </div>
 
         <div class="form-group">
@@ -117,14 +117,14 @@
             <input type="checkbox" id="autoSave">
             自动保存 AI 回答到知识库
           </label>
-          <small>每次回答后自动保存（可在侧边栏中关闭）</small>
+          <small data-i18n="options.autoSaveNote">每次回答后自动保存（可在侧边栏中关闭）</small>
         </div>
       </section>
 
       <section class="section">
-        <h2>外观</h2>
+        <h2 data-i18n="options.appearance">外观</h2>
         <div class="form-group">
-          <label for="theme">主题</label>
+          <label for="theme" data-i18n="settings.theme">主题</label>
           <select id="theme">
             <option value="light">浅色</option>
             <option value="dark">深色</option>
@@ -134,21 +134,21 @@
       </section>
 
       <section class="section">
-        <h2>数据管理</h2>
+        <h2 data-i18n="options.dataManagement">数据管理</h2>
         <div class="data-actions">
-          <button class="btn-secondary" id="btnExportMd">导出知识库 (Markdown)</button>
-          <button class="btn-secondary" id="btnExportJson">导出知识库 (JSON)</button>
-          <button class="btn-danger" id="btnClearData">清除所有数据</button>
+          <button class="btn-secondary" id="btnExportMd"data-i18n="options.exportMd">导出知识库 (Markdown)</button>
+          <button class="btn-secondary" id="btnExportJson"data-i18n="options.exportJson">导出知识库 (JSON)</button>
+          <button class="btn-danger" id="btnClearData"data-i18n="options.clearData">清除所有数据</button>
         </div>
-        <small>导出的知识库文件可以备份或导入到其他工具中</small>
+        <small data-i18n="options.exportNote">导出的知识库文件可以备份或导入到其他工具中</small>
       </section>
 
       <section class="section shortcuts-section">
-        <h2>快捷键</h2>
-        <p class="shortcut-hint">自定义侧边栏内的快捷键。点击快捷键后按新的组合键即可修改。</p>
+        <h2 data-i18n="options.shortcutsTitle">快捷键</h2>
+        <p class="shortcut-hint" data-i18n="options.shortcutsHint">自定义侧边栏内的快捷键。点击快捷键后按新的组合键即可修改。</p>
         <div id="shortcutsList" class="shortcuts-list"></div>
         <div class="shortcut-actions">
-          <button class="btn-secondary" id="btnResetShortcuts">恢复默认</button>
+          <button class="btn-secondary" id="btnResetShortcuts"data-i18n="options.resetShortcuts">恢复默认</button>
         </div>
         <div class="shortcut-chrome-guide">
           <p>如需修改浏览器全局快捷键（如打开侧边栏），请前往
@@ -158,8 +158,8 @@
       </section>
 
       <div class="form-actions">
-        <button class="btn-primary" id="btnSave">保存设置</button>
-        <div id="saveStatus" class="save-status hidden">设置已保存 ✓</div>
+        <button class="btn-primary" id="btnSave"data-i18n="options.saveBtn">保存设置</button>
+        <div id="saveStatus" class="save-status hidden" data-i18n="options.savedStatus">设置已保存 ✓</div>
       </div>
     </main>
     </div>

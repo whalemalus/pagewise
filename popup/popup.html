@@ -9,50 +9,51 @@
 <body>
   <div class="popup">
     <div class="popup-header">
-      <h1>智阅 PageWise</h1>
-      <span class="version">v2.4.0</span>
+      <h1 data-i18n="app.fullName">智阅 PageWise</h1>
+      <span class="version" data-i18n="app.version">v2.4.0</span>
     </div>
 
     <div class="popup-body">
       <button class="popup-btn primary" id="btnOpenSidebar">
         <span class="btn-icon">💬</span>
         <div class="btn-text">
-          <span class="btn-label">打开侧边栏</span>
-          <span class="btn-desc">开始问答</span>
+          <span class="btn-label" data-i18n="popup.openSidebar">打开侧边栏</span>
+          <span class="btn-desc" data-i18n="popup.startChat">开始问答</span>
         </div>
       </button>
 
       <button class="popup-btn" id="btnQuickSummary">
         <span class="btn-icon">📋</span>
         <div class="btn-text">
-          <span class="btn-label">总结当前页面</span>
-          <span class="btn-desc">一键提取要点</span>
+          <span class="btn-label" data-i18n="popup.quickSummary">总结当前页面</span>
+          <span class="btn-desc" data-i18n="popup.quickSummaryDesc">一键提取要点</span>
         </div>
       </button>
 
       <button class="popup-btn" id="btnKnowledge">
         <span class="btn-icon">📚</span>
         <div class="btn-text">
-          <span class="btn-label">知识库</span>
-          <span class="btn-desc">查看已保存的知识</span>
+          <span class="btn-label" data-i18n="popup.knowledgeBase">知识库</span>
+          <span class="btn-desc" data-i18n="popup.knowledgeBaseDesc">查看已保存的知识</span>
         </div>
       </button>
 
       <button class="popup-btn" id="btnBookmarks">
         <span class="btn-icon">🔖</span>
         <div class="btn-text">
-          <span class="btn-label">书签图谱</span>
-          <span class="btn-desc">浏览和管理书签</span>
+          <span class="btn-label" data-i18n="popup.bookmarkGraph">书签图谱</span>
+          <span class="btn-desc" data-i18n="popup.bookmarkGraphDesc">浏览和管理书签</span>
         </div>
       </button>
     </div>
 
     <div class="popup-footer">
-      <button class="link-btn" id="btnSettings">⚙️ 设置</button>
-      <span class="stats" id="statsInfo">加载中...</span>
+      <button class="link-btn" id="btnSettings"data-i18n="popup.settings">⚙️ 设置</button>
+      <span class="stats" id="statsInfo" data-i18n="sidebar.loading">加载中...</span>
     </div>
   </div>
 
+  <script type="module" src="../lib/i18n.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
