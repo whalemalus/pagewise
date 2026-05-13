@@ -1,11 +1,14 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "default_locale": "zh_CN",
   "description": "__MSG_extDescription__",
   "author": "PageWise",
   "minimum_chrome_version": "110",
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self';"
+  },
   "permissions": [
     "storage",
     "sidePanel",
