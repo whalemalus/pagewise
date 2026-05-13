@@ -10,7 +10,7 @@ import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 
 // ============================================================
-// DOM Mock — Minimal HTMLElement for KnowledgePanel
+// DOM Mock — Minimal HTMLElement + document for KnowledgePanel
 // ============================================================
 
 class MockElement {
@@ -77,9 +77,30 @@ class MockIntersectionObserver {
   static instances = [];
 }
 
+// Provide a minimal `document` global so KnowledgePanel can call
+// document.createElement() / document.createDocumentFragment() in Node.
+if (typeof globalThis.document === 'undefined') {
+  globalThis.document = {
+    createElement(tag) { return new MockElement(tag); },
+    createDocumentFragment() {
+      const frag = new MockElement('fragment');
+      frag._isFragment = true;
+      return frag;
+    },
+    body: {
+      appendChild(c) { /* no-op */ },
+      removeChild(c) { /* no-op */ },
+    },
+  };
+}
+
+// Provide IntersectionObserver globally for KnowledgePanel
+if (typeof globalThis.IntersectionObserver === 'undefined') {
+  globalThis.IntersectionObserver = MockIntersectionObserver;
+}
+
 function createMockMemory(entries = []) {
-  return {
-    kb: { constructor: { RELEVANCE_MODE: 'relevance' } },
+  const memory = {
     getAllEntries: async (limit) => entries.slice(0, limit || entries.length),
     getEntry: async (id) => entries.find(e => e.id === id) || null,
     deleteEntry: async (id) => {
@@ -88,21 +109,70 @@ function createMockMemory(entries = []) {
       return false;
     },
     saveEntry: async (data) => ({ id: `new-${Date.now()}`, ...data }),
-    getAllLanguages: async () => {
-      const langs = new Set();
-      entries.forEach(e => { if (e.language) langs.add(e.language); });
-      return [...langs];
-    },
     getAllTags: async () => {
-      const tags = new Set();
-      entries.forEach(e => (e.tags || []).forEach(t => tags.add(t)));
-      return [...tags];
+      const tagMap = new Map();
+      entries.forEach(e => (e.tags || []).forEach(t => tagMap.set(t, (tagMap.get(t) || 0) + 1)));
+      return [...tagMap].map(([tag, count]) => ({ tag, count }));
     },
     recall: async () => [],
     searchByTag: async (tag) => entries.filter(e => e.tags?.includes(tag)),
     exportMarkdown: async () => entries.map(e => `# ${e.title}\n${e.content}`).join('\n\n'),
     exportJSON: async () => JSON.stringify(entries),
   };
+
+  // memory.kb — provide the same methods KnowledgePanel calls via this.memory.kb.*
+  memory.kb = {
+    constructor: { RELEVANCE_MODE: 'relevance', getSearchSuggestions: () => [] },
+    getAllEntries: memory.getAllEntries,
+    getAllLanguages: async () => {
+      const langs = new Map();
+      entries.forEach(e => {
+        const lang = e.language || 'other';
+        langs.set(lang, (langs.get(lang) || 0) + 1);
+      });
+      return [...langs].map(([language, count]) => ({ language, count }));
+    },
+    search: async (query) => {
+      const q = query.toLowerCase();
+      return entries.filter(e =>
+        (e.title || '').toLowerCase().includes(q) ||
+        (e.content || '').toLowerCase().includes(q) ||
+        (e.summary || '').toLowerCase().includes(q) ||
+        (e.question || '').toLowerCase().includes(q)
+      );
+    },
+    combinedSearch: async (query, limit) => {
+      const q = query.toLowerCase();
+      const matched = entries.filter(e =>
+        (e.title || '').toLowerCase().includes(q) ||
+        (e.content || '').toLowerCase().includes(q)
+      );
+      return matched.slice(0, limit).map(entry => ({ entry, score: 0.9, matchType: 'semantic' }));
+    },
+    batchDelete: async (ids) => {
+      let deleted = 0;
+      for (const id of ids) {
+        const idx = entries.findIndex(e => e.id === id);
+        if (idx >= 0) { entries.splice(idx, 1); deleted++; }
+      }
+      return deleted;
+    },
+    batchAddTag: async (ids, tag) => {
+      let updated = 0;
+      for (const id of ids) {
+        const entry = entries.find(e => e.id === id);
+        if (entry) {
+          if (!entry.tags) entry.tags = [];
+          if (!entry.tags.includes(tag)) entry.tags.push(tag);
+          updated++;
+        }
+      }
+      return updated;
+    },
+    findRelatedEntries: async () => [],
+  };
+
+  return memory;
 }
 
 function createPanel(memory, entries = []) {
@@ -120,7 +190,7 @@ function createPanel(memory, entries = []) {
     memory: memory || createMockMemory(entries),
     addSystemMessage: () => {},
     showToast: () => {},
-    escapeHtml: (s) => s.replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])),
+    escapeHtml: (s) => (s == null ? '' : String(s)).replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])),
     downloadFile: () => {},
     getSearchMode: () => 'keyword',
   };
