@@ -335,7 +335,7 @@
   - 测试: 37 用例 ✅
   - 复杂度: Simple
 
-- [ ] **R81: 引导向导 BookmarkOnboarding**
+- [x] **R81: 引导向导 BookmarkOnboarding**
   - 首次使用引导
   - 功能介绍
   - 隐私说明
