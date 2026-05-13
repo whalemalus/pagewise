@@ -177,11 +177,34 @@
   - CSS: --text-muted 修复 (3.3:1→4.69:1), 状态徽章对比度, focus-visible, .sr-only, forced-colors
   - 测试: 49 用例
 
+### ✅ R81: BookmarkOnboarding 引导向导
+- **描述**: 书签功能引导向导，首次安装时显示分步引导
+- **优先级**: P1
+- **验收标准**:
+  - 首次安装时显示欢迎引导页
+  - 介绍核心功能（书签采集、知识图谱、AI推荐）
+  - 引导用户完成初始设置（选择主题、启用自动采集）
+  - 引导完成后不再显示（状态持久化）
+- **实现**:
+  - `lib/bookmark-onboarding.js` — 纯逻辑模块，工厂函数注入 storage
+  - 4 步引导向导: welcome → features → theme → autoCollect
+  - 核心功能介绍: bookmarkCollect / knowledgeGraph / aiRecommend
+  - 主题选择: light / dark / system 三选项
+  - 自动采集开关: boolean 持久化
+  - 步骤导航: nextStep / prevStep / goToStep / getCurrentStepIndex
+  - 进度追踪: getProgress() 返回 current/total/percentage
+  - 状态持久化: chrome.storage.local 5 个 key
+  - 引导完成后不显示: shouldShowOnboarding() 检查 completed flag
+  - resetOnboarding() 支持设置中重新触发
+  - i18n: zh-CN / en-US 双语 locale 字符串
+  - 测试: 72 用例 ✅
+
 ---
 
 ## 需求变更记录
 
 | 日期 | 需求 | 变更内容 |
 |------|------|----------|
+| 2026-05-13 | R81 | 新增 BookmarkOnboarding 引导向导需求 |
 | 2026-05-13 | R79 | 新增 BookmarkAccessibility 无障碍支持需求 |
 | 2026-04-26 | 全部 | 初始化需求文档，从 product-spec.md 提取 |

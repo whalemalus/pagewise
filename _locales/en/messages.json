@@ -58,5 +58,29 @@
   "bookmarkOverviewViewGraph": {
     "message": "📊 View Full Graph",
     "description": "Button to open full graph view"
+  },
+  "bookmarkOnboardingWelcomeTitle": {
+    "message": "Welcome to Bookmark Assistant",
+    "description": "Onboarding welcome step title"
+  },
+  "bookmarkOnboardingWelcomeDesc": {
+    "message": "PageWise transforms your browser bookmarks into an intelligent knowledge network, helping you manage and discover knowledge more efficiently.",
+    "description": "Onboarding welcome step description"
+  },
+  "bookmarkOnboardingFeaturesTitle": {
+    "message": "Core Features",
+    "description": "Onboarding features step title"
+  },
+  "bookmarkOnboardingThemeTitle": {
+    "message": "Choose Theme",
+    "description": "Onboarding theme step title"
+  },
+  "bookmarkOnboardingAutoCollectTitle": {
+    "message": "Auto Collection",
+    "description": "Onboarding auto-collect step title"
+  },
+  "bookmarkOnboardingComplete": {
+    "message": "Setup complete! Start exploring your bookmark knowledge network.",
+    "description": "Onboarding completion message"
   }
 }

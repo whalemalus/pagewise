@@ -7,6 +7,19 @@
      7|## [Unreleased]
 
 ### 新增
+- **R81: BookmarkOnboarding 引导向导** — `lib/bookmark-onboarding.js`
+  - 首次安装分步引导: welcome → features → theme → autoCollect 四步向导
+  - 核心功能介绍: 智能书签采集、知识图谱、AI 智能推荐
+  - 初始设置: 主题选择（light/dark/system）、自动采集开关
+  - 状态持久化: chrome.storage.local 存储引导完成状态和用户偏好
+  - 步骤导航: nextStep / prevStep / goToStep，支持进度追踪
+  - 引导完成后不再显示: shouldShowOnboarding() 自动检测
+  - 重置功能: resetOnboarding() 支持设置页重新触发
+  - i18n: zh-CN / en-US 双语 locale 字符串（22 个 key）
+  - Chrome Web Store: `_locales/en/messages.json` 和 `_locales/zh_CN/messages.json` 同步更新
+  - 纯 ES Module，工厂函数注入 storage，不依赖 DOM/Chrome API
+  - 测试: 72 用例 ✅
+
 - **R80: BookmarkI18n 国际化** — `lib/bookmark-i18n.js`
   - 中英文界面切换: 与 `lib/i18n.js` 全局 i18n 系统集成
   - 所有用户可见字符串外部化: 42+ 个 i18n key 覆盖搜索/过滤/状态/统计/面板/详情/概览等

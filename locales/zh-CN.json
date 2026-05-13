@@ -281,6 +281,34 @@
     "welcome": "欢迎"
   },
 
+  "bookmarkOnboarding": {
+    "skip": "跳过",
+    "next": "下一步",
+    "back": "上一步",
+    "finish": "完成",
+    "progress": "第 {{current}} 步，共 {{total}} 步",
+    "welcomeTitle": "欢迎使用书签智能助手",
+    "welcomeDesc": "PageWise 可以将你的浏览器书签转化为智能知识网络，帮助你更高效地管理和发现知识。",
+    "featuresTitle": "核心功能",
+    "featuresDesc": "了解 PageWise 书签助手的三大核心能力。",
+    "featureCollectTitle": "智能书签采集",
+    "featureCollectDesc": "自动读取并分析你的浏览器书签，构建结构化知识索引。",
+    "featureGraphTitle": "知识图谱",
+    "featureGraphDesc": "将书签之间的关联关系可视化，发现隐藏的知识联系。",
+    "featureAITitle": "AI 智能推荐",
+    "featureAIDesc": "基于你的阅读习惯和知识结构，推荐有价值的学习内容。",
+    "themeTitle": "选择主题",
+    "themeDesc": "选择你喜欢的界面主题风格，可以随时在设置中更改。",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "autoCollectTitle": "自动采集",
+    "autoCollectDesc": "是否启用书签自动采集？启用后 PageWise 会自动分析新添加的书签。",
+    "autoCollectEnable": "启用自动采集",
+    "autoCollectDisable": "稍后手动配置",
+    "onboardingComplete": "设置完成！开始探索你的书签知识网络吧。"
+  },
+
   "toasts": {
     "saved": "已保存",
     "deleted": "已删除",

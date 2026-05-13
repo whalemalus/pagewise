@@ -58,5 +58,29 @@
   "bookmarkOverviewViewGraph": {
     "message": "📊 查看完整图谱",
     "description": "查看完整图谱按钮"
+  },
+  "bookmarkOnboardingWelcomeTitle": {
+    "message": "欢迎使用书签智能助手",
+    "description": "引导向导欢迎步骤标题"
+  },
+  "bookmarkOnboardingWelcomeDesc": {
+    "message": "PageWise 可以将你的浏览器书签转化为智能知识网络，帮助你更高效地管理和发现知识。",
+    "description": "引导向导欢迎步骤描述"
+  },
+  "bookmarkOnboardingFeaturesTitle": {
+    "message": "核心功能",
+    "description": "引导向导功能介绍步骤标题"
+  },
+  "bookmarkOnboardingThemeTitle": {
+    "message": "选择主题",
+    "description": "引导向导主题选择步骤标题"
+  },
+  "bookmarkOnboardingAutoCollectTitle": {
+    "message": "自动采集",
+    "description": "引导向导自动采集步骤标题"
+  },
+  "bookmarkOnboardingComplete": {
+    "message": "设置完成！开始探索你的书签知识网络吧。",
+    "description": "引导向导完成提示"
   }
 }

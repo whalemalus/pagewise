@@ -281,6 +281,34 @@
     "welcome": "Welcome"
   },
 
+  "bookmarkOnboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish",
+    "progress": "Step {{current}} of {{total}}",
+    "welcomeTitle": "Welcome to Bookmark Assistant",
+    "welcomeDesc": "PageWise transforms your browser bookmarks into an intelligent knowledge network, helping you manage and discover knowledge more efficiently.",
+    "featuresTitle": "Core Features",
+    "featuresDesc": "Discover the three core capabilities of PageWise Bookmark Assistant.",
+    "featureCollectTitle": "Smart Bookmark Collection",
+    "featureCollectDesc": "Automatically read and analyze your browser bookmarks to build a structured knowledge index.",
+    "featureGraphTitle": "Knowledge Graph",
+    "featureGraphDesc": "Visualize relationships between bookmarks and discover hidden knowledge connections.",
+    "featureAITitle": "AI Recommendations",
+    "featureAIDesc": "Get personalized learning recommendations based on your reading habits and knowledge structure.",
+    "themeTitle": "Choose Theme",
+    "themeDesc": "Select your preferred interface theme. You can change this anytime in settings.",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "autoCollectTitle": "Auto Collection",
+    "autoCollectDesc": "Enable automatic bookmark collection? PageWise will analyze newly added bookmarks automatically.",
+    "autoCollectEnable": "Enable Auto Collection",
+    "autoCollectDisable": "Configure Later",
+    "onboardingComplete": "Setup complete! Start exploring your bookmark knowledge network."
+  },
+
   "toasts": {
     "saved": "Saved",
     "deleted": "Deleted",
