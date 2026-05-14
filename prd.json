@@ -1,0 +1,43 @@
+{
+  "project": "PageWise",
+  "version": "2.5.0",
+  "phase": "QA",
+  "theme": "全系统完整测试",
+  "tasks": [
+    {
+      "id": "QA001",
+      "title": "需求符合度验证 — 对照 ROADMAP.md 逐项检查 R1-R105 所有迭代功能",
+      "status": "pending",
+      "priority": "critical",
+      "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    },
+    {
+      "id": "QA002",
+      "title": "功能正确性测试 — AI问答/知识库/书签/高亮/Wiki/学习路径/复习/技能/插件/导入导出",
+      "status": "pending",
+      "priority": "critical",
+      "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    },
+    {
+      "id": "QA003",
+      "title": "集成测试 — Service Worker↔Content Script通信/IndexedDB一致性/Chrome API兼容性",
+      "status": "pending",
+      "priority": "critical",
+      "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    },
+    {
+      "id": "QA004",
+      "title": "可靠性测试 — 错误处理/边界情况/SW休眠唤醒/数据迁移",
+      "status": "pending",
+      "priority": "high",
+      "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    },
+    {
+      "id": "QA005",
+      "title": "浏览器兼容性测试 — Chrome/Edge/Firefox MV3",
+      "status": "pending",
+      "priority": "medium",
+      "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    }
+  ]
+}
