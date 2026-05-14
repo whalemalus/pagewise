@@ -235,4 +235,214 @@ describe('BookmarkFolderAnalyzer', () => {
     original.push(createBookmark('2', 'T2', 'https://t2.com', ['B']));
     assert.equal(a.bookmarks.length, 1);
   });
+
+  // ---------- 9. analyzeFolderStructure ----------
+
+  it('analyzeFolderStructure 返回正确的结构摘要', () => {
+    const result = analyzer.analyzeFolderStructure();
+    assert.equal(typeof result.totalFolders, 'number');
+    assert.ok(result.totalFolders > 0);
+    assert.equal(result.maxDepth, 4);
+    assert.equal(typeof result.avgBookmarksPerFolder, 'number');
+    assert.ok(result.avgBookmarksPerFolder > 0);
+  });
+
+  it('analyzeFolderStructure 正确统计深度分布', () => {
+    const result = analyzer.analyzeFolderStructure();
+    assert.equal(typeof result.depthDistribution, 'object');
+    // depth 1: 设计
+    assert.ok(result.depthDistribution[1] >= 1, '应有 depth=1 的文件夹');
+    // depth 4: A/B/C/D
+    assert.ok(result.depthDistribution[4] >= 1, '应有 depth=4 的文件夹');
+  });
+
+  it('analyzeFolderStructure 正确统计宽度分布', () => {
+    const result = analyzer.analyzeFolderStructure();
+    assert.equal(typeof result.widthDistribution, 'object');
+    // 0-5: 后端(2), 设计(1), A(1), A/B(1), A/B/C(1), A/B/C/D(1)
+    assert.ok('0-5' in result.widthDistribution);
+    // 50+: 开发/数据库(55)
+    assert.ok('50+' in result.widthDistribution);
+  });
+
+  it('analyzeFolderStructure 空数据返回零值', () => {
+    const result = emptyAnalyzer.analyzeFolderStructure();
+    assert.equal(result.totalFolders, 0);
+    assert.equal(result.maxDepth, 0);
+    assert.deepEqual(result.depthDistribution, {});
+    assert.deepEqual(result.widthDistribution, {});
+    assert.equal(result.avgBookmarksPerFolder, 0);
+  });
+
+  // ---------- 10. getDuplicateBookmarks ----------
+
+  it('getDuplicateBookmarks 能找到跨文件夹的重复 URL', () => {
+    const dupeBookmarks = [
+      createBookmark('d1', 'Google', 'https://google.com', ['搜索']),
+      createBookmark('d2', 'Google CN', 'https://google.com', ['搜索', '引擎']),
+      createBookmark('d3', 'Node', 'https://nodejs.org', ['开发']),
+      createBookmark('d4', 'Node Dup', 'https://nodejs.org', ['工具']),
+    ];
+    const a = new BookmarkFolderAnalyzer(dupeBookmarks);
+    const dupes = a.getDuplicateBookmarks();
+    assert.ok(dupes.length >= 2, '应检测到 2 个重复 URL');
+    const urls = dupes.map((d) => d.url);
+    assert.ok(urls.includes('https://google.com'));
+    assert.ok(urls.includes('https://nodejs.org'));
+  });
+
+  it('getDuplicateBookmarks 无重复时返回空数组', () => {
+    const unique = [
+      createBookmark('u1', 'A', 'https://a.com', ['X']),
+      createBookmark('u2', 'B', 'https://b.com', ['Y']),
+    ];
+    const a = new BookmarkFolderAnalyzer(unique);
+    assert.deepEqual(a.getDuplicateBookmarks(), []);
+  });
+
+  it('getDuplicateBookmarks 空数据返回空数组', () => {
+    assert.deepEqual(emptyAnalyzer.getDuplicateBookmarks(), []);
+  });
+
+  it('getDuplicateBookmarks 规范化 URL 后判定重复', () => {
+    const dupeBookmarks = [
+      createBookmark('n1', 'A', 'https://example.com/', ['X']),
+      createBookmark('n2', 'B', 'https://example.com', ['Y']),
+    ];
+    const a = new BookmarkFolderAnalyzer(dupeBookmarks);
+    const dupes = a.getDuplicateBookmarks();
+    assert.equal(dupes.length, 1, '去尾部斜杠后应判为重复');
+  });
+
+  it('getDuplicateBookmarks 同文件夹内不判为重复', () => {
+    const sameFolder = [
+      createBookmark('sf1', 'A', 'https://same.com', ['X']),
+      createBookmark('sf2', 'B', 'https://same.com', ['X']),
+    ];
+    const a = new BookmarkFolderAnalyzer(sameFolder);
+    const dupes = a.getDuplicateBookmarks();
+    assert.equal(dupes.length, 0, '同一文件夹内不算跨文件夹重复');
+  });
+
+  // ---------- 11. getFolderStats ----------
+
+  it('getFolderStats 返回每个叶子文件夹的统计', () => {
+    const stats = analyzer.getFolderStats();
+    assert.ok(Array.isArray(stats));
+    assert.ok(stats.length > 0);
+    for (const s of stats) {
+      assert.ok('folder' in s);
+      assert.ok('count' in s);
+      assert.ok('urls' in s);
+      assert.ok('lastModified' in s);
+    }
+  });
+
+  it('getFolderStats 正确统计每个文件夹的书签数', () => {
+    const stats = analyzer.getFolderStats();
+    const feStats = stats.find((s) => s.folder === '开发/前端');
+    assert.ok(feStats, '应有 "开发/前端" 统计');
+    assert.equal(feStats.count, 10);
+    assert.equal(feStats.urls.length, 10);
+  });
+
+  it('getFolderStats 空数据返回空数组', () => {
+    assert.deepEqual(emptyAnalyzer.getFolderStats(), []);
+  });
+
+  it('getFolderStats 包含 lastModified 时间', () => {
+    const bm = [
+      { id: '1', title: 'A', url: 'https://a.com', folderPath: ['X'], lastModified: '2025-01-01' },
+      { id: '2', title: 'B', url: 'https://b.com', folderPath: ['X'], lastModified: '2025-06-15' },
+    ];
+    const a = new BookmarkFolderAnalyzer(bm);
+    const stats = a.getFolderStats();
+    assert.equal(stats[0].lastModified, '2025-06-15', '应取最新修改时间');
+  });
+
+  // ---------- 12. suggestOrganization ----------
+
+  it('suggestOrganization 为空文件夹建议删除', () => {
+    const suggestions = analyzer.suggestOrganization();
+    // 设计文件夹只有 1 个书签 → underused → 建议合并
+    // 不应有 null suggestedName (除非是真正空文件夹)
+    assert.ok(Array.isArray(suggestions));
+  });
+
+  it('suggestOrganization 为拥挤文件夹建议子分类', () => {
+    const suggestions = analyzer.suggestOrganization();
+    const splitSuggestions = suggestions.filter(
+      (s) => s.folder === '开发/数据库' && s.suggestedName && s.suggestedName.includes('/')
+    );
+    assert.ok(splitSuggestions.length > 0, '应为拥挤文件夹生成子分类建议');
+  });
+
+  it('suggestOrganization 为过深文件夹建议扁平化', () => {
+    // A/B/C/D 是 4 层，不超过阈值 4，所以我们加一个更深的
+    const deepBookmarks = [
+      createBookmark('x1', 'X', 'https://x.com', ['E', 'F', 'G', 'H', 'I']),
+    ];
+    const a = new BookmarkFolderAnalyzer(deepBookmarks);
+    const suggestions = a.suggestOrganization();
+    const flatten = suggestions.find((s) => s.reason.includes('扁平化'));
+    assert.ok(flatten, '应为超深文件夹建议扁平化');
+    assert.equal(flatten.confidence, 0.6);
+  });
+
+  it('suggestOrganization 每个建议都有必要的字段', () => {
+    const suggestions = analyzer.suggestOrganization();
+    for (const s of suggestions) {
+      assert.ok('folder' in s, '应有 folder 字段');
+      assert.ok('suggestedName' in s, '应有 suggestedName 字段');
+      assert.ok('reason' in s, '应有 reason 字段');
+      assert.ok('confidence' in s, '应有 confidence 字段');
+      assert.ok(s.confidence >= 0 && s.confidence <= 1, 'confidence 应在 0-1 之间');
+    }
+  });
+
+  it('suggestOrganization 空数据返回空数组', () => {
+    assert.deepEqual(emptyAnalyzer.suggestOrganization(), []);
+  });
+
+  // ---------- 13. exportFolderTree ----------
+
+  it('exportFolderTree 默认导出 indented text', () => {
+    const text = analyzer.exportFolderTree();
+    assert.equal(typeof text, 'string');
+    assert.ok(text.length > 0);
+    // 应包含文件夹名
+    assert.ok(text.includes('开发'), '应包含 "开发"');
+    assert.ok(text.includes('前端'), '应包含 "前端"');
+  });
+
+  it('exportFolderTree text 格式使用缩进', () => {
+    const text = analyzer.exportFolderTree('text');
+    const lines = text.split('\n');
+    // 根级文件夹不应有缩进
+    const devLine = lines.find((l) => l.trimStart().startsWith('开发') && !l.startsWith(' '));
+    assert.ok(devLine, '根级文件夹应无缩进');
+    // 子文件夹应有缩进
+    const feLine = lines.find((l) => l.includes('前端'));
+    assert.ok(feLine.startsWith('  '), '子文件夹应有缩进');
+  });
+
+  it('exportFolderTree text 格式显示书签数量', () => {
+    const text = analyzer.exportFolderTree('text');
+    assert.ok(text.includes('(10)'), '应显示前端文件夹的书签数量');
+  });
+
+  it('exportFolderTree json 格式导出有效 JSON', () => {
+    const json = analyzer.exportFolderTree('json');
+    const parsed = JSON.parse(json);
+    assert.ok(Array.isArray(parsed));
+    assert.ok(parsed.length > 0);
+    assert.ok('name' in parsed[0]);
+    assert.ok('children' in parsed[0]);
+    assert.ok('count' in parsed[0]);
+  });
+
+  it('exportFolderTree 空数据导出空结果', () => {
+    assert.equal(emptyAnalyzer.exportFolderTree('text'), '');
+    assert.equal(emptyAnalyzer.exportFolderTree('json'), '[]');
+  });
 });
