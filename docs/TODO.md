@@ -354,7 +354,7 @@
 
 ### 打磨：安全 → 性能 → 文档 → 发布
 
-- [ ] **R83: Chrome Web Store 准备 BookmarkStorePrep**
+- [x] **R83: Chrome Web Store 准备 BookmarkStorePrep**
   - 更新 manifest.json
   - 更新 _locales
   - 截图准备

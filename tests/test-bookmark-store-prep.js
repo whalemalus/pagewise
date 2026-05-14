@@ -1,9 +1,25 @@
 /**
- * Tests for BookmarkStorePrep — Chrome Web Store 发布准备
+ * Tests for BookmarkStorePrep — Chrome Web Store 发布准备 (R83)
+ *
+ * 测试范围:
+ *   validateManifest / checkIcons / getStoreListing
+ *   validateContentSecurityPolicy / generatePermissionJustification
+ *   getScreenshotSpec / detectLanguageSupport
+ *   suggestManifestImprovements / checkStoreSubmissionReadiness
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
-import { validateManifest, checkIcons, getStoreListing } from '../lib/bookmark-store-prep.js'
+import {
+  validateManifest,
+  checkIcons,
+  getStoreListing,
+  validateContentSecurityPolicy,
+  generatePermissionJustification,
+  getScreenshotSpec,
+  detectLanguageSupport,
+  suggestManifestImprovements,
+  checkStoreSubmissionReadiness,
+} from '../lib/bookmark-store-prep.js'
 
 // ==================== Test Fixtures ====================
 
