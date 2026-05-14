@@ -361,7 +361,7 @@
   - 测试: 6+ 用例
   - 复杂度: Medium
 
-- [ ] **R84: 安全审计 BookmarkSecurityAudit**
+- [x] **R84: 安全审计 BookmarkSecurityAudit**
   - XSS 防护
   - 数据隔离
   - 权限最小化
