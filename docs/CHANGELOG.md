@@ -7,6 +7,15 @@
      7|## [Unreleased]
 
 ### 新增
+- **R85: BookmarkPerformanceBenchmark 性能基准测试** — `lib/bookmark-performance-benchmark.js`
+  - 搜索基准: `benchmarkSearch()` — 基于 BookmarkIndexer 的搜索延迟统计
+  - 排序基准: `benchmarkSort()` — 按 dateAdded 降序排序性能
+  - 去重基准: `benchmarkDedup()` — URL 精确去重性能
+  - 内存估算: `benchmarkMemory()` — 书签数据结构内存占用模型
+  - 统计指标: avg/min/max/p50/p95/p99 + 线性插值百分位算法
+  - 边界安全: null/空数组/iterations=0 统一返回零值
+  - 测试: 30 用例 ✅
+
 - **R81: BookmarkOnboarding 引导向导** — `lib/bookmark-onboarding.js`
   - 首次安装分步引导: welcome → features → theme → autoCollect 四步向导
   - 核心功能介绍: 智能书签采集、知识图谱、AI 智能推荐

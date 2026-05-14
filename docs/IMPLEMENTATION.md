@@ -613,4 +613,41 @@ BookmarkI18n (新建, R80)
    498|   - 暴露 `lib/pdf.min.mjs` 和 `lib/pdf.worker.min.mjs`
    499|
    500|## 技术决策
+
+---
+
+## 迭代 R85 — 性能基准测试 BookmarkPerformanceBenchmark
+
+> 日期: 2026-05-14
+> 任务: R85: 性能基准测试 BookmarkPerformanceBenchmark
+
+### 新增文件
+
+1. **lib/bookmark-performance-benchmark.js** — 性能基准测试模块 (286 行)
+   - `BookmarkPerformanceBenchmark.benchmarkSearch(bookmarks, query, iterations)` — 搜索基准测试，基于 BookmarkIndexer
+   - `BookmarkPerformanceBenchmark.benchmarkSort(bookmarks, iterations)` — 排序基准测试（dateAdded 降序）
+   - `BookmarkPerformanceBenchmark.benchmarkDedup(bookmarks, iterations)` — 去重基准测试（URL 精确匹配）
+   - `BookmarkPerformanceBenchmark.benchmarkMemory(bookmarks)` — 内存估算（字符串/数组/对象开销模型）
+   - `_computeStats(latencies)` — 延迟统计（avg/min/max/p50/p95/p99）
+   - `_percentile(sorted, p)` — 线性插值百分位算法
+   - `_emptyResult(iterations)` — 边界条件默认返回值
+
+2. **tests/test-bookmark-performance-benchmark.js** — 30 个单元测试 (298 行)
+   - benchmarkSearch: 11 个测试（正常/边界/大规模 100-10000 书签）
+   - benchmarkSort: 6 个测试（结构/单调性/空输入/大规模）
+   - benchmarkDedup: 6 个测试（结构/单调性/空输入/大规模）
+   - benchmarkMemory: 7 个测试（结构/非零/空/null/对比/breakdown 求和/大规模）
+
+### 设计决策
+
+- **纯计算模块**: 不依赖 IndexedDB/Chrome API，使用 `performance.now()` 高精度计时
+- **百分位线性插值**: 业界标准算法，处理 length=0/1 边界
+- **排序用副本**: 每次迭代用 `[...bookmarks]` 避免原地排序污染
+- **内存估算模型**: 简化估算（48 bytes 字符串基础 + 2 bytes/char UTF-16），非 V8 heap 快照
+- **统一空结果**: null/空数组/iterations=0 统一返回 `_emptyResult()`，不抛异常
+
+### 测试结果
+
+- 新增: 30 个测试，全部通过
+- 全量回归: 4238 tests, 0 fail
    501|

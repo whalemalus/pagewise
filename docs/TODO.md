@@ -368,7 +368,7 @@
   - 测试: 8+ 用例
   - 复杂度: Medium
 
-- [ ] **R85: 性能基准测试 BookmarkPerformanceBenchmark**
+- [x] **R85: 性能基准测试 BookmarkPerformanceBenchmark**
   - 采集性能基准
   - 渲染性能基准
   - 搜索性能基准
