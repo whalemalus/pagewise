@@ -1119,25 +1119,31 @@
     document.body.appendChild(btn);
   }
 
-  document.addEventListener('mouseup', () => {
-    setTimeout(() => {
-      const sel = window.getSelection();
-      const text = sel ? sel.toString().trim() : '';
-      if (text.length > 0) {
-        const range = sel.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        createFloatBtn(text, rect);
-      } else {
-        removeFloatBtn();
-      }
-    }, 200);
-  });
+  // ==================== SelectionToolbar 初始化 ====================
 
-  document.addEventListener('mousedown', (e) => {
-    if (e.target.id !== 'pagewise-float-btn') {
-      removeFloatBtn();
-    }
-  });
+  let _selectionToolbar = null;
+
+  /**
+   * 初始化划线浮动快捷操作栏
+   * 旧的 mouseup 单按钮已被 SelectionToolbar 替代，
+   * 但保留 removeFloatBtn / createFloatBtn 以兼容其他调用点。
+   */
+  function initSelectionToolbar() {
+    if (_selectionToolbar) return;
+    if (typeof SelectionToolbar === 'undefined') return; // lib 未加载时静默
+
+    _selectionToolbar = new SelectionToolbar({ delay: 200, offsetY: 10 });
+    _selectionToolbar.listenForSelection();
+
+    // 当 toolbar 可见时隐藏旧的单按钮
+    const _origShow = _selectionToolbar.showToolbar.bind(_selectionToolbar);
+    _selectionToolbar.showToolbar = function (text, rect) {
+      removeFloatBtn(); // 隐藏旧按钮
+      _origShow(text, rect);
+    };
+  }
+
+  initSelectionToolbar();
 
   // ==================== PDF 文档提取 ====================
 
@@ -1478,6 +1484,22 @@
 
       case 'ping':
         sendResponse({ alive: true });
+        break;
+
+      case 'selectionToolbarHide':
+        // background 可请求隐藏工具栏（例如打开侧边栏后）
+        if (_selectionToolbar) {
+          _selectionToolbar.hideToolbar();
+        }
+        sendResponse({ success: true });
+        break;
+
+      case 'selectionToolbarState':
+        // 查询工具栏当前状态
+        sendResponse({
+          visible: _selectionToolbar ? _selectionToolbar.visible : false,
+          text: _selectionToolbar ? _selectionToolbar.currentText : ''
+        });
         break;
 
       default:

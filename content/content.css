@@ -64,3 +64,63 @@
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* ==================== 划线浮动快捷操作栏 ==================== */
+
+.pagewise-toolbar {
+  position: fixed;
+  z-index: 2147483647;
+  display: flex;
+  gap: 2px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12), 0 1px 4px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  user-select: none;
+  pointer-events: auto;
+}
+
+.pagewise-toolbar--visible {
+  animation: pagewise-toolbar-fadein 0.15s ease-out;
+}
+
+@keyframes pagewise-toolbar-fadein {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.pagewise-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.3;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+  font-family: inherit;
+}
+
+.pagewise-toolbar-btn:hover {
+  background: #f0f0ff;
+  color: #4f46e5;
+}
+
+.pagewise-toolbar-btn:active {
+  background: #e0e0ff;
+}
+
+/* toolbar 显示时隐藏旧的划词浮动按钮 */
+.pagewise-toolbar[style*="display: flex"] ~ #pagewise-float-btn,
+.pagewise-toolbar.pagewise-toolbar--visible ~ #pagewise-float-btn {
+  display: none !important;
+}
