@@ -5,6 +5,7 @@
 
 import { logInfo, logError, logWarn } from '../lib/log-store.js';
 import { PW, openSidePanel, closeSidePanel, setSidePanelBehavior, createContextMenu, onContextMenuClicked } from '../lib/browser-compat.js';
+import { ContextMenuManager } from '../lib/context-menu.js';
 
 // ==================== 全局错误捕获 ====================
 self.onerror = function (message, source, lineno, colno, error) {
@@ -18,6 +19,7 @@ self.addEventListener('unhandledrejection', function (event) {
 
 // ==================== 初始化 ====================
 
+// 原有菜单项
 PW.runtime.onInstalled.addListener(() => {
   createContextMenu({
     id: 'askAI',
@@ -31,12 +33,35 @@ PW.runtime.onInstalled.addListener(() => {
     contexts: ['page']
   });
 
+  // 注册增强右键菜单项（KIMI-P0-006: QuickActionMenu）
+  contextMenuManager.registerMenus();
+
   logInfo('service-worker', '扩展已安装/更新');
 });
+
+// ==================== 增强右键菜单 (KIMI-P0-006) ====================
+
+const contextMenuManager = new ContextMenuManager({
+  onAction: (action, info, tab) => {
+    logInfo('context-menu-manager', `增强菜单动作: ${action}`, {
+      tabId: tab?.id,
+      selection: (info.selectionText || '').slice(0, 100),
+    });
+  },
+  sendMessage: (data) => {
+    sendMessageWithRetry(data, 8, 300);
+  },
+});
+
+// 监听增强菜单的点击事件
+contextMenuManager.listenForClicks();
 
 // ==================== 右键菜单 ====================
 
 onContextMenuClicked(async (info, tab) => {
+  // 只处理原有菜单项，增强菜单项由 ContextMenuManager 处理
+  if (info.menuItemId !== 'askAI' && info.menuItemId !== 'summarizePage') return;
+
   const action = info.menuItemId === 'askAI' ? 'contextMenuAsk' : 'contextMenuSummarize';
   const selection = info.selectionText || '';
   
