@@ -21,7 +21,7 @@
     {
       "id": "QA003",
       "title": "集成测试 — Service Worker↔Content Script通信/IndexedDB一致性/Chrome API兼容性",
-      "status": "pending",
+      "status": "done",
       "priority": "critical",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
     },
