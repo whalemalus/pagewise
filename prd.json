@@ -42,7 +42,7 @@
     {
       "id": "KIMI-P0-001",
       "title": "SelectionFloatingToolbar — 划线浮动快捷操作栏",
-      "status": "pending",
+      "status": "done",
       "priority": "critical",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "参考 Kimi 的划线浮动按钮设计，实现选中文字后弹出快捷操作栏",
@@ -58,7 +58,7 @@
     {
       "id": "KIMI-P0-002",
       "title": "PageSummaryButton — 一键全文总结按钮",
-      "status": "pending",
+      "status": "done",
       "priority": "critical",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "参考 Kimi 的全文总结功能，在页面显眼位置添加一键总结按钮",
@@ -74,7 +74,7 @@
     {
       "id": "KIMI-P0-003",
       "title": "ExploreModeShortcut — Explore 快捷模式",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "参考 Kimi 的 Ctrl+J Explore 模式，实现快速探索交互",
@@ -89,7 +89,7 @@
     {
       "id": "KIMI-P0-004",
       "title": "ChatModeShortcut — Chat 快捷模式",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "参考 Kimi 的 Ctrl+K Chat 模式，实现快速对话交互",
@@ -104,7 +104,7 @@
     {
       "id": "KIMI-P0-005",
       "title": "SelectionEnhancement — 选中文本智能增强",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "增强现有选中文本处理能力，参考 Kimi 的多场景支持",
@@ -120,7 +120,7 @@
     {
       "id": "KIMI-P0-006",
       "title": "QuickActionMenu — 页面右键增强菜单",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
       "description": "增强 Chrome 右键菜单，添加 AI 相关快捷操作",
