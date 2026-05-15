@@ -1204,6 +1204,9 @@ class SidebarApp {
       } else if (request.action === 'shortcutSummarize') {
         logInfo('sidebar', '收到快捷键总结');
         this.quickSummarize();
+      } else if (request.action === 'openChat') {
+        logInfo('sidebar', '收到 openChat 消息', { tabUrl: request.tabUrl });
+        this.openChatWithContext(request);
       }
       sendResponse({ received: true });
     });
@@ -1271,6 +1274,48 @@ class SidebarApp {
     } else if (data.action === 'shortcutSummarize') {
       this.quickSummarize();
     }
+  }
+
+  /**
+   * 打开 Chat 模式，自动预填页面上下文
+   * @param {Object} data — { action, tabId, tabUrl, tabTitle, timestamp }
+   */
+  openChatWithContext(data) {
+    // 切换到 Chat 标签
+    this.switchTab('chat');
+
+    // 构建页面上下文预填文本
+    const parts = [];
+    if (data.tabTitle) parts.push(`页面标题：${data.tabTitle}`);
+    if (data.tabUrl) parts.push(`页面链接：${data.tabUrl}`);
+
+    // 如果已有页面内容提取结果，附加摘要
+    const content = this.currentPageContent;
+    if (content && content.content) {
+      const summary = content.content.length > 300
+        ? content.content.slice(0, 300) + '...'
+        : content.content;
+      parts.push(`页面摘要：${summary}`);
+    }
+
+    if (parts.length > 0 && this.userInput) {
+      const contextPrefix = `[页面上下文]\n${parts.join('\n')}\n\n请基于以上页面内容回答我的问题：\n`;
+      this.userInput.value = contextPrefix;
+      this.userInput.style.height = 'auto';
+      this.userInput.style.height = Math.min(this.userInput.scrollHeight, 120) + 'px';
+      this.userInput.focus();
+      // 将光标移到末尾
+      this.userInput.setSelectionRange(
+        this.userInput.value.length,
+        this.userInput.value.length
+      );
+    }
+
+    logInfo('sidebar', 'Chat 模式已打开，页面上下文已预填', {
+      hasTitle: !!data.tabTitle,
+      hasUrl: !!data.tabUrl,
+      hasContent: !!(content && content.content)
+    });
   }
 
   // ==================== 日志面板 ====================

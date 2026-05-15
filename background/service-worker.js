@@ -147,6 +147,20 @@ PW.commands.onCommand.addListener(async (command) => {
       }
       break;
     }
+
+    case 'chat': {
+      await openSidePanel(tab.id);
+      openSidePanels.add(tab.id);
+      const chatData = {
+        action: 'openChat',
+        tabId: tab.id,
+        tabUrl: tab.url,
+        tabTitle: tab.title,
+        timestamp: Date.now()
+      };
+      sendMessageWithRetry(chatData, 5, 400);
+      break;
+    }
   }
 });
 

@@ -98,6 +98,13 @@
         "mac": "Command+J"
       },
       "description": "切换探索模式"
+    },
+    "chat": {
+      "suggested_key": {
+        "default": "Ctrl+K",
+        "mac": "Command+K"
+      },
+      "description": "打开 Chat 模式"
     }
   }
 }
