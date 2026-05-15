@@ -391,11 +391,12 @@
   - 测试: 4+ 用例
   - 复杂度: Simple
 
-- [ ] **R88: 数据迁移 BookmarkMigration**
-  - 版本升级迁移
-  - 数据格式兼容
-  - 迁移脚本
-  - 测试: 6+ 用例
+- [x] **R88: 数据迁移 BookmarkMigration** — `lib/bookmark-migration.js`
+  - 版本升级迁移 (v1→v2: clusters→collections, statuses→readingProgress, 新增 metadata)
+  - 数据格式兼容 (checkDataCompatibility: v1/v2 结构验证)
+  - 迁移路径规划 (getMigrationPath) + 迁移报告 (createMigrationReport)
+  - 批量迁移 (batchMigrate) + 迁移验证 (validateMigration)
+  - 测试: 92 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R89: 备份恢复 BookmarkBackupRestore**

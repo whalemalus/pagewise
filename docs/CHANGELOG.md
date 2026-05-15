@@ -7,6 +7,19 @@
      7|## [Unreleased]
 
 ### 新增
+- **R88: BookmarkMigration 数据迁移框架** — `lib/bookmark-migration.js`
+  - 版本检测: `getMigrationVersion()` — 识别 v1/v2 数据格式
+  - 版本迁移: `migrateV1ToV2()` — v1→v2 完整迁移 (clusters→collections, statuses→readingProgress, metadata 补全, 书签字段规范化)
+  - 迁移运行器: `runMigration()` — 自动路径规划 + 逐步迁移 + 降级拒绝 + 已是目标版本跳过
+  - 迁移验证: `validateMigration()` — 数据完整性校验 (书签数/id/url/聚类/标签/状态/metadata)
+  - 迁移路径规划: `getMigrationPath()` — 从 MIGRATION_STEPS 注册表查找迁移步骤
+  - 迁移报告: `createMigrationReport()` — 不执行迁移的预分析报告 (版本/概况/预计变更/兼容性)
+  - 兼容性检查: `checkDataCompatibility()` — v1/v2 结构规范验证 (issues + warnings)
+  - 批量迁移: `batchMigrate()` — 多数据集独立迁移 + 统计摘要 (succeeded/failed/skipped)
+  - 迁移步骤注册表: `MIGRATION_STEPS` — 可扩展的冻结迁移路径定义
+  - 纯 ES Module，零副作用，不依赖 DOM / Chrome API
+  - 测试: 92 用例 ✅
+
 - **R86: BookmarkErrorHandler 错误处理与优雅降级** — `lib/bookmark-error-handler.js`
   - 错误分类: `classifyError()` — 5 类 (network/permission/storage/validation/unknown)，优先级: 显式标记 → error.name → 关键词匹配 → 默认
   - 优雅降级: `handleBookmarkError()` — 结构化错误响应 (category/message/recovery/timestamp/context)，每类 ≥ 3 条恢复建议

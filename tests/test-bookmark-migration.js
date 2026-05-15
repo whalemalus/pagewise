@@ -1,7 +1,8 @@
 /**
  * Tests for BookmarkMigration — 数据迁移框架
  *
- * 覆盖: 版本检测、v1→v2 迁移、迁移验证、迁移运行器、边界条件
+ * 覆盖: 版本检测、v1→v2 迁移、迁移验证、迁移运行器、
+ *       迁移路径规划、迁移报告、数据兼容性检查、批量迁移、边界条件
  */
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
@@ -11,10 +12,15 @@ import {
   CURRENT_VERSION,
   SUPPORTED_VERSIONS,
   FORMAT_VERSION_V2,
+  MIGRATION_STEPS,
   getMigrationVersion,
   migrateV1ToV2,
   validateMigration,
   runMigration,
+  getMigrationPath,
+  createMigrationReport,
+  checkDataCompatibility,
+  batchMigrate,
 } from '../lib/bookmark-migration.js'
 
 // ==================== Fixtures ====================
@@ -392,5 +398,308 @@ describe('runMigration', () => {
     const result = runMigration(createV1Data(), null)
     assert.equal(result.success, false)
     assert.ok(result.errors[0].includes('未指定'))
+  })
+})
+
+// ==================== MIGRATION_STEPS ====================
+
+describe('MIGRATION_STEPS', () => {
+  it('is a frozen array', () => {
+    assert.ok(Array.isArray(MIGRATION_STEPS))
+    assert.throws(() => { MIGRATION_STEPS.push({}) })
+  })
+
+  it('contains v1→v2 step', () => {
+    const step = MIGRATION_STEPS.find(s => s.from === VERSION_V1 && s.to === VERSION_V2)
+    assert.ok(step, 'should have v1→v2 migration step')
+    assert.ok(step.description.includes('v1'))
+    assert.ok(step.description.includes('v2'))
+  })
+
+  it('each step has from, to, and description', () => {
+    for (const step of MIGRATION_STEPS) {
+      assert.equal(typeof step.from, 'number')
+      assert.equal(typeof step.to, 'number')
+      assert.equal(typeof step.description, 'string')
+      assert.ok(step.to > step.from, 'to should be greater than from')
+    }
+  })
+
+  it('individual steps are frozen', () => {
+    for (const step of MIGRATION_STEPS) {
+      assert.ok(Object.isFrozen(step))
+    }
+  })
+})
+
+// ==================== getMigrationPath ====================
+
+describe('getMigrationPath', () => {
+  it('returns path from v1 to v2', () => {
+    const path = getMigrationPath(VERSION_V1, VERSION_V2)
+    assert.equal(path.possible, true)
+    assert.equal(path.steps.length, 1)
+    assert.equal(path.steps[0].from, VERSION_V1)
+    assert.equal(path.steps[0].to, VERSION_V2)
+    assert.equal(path.error, null)
+  })
+
+  it('returns empty steps when same version', () => {
+    const path = getMigrationPath(VERSION_V2, VERSION_V2)
+    assert.equal(path.possible, true)
+    assert.equal(path.steps.length, 0)
+    assert.equal(path.error, null)
+  })
+
+  it('returns error for downgrade', () => {
+    const path = getMigrationPath(VERSION_V2, VERSION_V1)
+    assert.equal(path.possible, false)
+    assert.ok(path.error.includes('降级'))
+  })
+
+  it('returns error for non-finite version', () => {
+    const path = getMigrationPath(NaN, VERSION_V2)
+    assert.equal(path.possible, false)
+    assert.ok(path.error.includes('有效数字'))
+  })
+
+  it('returns error for unsupported from version', () => {
+    const path = getMigrationPath(99, VERSION_V2)
+    assert.equal(path.possible, false)
+    // fromVersion=99 > toVersion=2, so downgrade check triggers first
+    assert.ok(path.error.includes('降级') || path.error.includes('不支持'))
+  })
+
+  it('returns error for unsupported to version', () => {
+    const path = getMigrationPath(VERSION_V1, 99)
+    assert.equal(path.possible, false)
+    assert.ok(path.error.includes('不支持的目标版本'))
+  })
+})
+
+// ==================== createMigrationReport ====================
+
+describe('createMigrationReport', () => {
+  it('generates report for v1→v2 migration', () => {
+    const { report, error } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.equal(error, null)
+    assert.ok(report)
+    assert.equal(report.currentVersion, VERSION_V1)
+    assert.equal(report.targetVersion, VERSION_V2)
+    assert.equal(report.needsMigration, true)
+    assert.equal(report.migrationPossible, true)
+  })
+
+  it('includes data overview', () => {
+    const { report } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.equal(report.dataOverview.bookmarkCount, 2)
+    assert.equal(report.dataOverview.clusterCount, 1)
+    assert.equal(report.dataOverview.tagCount, 1)
+    assert.equal(report.dataOverview.statusCount, 1)
+  })
+
+  it('includes expected changes', () => {
+    const { report } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.ok(report.expectedChanges.length > 0)
+    assert.ok(report.expectedChanges[0].description)
+  })
+
+  it('includes compatibility check', () => {
+    const { report } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.ok(report.compatibility)
+    assert.equal(typeof report.compatibility.compatible, 'boolean')
+  })
+
+  it('includes generatedAt timestamp', () => {
+    const { report } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.ok(report.generatedAt)
+    assert.ok(!isNaN(new Date(report.generatedAt).getTime()))
+  })
+
+  it('returns error for null data', () => {
+    const { report, error } = createMigrationReport(null, VERSION_V2)
+    assert.equal(report, null)
+    assert.ok(error.includes('为空'))
+  })
+
+  it('returns error for unrecognizable version', () => {
+    const { report, error } = createMigrationReport({ version: 99 }, VERSION_V2)
+    assert.equal(report, null)
+    assert.ok(error.includes('无法识别'))
+  })
+
+  it('returns error for invalid target version', () => {
+    const { report, error } = createMigrationReport(createV1Data(), -1)
+    assert.equal(report, null)
+    assert.ok(error.includes('无效'))
+  })
+
+  it('shows needsMigration=false when already at target', () => {
+    const v2Data = migrateV1ToV2(createV1Data()).data
+    const { report } = createMigrationReport(v2Data, VERSION_V2)
+    assert.equal(report.needsMigration, false)
+    assert.equal(report.expectedChanges.length, 0)
+  })
+
+  it('migration path is array of strings', () => {
+    const { report } = createMigrationReport(createV1Data(), VERSION_V2)
+    assert.ok(Array.isArray(report.migrationPath))
+    assert.ok(report.migrationPath.every(s => typeof s === 'string'))
+  })
+})
+
+// ==================== checkDataCompatibility ====================
+
+describe('checkDataCompatibility', () => {
+  it('validates v1 data as compatible', () => {
+    const result = checkDataCompatibility(createV1Data())
+    assert.equal(result.compatible, true)
+    assert.equal(result.version, VERSION_V1)
+    assert.equal(result.issues.length, 0)
+  })
+
+  it('validates v2 data as compatible', () => {
+    const v2Data = migrateV1ToV2(createV1Data()).data
+    const result = checkDataCompatibility(v2Data)
+    assert.equal(result.compatible, true)
+    assert.equal(result.version, VERSION_V2)
+    assert.equal(result.issues.length, 0)
+  })
+
+  it('returns issues for null data', () => {
+    const result = checkDataCompatibility(null)
+    assert.equal(result.compatible, false)
+    assert.ok(result.issues[0].includes('为空'))
+  })
+
+  it('returns issues for array data', () => {
+    const result = checkDataCompatibility([1, 2, 3])
+    assert.equal(result.compatible, false)
+    assert.ok(result.issues[0].includes('数组'))
+  })
+
+  it('detects missing version field', () => {
+    const result = checkDataCompatibility({ bookmarks: [{ id: '1', url: 'http://x' }] })
+    assert.equal(result.compatible, false)
+    assert.ok(result.issues.some(i => i.includes('version')))
+  })
+
+  it('detects unrecognizable version', () => {
+    const result = checkDataCompatibility({ version: 99 })
+    assert.equal(result.compatible, false)
+    assert.ok(result.issues.some(i => i.includes('无法识别')))
+  })
+
+  it('warns about missing optional v1 arrays', () => {
+    const result = checkDataCompatibility({ version: 1, bookmarks: [] })
+    assert.equal(result.version, VERSION_V1)
+    assert.ok(result.warnings.some(w => w.includes('clusters')))
+    assert.ok(result.warnings.some(w => w.includes('tags')))
+    assert.ok(result.warnings.some(w => w.includes('statuses')))
+  })
+
+  it('detects missing bookmark id in v1', () => {
+    const data = { version: 1, bookmarks: [{ title: 'X', url: 'http://x' }], clusters: [], tags: [], statuses: [] }
+    const result = checkDataCompatibility(data)
+    assert.ok(result.issues.some(i => i.includes('缺少 id')))
+  })
+
+  it('warns about bookmark without url and title in v1', () => {
+    const data = { version: 1, bookmarks: [{ id: '1' }], clusters: [], tags: [], statuses: [] }
+    const result = checkDataCompatibility(data)
+    assert.ok(result.warnings.some(w => w.includes('url 和 title')))
+  })
+
+  it('warns about missing v2 optional fields', () => {
+    const data = { version: 2, bookmarks: [] }
+    const result = checkDataCompatibility(data)
+    assert.ok(result.warnings.some(w => w.includes('formatVersion')))
+    assert.ok(result.warnings.some(w => w.includes('collections')))
+    assert.ok(result.warnings.some(w => w.includes('readingProgress')))
+    assert.ok(result.warnings.some(w => w.includes('metadata')))
+  })
+
+  it('v1 data with missing bookmarks array is an issue', () => {
+    const data = { version: 1, clusters: [], tags: [], statuses: [] }
+    const result = checkDataCompatibility(data)
+    assert.ok(result.issues.some(i => i.includes('bookmarks 数组')))
+  })
+
+  it('empty v1 data is compatible (empty arrays are valid)', () => {
+    const result = checkDataCompatibility(createMinimalV1Data())
+    assert.equal(result.compatible, true)
+    assert.equal(result.version, VERSION_V1)
+  })
+})
+
+// ==================== batchMigrate ====================
+
+describe('batchMigrate', () => {
+  it('migrates multiple v1 datasets to v2', () => {
+    const data1 = createV1Data()
+    const data2 = createMinimalV1Data()
+    const { results, summary } = batchMigrate([data1, data2], VERSION_V2)
+    assert.equal(summary.total, 2)
+    assert.equal(summary.succeeded, 2)
+    assert.equal(summary.failed, 0)
+    assert.equal(results[0].data.version, VERSION_V2)
+    assert.equal(results[1].data.version, VERSION_V2)
+  })
+
+  it('skips datasets already at target version', () => {
+    const v2Data = migrateV1ToV2(createV1Data()).data
+    const { summary } = batchMigrate([v2Data], VERSION_V2)
+    assert.equal(summary.skipped, 1)
+    assert.equal(summary.succeeded, 0)
+  })
+
+  it('handles failed items without affecting others', () => {
+    const valid = createV1Data()
+    const invalid = { version: 99, bookmarks: [] }
+    const { results, summary } = batchMigrate([valid, invalid, valid], VERSION_V2)
+    assert.equal(summary.total, 3)
+    assert.equal(summary.succeeded, 2)
+    assert.equal(summary.failed, 1)
+    assert.equal(results[1].success, false)
+  })
+
+  it('returns empty summary for null input', () => {
+    const { results, summary } = batchMigrate(null, VERSION_V2)
+    assert.equal(results.length, 0)
+    assert.equal(summary.total, 0)
+  })
+
+  it('returns empty summary for non-array input', () => {
+    const { results, summary } = batchMigrate('not-array', VERSION_V2)
+    assert.equal(results.length, 0)
+    assert.equal(summary.total, 0)
+  })
+
+  it('handles empty array', () => {
+    const { results, summary } = batchMigrate([], VERSION_V2)
+    assert.equal(results.length, 0)
+    assert.equal(summary.total, 0)
+    assert.equal(summary.succeeded, 0)
+    assert.equal(summary.failed, 0)
+    assert.equal(summary.skipped, 0)
+  })
+
+  it('each result includes index', () => {
+    const { results } = batchMigrate([createV1Data()], VERSION_V2)
+    assert.equal(results[0].index, 0)
+  })
+
+  it('does not mutate original data', () => {
+    const data = createV1Data()
+    const originalVersion = data.version
+    batchMigrate([data], VERSION_V2)
+    assert.equal(data.version, originalVersion)
+  })
+
+  it('preserves data through batch migration', () => {
+    const data = createV1Data()
+    const { results } = batchMigrate([data], VERSION_V2)
+    assert.equal(results[0].data.bookmarks.length, 2)
+    assert.equal(results[0].data.bookmarks[0].url, 'https://pagewise.dev')
   })
 })

@@ -2,6 +2,92 @@
 
 ---
 
+## 迭代 R88 — 数据迁移 BookmarkMigration
+
+> 日期: 2026-05-15
+> 任务: R88 数据迁移 BookmarkMigration — 书签数据版本升级迁移、格式兼容检查、批量迁移与迁移报告
+
+### 新增/增强文件
+
+1. **lib/bookmark-migration.js** — 数据迁移框架 (~625 行)
+   - `VERSION_V1` / `VERSION_V2` / `CURRENT_VERSION` — 版本常量
+   - `SUPPORTED_VERSIONS` — 冻结的已支持版本列表
+   - `FORMAT_VERSION_V2` — v2 格式标识字符串
+   - `MIGRATION_STEPS` — 迁移步骤注册表（冻结，可扩展）
+   - `getMigrationVersion(data)` — 版本检测（null/undefined/数组/非数字/负数/不支持版本 → null）
+   - `migrateV1ToV2(data)` — v1→v2 完整迁移（深拷贝，不修改原数据）
+     - clusters → collections 重命名
+     - statuses → readingProgress 重命名
+     - metadata 补全（bookmarkCount/collectionCount/tagCount/source/generator/previousVersion）
+     - formatVersion / migratedAt 补充
+     - 书签字段规范化（tags/folderPath 数组化，status 校验，dateAddedISO 补充）
+   - `validateMigration(oldData, newData)` — 迁移完整性校验
+     - 版本号更新检查
+     - 书签数量/id/url 一致性
+     - clusters→collections / statuses→readingProgress 数量对应
+     - metadata 存在性
+   - `runMigration(data, targetVersion)` — 迁移运行器
+     - 自动路径规划 + 逐步迁移
+     - 已是目标版本跳过（带 warning）
+     - 降级拒绝（v2→v1 不支持）
+     - 无效/不支持版本拒绝
+   - `getMigrationPath(fromVersion, toVersion)` — 迁移路径查询
+     - 从 MIGRATION_STEPS 注册表查找适用步骤
+     - 返回 { possible, steps[], error }
+   - `createMigrationReport(data, targetVersion)` — 迁移报告（不执行迁移）
+     - 当前/目标版本、数据概况、迁移步骤、预计变更、兼容性检查结果
+   - `checkDataCompatibility(data)` — 数据格式兼容性检查
+     - v1 结构验证（bookmarks/clusters/tags/statuses）
+     - v2 结构验证（formatVersion/collections/readingProgress/metadata）
+     - 书签字段完整性（id/url/title）
+     - 返回 { compatible, version, issues[], warnings[] }
+   - `batchMigrate(dataArray, targetVersion)` — 批量迁移
+     - 独立迁移每个数据集，失败不影响其他
+     - summary 统计：total/succeeded/failed/skipped
+   - 内部: `migrateBookmarkV1ToV2(bm)` / `deepCopy(obj)`
+
+2. **tests/test-bookmark-migration.js** — 92 个单元测试
+   - version constants: 5 个（值正确性 + 冻结性）
+   - getMigrationVersion: 10 个（v1/v2 检测 + null/undefined/非对象/数组/无版本/不支持版本/非有限数/负数）
+   - migrateV1ToV2: 14 个（版本字段/书签保留/URL 保留/字段重命名/metadata/migratedAt/dateAddedISO/不可变性/null/非v1/缺失数组/字段规范化/标签保留）
+   - validateMigration: 10 个（成功验证/统计/缺失书签/缺失ID/缺失URL/错误版本/缺失metadata/聚类数量/null输入）
+   - runMigration: 12 个（v1→v2/数据保留/已是目标版本/降级拒绝/null/缺失目标/无效目标/不支持目标/不可识别版本/不可变性/最小数据/null目标）
+   - MIGRATION_STEPS: 4 个（冻结/v1→v2步骤/字段类型/步骤冻结）
+   - getMigrationPath: 6 个（v1→v2/同版本/降级/非有限数/不支持起始/不支持目标）
+   - createMigrationReport: 10 个（v1→v2报告/数据概况/预计变更/兼容性检查/时间戳/null/不可识别/无效目标/无需迁移/路径格式）
+   - checkDataCompatibility: 12 个（v1兼容/v2兼容/null/数组/缺失version/不可识别/缺失可选数组/缺失ID/缺失URL+title/缺失v2字段/缺失bookmarks数组/空v1数据）
+   - batchMigrate: 9 个（多数据集/跳过/失败不影响其他/null/非数组/空数组/索引/不可变性/数据保留）
+
+### 设计决策
+
+- **纯 ES Module、零副作用**: 所有导出函数为纯函数，不依赖 DOM / Chrome API
+- **深拷贝安全**: 迁移前深拷贝，绝不修改输入数据
+- **可扩展迁移路径**: MIGRATION_STEPS 注册表 + getMigrationPath，新增版本只需注册新步骤
+- **防御性编程**: null/undefined/空对象/数组/非数字等边界条件统一安全处理
+- **迁移报告不执行**: createMigrationReport 只分析不执行，用于迁移前预览
+- **批量隔离**: batchMigrate 中单个失败不影响其他数据集
+- **不可变常量**: MIGRATION_STEPS、SUPPORTED_VERSIONS 使用 Object.freeze 冻结
+
+### 依赖关系
+
+```
+BookmarkMigration (增强, R88)
+  └── 无外部依赖 (纯数据模块)
+
+推荐集成:
+  ├── BookmarkImportExport (R61) — importFromJSON 后自动 runMigration
+  ├── BookmarkIO (R61) — 导入前 checkDataCompatibility
+  ├── sidebar.js — 升级提示后 runMigration
+  └── BookmarkSync (R94) — 跨设备同步时版本对齐
+```
+
+### 测试结果
+
+- 新增: 92 个测试，全部通过
+- 总测试: 92 (本模块)
+
+---
+
 ## 迭代 R86 — 错误处理 BookmarkErrorHandler
 
 > 日期: 2026-05-15
