@@ -14,7 +14,7 @@
     {
       "id": "QA002",
       "title": "功能正确性测试 — AI问答/知识库/书签/高亮/Wiki/学习路径/复习/技能/插件/导入导出",
-      "status": "pending",
+      "status": "done",
       "priority": "critical",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
     },
