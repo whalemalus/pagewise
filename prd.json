@@ -7,7 +7,7 @@
     {
       "id": "QA001",
       "title": "需求符合度验证 — 对照 ROADMAP.md 逐项检查 R1-R105 所有迭代功能",
-      "status": "pending",
+      "status": "done",
       "priority": "critical",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
     },
