@@ -35,7 +35,7 @@
     {
       "id": "QA005",
       "title": "浏览器兼容性测试 — Chrome/Edge/Firefox MV3",
-      "status": "pending",
+      "status": "done",
       "priority": "medium",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
     },
