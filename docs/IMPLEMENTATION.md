@@ -2,6 +2,60 @@
 
 ---
 
+## 迭代 R86 — 错误处理 BookmarkErrorHandler
+
+> 日期: 2026-05-15
+> 任务: R86 错误处理 BookmarkErrorHandler — 书签操作统一错误分类、优雅降级、错误边界包装和结构化日志
+
+### 新增文件
+
+1. **lib/bookmark-error-handler.js** — 书签专用错误处理模块 (~294 行)
+   - `ERROR_CATEGORIES` — 冻结常量对象，5 个错误类别 (network/permission/storage/validation/unknown)
+   - `classifyError(error)` — 错误分类（优先级: 显式标记 → error.name → 关键词匹配 → 默认 unknown）
+   - `handleBookmarkError(error, context?)` — 优雅降级处理，返回结构化响应 + 恢复建议
+   - `createErrorBoundary(fn, fallback)` — 异步函数错误边界包装（成功透传，失败调用 fallback）
+   - `logError(error, context?)` — 结构化日志（不写 console，返回对象）
+   - 内部: 4 组关键词表 (network 11 / permission 10 / storage 12 / validation 11)
+   - 内部: RECOVERY_SUGGESTIONS 恢复建议映射（每类 3 条中文建议）
+   - 所有常量 `Object.freeze` 冻结，防止运行时篡改
+
+2. **tests/test-bookmark-error-handler.js** — 48 个单元测试 (~337 行)
+   - ERROR_CATEGORIES: 值正确性 + 冻结性 (2)
+   - classifyError: 显式标记 / 6 种 Error name / 关键词匹配 / null/undefined/空对象/字符串 (22)
+   - handleBookmarkError: 结构化响应 / 时间戳 / context 默认值 / 字符串错误 / null 错误 (8)
+   - createErrorBoundary: 返回函数 / TypeError 校验 / 成功路径 / 错误路径 / 参数传递 (7)
+   - logError: 结构化字段 / stack 处理 / context 默认值 / null 安全 (9)
+
+### 设计决策
+
+- **纯函数、零副作用**: 所有导出函数为纯函数，适合 Service Worker / Content Script / Sidebar 任意上下文
+- **独立模块**: 与 `error-handler.js` 互不依赖，覆盖不同错误领域（AI API vs 书签操作）
+- **不内置重试**: 重试策略因场景而异，由调用方决定，保持模块职责单一
+- **日志不输出**: `logError()` 返回结构化对象，由调用方决定输出方式
+- **防御性编程**: null / undefined / 空对象 / 空字符串均安全处理
+- **中文恢复建议**: 当前版本硬编码中文，后续可接入 i18n (已知技术债务 I02)
+
+### 依赖关系
+
+```
+BookmarkErrorHandler (新建, R86)
+  └── 无外部依赖 (纯数据模块)
+
+推荐集成:
+  ├── BookmarkCollector — handleBookmarkError 包装 catch 块
+  ├── BookmarkGraphEngine — createErrorBoundary 包装 buildGraph
+  ├── BookmarkSearch — classifyError 分类搜索异常
+  ├── BookmarkSync — logError 替换全局日志
+  └── sidebar.js — handleBookmarkError 生成用户可读错误信息
+```
+
+### 测试结果
+
+- 新增: 48 个测试，全部通过
+- 总测试: 48 (本模块)
+
+---
+
 ## 迭代 R80 — 国际化 BookmarkI18n
 
 > 日期: 2026-05-13

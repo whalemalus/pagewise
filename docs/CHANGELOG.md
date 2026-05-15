@@ -7,6 +7,15 @@
      7|## [Unreleased]
 
 ### 新增
+- **R86: BookmarkErrorHandler 错误处理与优雅降级** — `lib/bookmark-error-handler.js`
+  - 错误分类: `classifyError()` — 5 类 (network/permission/storage/validation/unknown)，优先级: 显式标记 → error.name → 关键词匹配 → 默认
+  - 优雅降级: `handleBookmarkError()` — 结构化错误响应 (category/message/recovery/timestamp/context)，每类 ≥ 3 条恢复建议
+  - 错误边界: `createErrorBoundary(fn, fallback)` — 异步函数错误边界包装，成功透传，失败调用 fallback(error, ...args)
+  - 结构化日志: `logError()` — 返回 {level, category, message, stack, context, timestamp}，不写 console
+  - 纯函数设计，零副作用，不依赖 DOM / Chrome API
+  - 独立于 `error-handler.js` (AI API 错误)，互不依赖，覆盖不同错误领域
+  - 测试: 48 用例 ✅
+
 - **R85: BookmarkPerformanceBenchmark 性能基准测试** — `lib/bookmark-performance-benchmark.js`
   - 搜索基准: `benchmarkSearch()` — 基于 BookmarkIndexer 的搜索延迟统计
   - 排序基准: `benchmarkSort()` — 按 dateAdded 降序排序性能

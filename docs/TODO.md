@@ -375,11 +375,13 @@
   - 测试: 8+ 用例
   - 复杂度: Medium
 
-- [ ] **R86: 错误处理 BookmarkErrorHandler**
-  - 全局错误捕获
-  - 用户友好提示
-  - 错误上报（可选）
-  - 测试: 8+ 用例
+- [x] **R86: 错误处理 BookmarkErrorHandler** — `lib/bookmark-error-handler.js`
+  - 错误分类: `classifyError()` — 5 类 (network/permission/storage/validation/unknown)
+  - 优雅降级: `handleBookmarkError()` — 结构化错误响应 + 恢复建议
+  - 错误边界: `createErrorBoundary()` — 异步函数包装 + fallback
+  - 结构化日志: `logError()` — 不写 console，返回结构化对象
+  - 纯函数设计，零副作用，不依赖 DOM / Chrome API
+  - 测试: 48 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R87: 用户文档 BookmarkDocumentation**
