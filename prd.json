@@ -38,6 +38,99 @@
       "status": "pending",
       "priority": "medium",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
+    },
+    {
+      "id": "KIMI-P0-001",
+      "title": "SelectionFloatingToolbar — 划线浮动快捷操作栏",
+      "status": "pending",
+      "priority": "critical",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "参考 Kimi 的划线浮动按钮设计，实现选中文字后弹出快捷操作栏",
+      "acceptance": [
+        "选中文字后在选区附近显示浮动按钮",
+        "支持4个快捷操作：解释、翻译、总结、问AI",
+        "点击后自动将选中文本发送到对应功能",
+        "浮动按钮样式美观，不遮挡选中文本",
+        "支持键盘快捷键触发（如 Ctrl+Shift+E 解释）",
+        "与现有高亮系统兼容，不冲突"
+      ]
+    },
+    {
+      "id": "KIMI-P0-002",
+      "title": "PageSummaryButton — 一键全文总结按钮",
+      "status": "pending",
+      "priority": "critical",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "参考 Kimi 的全文总结功能，在页面显眼位置添加一键总结按钮",
+      "acceptance": [
+        "在 Side Panel 顶部添加「总结全文」按钮",
+        "点击后自动提取页面主要内容",
+        "调用 AI 生成结构化摘要（3-5个要点）",
+        "支持流式输出，实时显示生成过程",
+        "摘要结果可一键保存到知识库",
+        "支持自定义总结长度（简短/详细）"
+      ]
+    },
+    {
+      "id": "KIMI-P0-003",
+      "title": "ExploreModeShortcut — Explore 快捷模式",
+      "status": "pending",
+      "priority": "high",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "参考 Kimi 的 Ctrl+J Explore 模式，实现快速探索交互",
+      "acceptance": [
+        "注册 Ctrl+J 快捷键触发 Explore 模式",
+        "Explore 模式下划线自动显示解释",
+        "Explore 模式下截图自动 OCR 识别",
+        "状态栏显示当前模式（探索/对话）",
+        "Esc 退出 Explore 模式"
+      ]
+    },
+    {
+      "id": "KIMI-P0-004",
+      "title": "ChatModeShortcut — Chat 快捷模式",
+      "status": "pending",
+      "priority": "high",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "参考 Kimi 的 Ctrl+K Chat 模式，实现快速对话交互",
+      "acceptance": [
+        "注册 Ctrl+K 快捷键打开 Chat 模式",
+        "Chat 模式自动携带当前页面上下文",
+        "支持全局浮窗和侧边栏两种显示方式",
+        "记住用户上次选择的显示方式",
+        "Chat 输入框支持 @ 页面元素引用"
+      ]
+    },
+    {
+      "id": "KIMI-P0-005",
+      "title": "SelectionEnhancement — 选中文本智能增强",
+      "status": "pending",
+      "priority": "high",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "增强现有选中文本处理能力，参考 Kimi 的多场景支持",
+      "acceptance": [
+        "选中代码片段：自动识别语言，提供代码解释",
+        "选中URL：自动预览链接内容摘要",
+        "选中错误信息：自动搜索解决方案",
+        "选中数学公式：自动计算结果",
+        "选中英文：提供翻译和例句",
+        "所有操作结果可一键保存到知识库"
+      ]
+    },
+    {
+      "id": "KIMI-P0-006",
+      "title": "QuickActionMenu — 页面右键增强菜单",
+      "status": "pending",
+      "priority": "medium",
+      "ref": "docs/KIMI-EXTENSION-ANALYSIS.md",
+      "description": "增强 Chrome 右键菜单，添加 AI 相关快捷操作",
+      "acceptance": [
+        "右键菜单添加「用 PageWise 解释」选项",
+        "右键菜单添加「用 PageWise 总结」选项",
+        "右键图片添加「识别图片文字」选项",
+        "右键链接添加「预览链接内容」选项",
+        "菜单项可根据页面类型动态调整"
+      ]
     }
   ]
 }
