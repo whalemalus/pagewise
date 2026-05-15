@@ -28,7 +28,7 @@
     {
       "id": "QA004",
       "title": "可靠性测试 — 错误处理/边界情况/SW休眠唤醒/数据迁移",
-      "status": "pending",
+      "status": "done",
       "priority": "high",
       "ref": "docs/FULL-SYSTEM-TEST-PLAN.md"
     },
