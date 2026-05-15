@@ -384,7 +384,7 @@
   - 测试: 48 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R87: 用户文档 BookmarkDocumentation**
+- [x] **R87: 用户文档 BookmarkDocumentation**
   - 使用指南
   - API 文档
   - 常见问题
