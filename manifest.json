@@ -91,6 +91,13 @@
         "mac": "Command+Shift+X"
       },
       "description": "打开/关闭侧边栏"
+    },
+    "explore": {
+      "suggested_key": {
+        "default": "Ctrl+J",
+        "mac": "Command+J"
+      },
+      "description": "切换探索模式"
     }
   }
 }

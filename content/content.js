@@ -1145,6 +1145,23 @@
 
   initSelectionToolbar();
 
+  // ==================== ExploreMode 初始化 ====================
+
+  let _exploreMode = null;
+
+  /**
+   * 初始化探索模式（Explore 快捷模式）
+   * Ctrl+J 切换，探索模式下选中文本自动触发解释
+   */
+  function initExploreMode() {
+    if (_exploreMode) return;
+    if (typeof ExploreMode === 'undefined') return; // lib 未加载时静默
+
+    _exploreMode = new ExploreMode({ debounceMs: 300, minSelectionLength: 2 });
+  }
+
+  initExploreMode();
+
   // ==================== PDF 文档提取 ====================
 
   /**
@@ -1499,6 +1516,27 @@
         sendResponse({
           visible: _selectionToolbar ? _selectionToolbar.visible : false,
           text: _selectionToolbar ? _selectionToolbar.currentText : ''
+        });
+        break;
+
+      case 'exploreModeEnable':
+        if (_exploreMode) _exploreMode.enable();
+        sendResponse({ success: true, active: _exploreMode ? _exploreMode.isActive() : false });
+        break;
+
+      case 'exploreModeDisable':
+        if (_exploreMode) _exploreMode.disable();
+        sendResponse({ success: true, active: _exploreMode ? _exploreMode.isActive() : false });
+        break;
+
+      case 'exploreModeToggle':
+        if (_exploreMode) _exploreMode.toggle();
+        sendResponse({ success: true, active: _exploreMode ? _exploreMode.isActive() : false });
+        break;
+
+      case 'exploreModeState':
+        sendResponse({
+          active: _exploreMode ? _exploreMode.isActive() : false
         });
         break;
 
