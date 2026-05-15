@@ -69,6 +69,7 @@
         <button class="btn-icon" id="btnHistoryHeader" data-i18n-title="sidebar.historyHeaderBtn" data-i18n-aria-label="sidebar.historyHeaderBtn" title="历史对话" aria-label="历史对话">🕐</button>
         <button class="btn-icon" id="btnExportConversation" data-i18n-title="sidebar.exportBtn" data-i18n-aria-label="sidebar.exportBtn" title="导出对话为 Markdown" aria-label="导出对话为 Markdown">📤</button>
         <button class="btn-icon" id="btnClearChat" data-i18n-title="sidebar.clearBtn" data-i18n-aria-label="sidebar.clearBtn" title="清空对话" aria-label="清空对话">🗑️</button>
+        <button class="btn-icon" id="btnPageSummary" data-i18n-title="sidebar.pageSummaryBtn" data-i18n-aria-label="sidebar.pageSummaryBtn" title="一键全文总结" aria-label="一键全文总结">📄</button>
       </div>
     </div>
 
@@ -182,6 +183,32 @@
           <button class="btn-sm btn-danger" id="btnClearHistory" data-i18n="history.clearAll" data-i18n-aria-label="history.clearAll" aria-label="清空全部历史对话">清空全部</button>
         </div>
         <div class="history-list" id="historyList"></div>
+      </div>
+
+      <!-- 全文总结结果 -->
+      <div class="summary-container hidden" id="summaryContainer">
+        <div class="summary-header">
+          <span class="summary-header-icon">📄</span>
+          <span class="summary-header-title">全文总结</span>
+          <div class="summary-header-actions">
+            <select class="summary-length-select" id="summaryLengthSelect" aria-label="摘要长度">
+              <option value="brief">简要</option>
+              <option value="detailed">详细</option>
+            </select>
+            <button class="btn-icon summary-close" id="btnCloseSummary" aria-label="关闭总结">&times;</button>
+          </div>
+        </div>
+        <div class="summary-body" id="summaryBody">
+          <div class="summary-loading hidden" id="summaryLoading">
+            <span class="summary-spinner"></span>
+            <span>正在生成摘要…</span>
+          </div>
+          <div class="summary-content" id="summaryContent"></div>
+        </div>
+        <div class="summary-footer hidden" id="summaryFooter">
+          <button class="btn-sm btn-primary-sm" id="btnSaveSummaryToKB" aria-label="保存到知识库">💾 保存到知识库</button>
+          <button class="btn-sm" id="btnCopySummary" aria-label="复制摘要">📋 复制</button>
+        </div>
       </div>
 
       <!-- 输入区域 -->

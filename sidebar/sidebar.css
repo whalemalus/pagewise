@@ -6957,3 +6957,222 @@ body.dark ::selection {
     outline: 2px solid Highlight;
   }
 }
+
+/* ==================== 一键全文总结 ==================== */
+
+.summary-container {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  margin: 8px 12px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  animation: summary-slide-in 0.3s var(--transition-spring);
+}
+
+@keyframes summary-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--accent-light);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.summary-header-icon {
+  font-size: 16px;
+}
+
+.summary-header-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.summary-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.summary-length-select {
+  font-size: var(--text-xs);
+  padding: 2px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  outline: none;
+}
+
+.summary-length-select:focus {
+  border-color: var(--accent);
+}
+
+.summary-close {
+  font-size: 18px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all var(--transition-fast);
+}
+
+.summary-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--text-primary);
+}
+
+.summary-body {
+  padding: 12px 14px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-size: var(--text-base);
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+.summary-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.summary-body::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+.summary-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  padding: 8px 0;
+}
+
+.summary-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border-color);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: summary-spin 0.8s linear infinite;
+}
+
+@keyframes summary-spin {
+  to { transform: rotate(360deg); }
+}
+
+.summary-content {
+  /* Markdown 渲染样式 */
+}
+
+.summary-content h1,
+.summary-content h2,
+.summary-content h3 {
+  margin: 12px 0 6px;
+  font-size: var(--text-md);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.summary-content p {
+  margin: 4px 0;
+}
+
+.summary-content ul,
+.summary-content ol {
+  padding-left: 20px;
+  margin: 6px 0;
+}
+
+.summary-content li {
+  margin: 3px 0;
+}
+
+.summary-content strong {
+  color: var(--accent-hover);
+}
+
+.summary-content blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  margin: 8px 0;
+  color: var(--text-secondary);
+}
+
+/* 流式输出光标动画 */
+.summary-content.streaming::after {
+  content: '▊';
+  animation: summary-blink 0.8s step-end infinite;
+  color: var(--accent);
+  font-size: var(--text-sm);
+}
+
+@keyframes summary-blink {
+  50% { opacity: 0; }
+}
+
+.summary-empty {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-align: center;
+  padding: 12px 0;
+}
+
+.summary-points {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.summary-points li {
+  position: relative;
+  padding: 6px 0 6px 20px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.summary-points li:last-child {
+  border-bottom: none;
+}
+
+.summary-points li::before {
+  content: '•';
+  position: absolute;
+  left: 4px;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.summary-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .summary-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+}

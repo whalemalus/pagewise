@@ -45,6 +45,7 @@ import { BookmarkGapDetector } from '../lib/bookmark-gap-detector.js';
 import { BookmarkImportExport } from '../lib/bookmark-io.js';
 import { BookmarkDetailPanel } from '../lib/bookmark-detail-panel.js';
 import { BookmarkAccessibility } from '../lib/bookmark-accessibility.js';
+import { PageSummarizer } from '../lib/page-summarizer.js';
 
 // ==================== 提供商预设 ====================
 
@@ -79,6 +80,11 @@ class SidebarApp {
 
     // AI 响应缓存（纯内存 LRU，30 分钟 TTL，最多 50 条）
     this.aiCache = new AICache({ maxSize: 50, ttlMs: 30 * 60 * 1000 });
+
+    // 全文总结引擎
+    this.pageSummarizer = new PageSummarizer();
+    this.summaryAbortController = null;
+    this.currentSummary = '';
 
     // 搜索模式
     this.searchMode = 'keyword'; // 'keyword' | 'semantic'
@@ -273,6 +279,17 @@ class SidebarApp {
     this.screenshotThumb = document.getElementById('screenshotThumb');
     this.btnRemoveScreenshot = document.getElementById('btnRemoveScreenshot');
     this.btnSummarize = document.getElementById('btnSummarize');
+    // 全文总结相关 DOM
+    this.btnPageSummary = document.getElementById('btnPageSummary');
+    this.summaryContainer = document.getElementById('summaryContainer');
+    this.summaryBody = document.getElementById('summaryBody');
+    this.summaryLoading = document.getElementById('summaryLoading');
+    this.summaryContent = document.getElementById('summaryContent');
+    this.summaryFooter = document.getElementById('summaryFooter');
+    this.summaryLengthSelect = document.getElementById('summaryLengthSelect');
+    this.btnCloseSummary = document.getElementById('btnCloseSummary');
+    this.btnSaveSummaryToKB = document.getElementById('btnSaveSummaryToKB');
+    this.btnCopySummary = document.getElementById('btnCopySummary');
     this.btnExplain = document.getElementById('btnExplain');
     this.searchInput = document.getElementById('searchInput');
     this.searchModeToggle = document.getElementById('searchModeToggle');
@@ -666,6 +683,19 @@ class SidebarApp {
     }
     this.btnSummarize.addEventListener('click', () => this.quickSummarize());
     this.btnExplain.addEventListener('click', () => this.quickExplain());
+    // 一键全文总结按钮
+    if (this.btnPageSummary) {
+      this.btnPageSummary.addEventListener('click', () => this.handlePageSummary());
+    }
+    if (this.btnCloseSummary) {
+      this.btnCloseSummary.addEventListener('click', () => this.closeSummary());
+    }
+    if (this.btnSaveSummaryToKB) {
+      this.btnSaveSummaryToKB.addEventListener('click', () => this.saveSummaryToKnowledgeBase());
+    }
+    if (this.btnCopySummary) {
+      this.btnCopySummary.addEventListener('click', () => this.copySummary());
+    }
     this.searchInput.addEventListener('input', debounce(() => this.searchKnowledge(), 300));
 
     // 搜索模式切换
@@ -3155,6 +3185,159 @@ class SidebarApp {
       ? `请解释以下内容的含义：${text}`
       : '请解释页面中选中的内容，或解释页面的核心技术概念';
     this.sendMessage();
+  }
+
+  // ==================== 一键全文总结 ====================
+
+  /**
+   * 处理「一键全文总结」按钮点击
+   * 提取页面内容 → 展示摘要容器 → 流式生成摘要
+   */
+  async handlePageSummary() {
+    if (!this.aiClient) {
+      this.showToast('请先在设置中配置 API Key', 'error');
+      this.switchTab('settings');
+      return;
+    }
+
+    // 显示摘要容器
+    this.summaryContainer.classList.remove('hidden');
+    this.summaryLoading.classList.remove('hidden');
+    this.summaryContent.innerHTML = '';
+    this.summaryFooter.classList.add('hidden');
+
+    // 取消之前的请求
+    if (this.summaryAbortController) {
+      this.summaryAbortController.abort();
+    }
+    this.summaryAbortController = new AbortController();
+
+    try {
+      // 确保有页面内容
+      if (!this.currentPageContent) {
+        await this.extractContent();
+      }
+
+      const pageContent = this.currentPageContent?.content || '';
+      if (!pageContent) {
+        this.summaryLoading.classList.add('hidden');
+        this.summaryContent.innerHTML = '<p class="summary-empty">⚠️ 无法提取页面内容，请尝试刷新页面后重试。</p>';
+        return;
+      }
+
+      const language = this.currentPageContent?.language || 'zh';
+      const length = this.summaryLengthSelect?.value || 'brief';
+
+      let fullText = '';
+
+      await this.pageSummarizer.generateSummary(pageContent, {
+        length,
+        language: language === 'en' ? 'en' : 'zh',
+        aiClient: this.aiClient,
+        signal: this.summaryAbortController.signal,
+        onChunk: (chunk) => {
+          fullText += chunk;
+          // 隐藏 loading，显示内容
+          this.summaryLoading.classList.add('hidden');
+          this.summaryContent.innerHTML = renderMarkdown(fullText);
+          // 自动滚动到底部
+          this.summaryContent.scrollTop = this.summaryContent.scrollHeight;
+        }
+      });
+
+      // 流式完成后显示 footer
+      this.summaryFooter.classList.remove('hidden');
+      this.currentSummary = fullText;
+      this.summaryLoading.classList.add('hidden');
+
+    } catch (error) {
+      if (error.name === 'AbortError' || this.summaryAbortController.signal.aborted) {
+        this.summaryContent.innerHTML += '<p class="summary-empty">⏹️ 已停止生成</p>';
+      } else {
+        this.summaryLoading.classList.add('hidden');
+        this.summaryContent.innerHTML = `<p class="summary-empty">❌ 摘要生成失败：${this.escapeHtml(error.message)}</p>`;
+        console.error('[PageWise] PageSummary error:', error);
+      }
+    }
+  }
+
+  /**
+   * 关闭摘要容器
+   */
+  closeSummary() {
+    if (this.summaryAbortController) {
+      this.summaryAbortController.abort();
+    }
+    this.summaryContainer.classList.add('hidden');
+    this.summaryContent.innerHTML = '';
+    this.summaryFooter.classList.add('hidden');
+    this.currentSummary = '';
+  }
+
+  /**
+   * 保存摘要到知识库
+   */
+  async saveSummaryToKnowledgeBase() {
+    if (!this.currentSummary) {
+      this.showToast('没有可保存的摘要', 'error');
+      return;
+    }
+
+    try {
+      this.btnSaveSummaryToKB.textContent = '保存中…';
+      this.btnSaveSummaryToKB.disabled = true;
+
+      const content = this.currentPageContent?.content || '';
+      const { summary, tags } = await this.aiClient.generateSummaryAndTags(
+        `全文摘要：${this.currentSummary.slice(0, 1000)}`
+      );
+
+      const result = await this.memory.kb.saveEntry({
+        title: `📄 ${this.currentPageContent?.title || '页面摘要'}`,
+        content: content.slice(0, 5000),
+        summary: summary || this.currentSummary.slice(0, 500),
+        sourceUrl: this.currentPageContent?.url || this.currentTabUrl || '',
+        sourceTitle: this.currentPageContent?.title || '',
+        tags: tags.length > 0 ? tags : ['页面摘要', '全文总结'],
+        category: '页面摘要',
+        question: '请总结当前页面',
+        answer: this.currentSummary,
+        language: this.currentPageContent?.language || 'other'
+      });
+
+      if (result && result.duplicate) {
+        this.showToast(`已存在类似条目「${result.existing.title}」`, 'warning');
+      } else {
+        this.showToast('已保存到知识库 ✓', 'success');
+        incrementCounter('totalKnowledgeEntries');
+      }
+      this.loadKnowledgeTags();
+    } catch (error) {
+      this.showToast(`保存失败：${error.message}`, 'error');
+    } finally {
+      this.btnSaveSummaryToKB.textContent = '💾 保存到知识库';
+      this.btnSaveSummaryToKB.disabled = false;
+    }
+  }
+
+  /**
+   * 复制摘要到剪贴板
+   */
+  async copySummary() {
+    if (!this.currentSummary) return;
+    try {
+      await navigator.clipboard.writeText(this.currentSummary);
+      this.showToast('已复制到剪贴板', 'success');
+    } catch {
+      // 降级方案
+      const textarea = document.createElement('textarea');
+      textarea.value = this.currentSummary;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+      this.showToast('已复制到剪贴板', 'success');
+    }
   }
 
   // ==================== YouTube 功能 ====================
