@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PageWise Options - PinchTab E2E Test</title>
+  <script src="chrome-mock-inject.js"></script>
+  <script>
+    chrome.runtime._basePath = window.location.origin + '/pagewise/';
+  </script>
+</head>
+<body>
+  <p style="background:#ff9800;color:#fff;padding:8px;text-align:center;font-size:13px;margin:0;">
+    ⚠️ PinchTab E2E Mock 环境 — Chrome API 已模拟
+  </p>
+  <iframe id="optionsFrame" src="../../options/options.html"
+    style="width:100%;height:calc(100vh - 36px);border:none;"></iframe>
+
+  <script>
+    const frame = document.getElementById('optionsFrame');
+    frame.addEventListener('load', () => {
+      try {
+        const frameWin = frame.contentWindow;
+        if (!frameWin.chrome || !frameWin.chrome.storage) {
+          const script = frameWin.document.createElement('script');
+          script.src = '../chrome-mock-inject.js';
+          frameWin.document.head.appendChild(script);
+          console.log('[E2E] Mock injected into iframe');
+        }
+      } catch (e) {
+        console.log('[E2E] Cross-origin, mock already in parent window');
+      }
+    });
+  </script>
+</body>
+</html>

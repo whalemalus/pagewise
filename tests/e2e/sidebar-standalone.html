@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PageWise Sidebar - PinchTab E2E Test</title>
+  <!-- 先注入 Chrome API Mock -->
+  <script src="chrome-mock-inject.js"></script>
+  <!-- 设置 runtime.basePath 让模块加载正确 -->
+  <script>
+    chrome.runtime._basePath = window.location.origin + '/pagewise/';
+  </script>
+</head>
+<body>
+  <p style="background:#ff9800;color:#fff;padding:8px;text-align:center;font-size:13px;margin:0;">
+    ⚠️ PinchTab E2E Mock 环境 — Chrome API 已模拟
+  </p>
+  <!-- 用 iframe 加载真实 sidebar 页面 -->
+  <iframe id="sidebarFrame" src="../../sidebar/sidebar.html"
+    style="width:100%;height:calc(100vh - 36px);border:none;"></iframe>
+
+  <script>
+    // 将 mock 注入到 iframe 中
+    const frame = document.getElementById('sidebarFrame');
+    frame.addEventListener('load', () => {
+      try {
+        const frameWin = frame.contentWindow;
+        if (!frameWin.chrome || !frameWin.chrome.storage) {
+          // 注入 mock 到 iframe
+          const script = frameWin.document.createElement('script');
+          script.src = '../chrome-mock-inject.js';
+          frameWin.document.head.appendChild(script);
+          console.log('[E2E] Mock injected into iframe');
+        }
+      } catch (e) {
+        console.log('[E2E] Cross-origin, mock already in parent window');
+      }
+    });
+  </script>
+</body>
+</html>
