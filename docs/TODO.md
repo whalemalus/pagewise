@@ -399,18 +399,18 @@
   - 测试: 92 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R89: 备份恢复 BookmarkBackupRestore**
-  - 书签数据备份
-  - 一键恢复
-  - 自动备份策略
-  - 测试: 6+ 用例
+- [x] **R89: 备份恢复 BookmarkBackupRestore** — `lib/bookmark-backup.js`
+  - createBackup/restoreBackup/validateBackup/computeChecksum
+  - 增量备份 createIncrementalBackup
+  - 备份管理 listStoredBackups/deleteStoredBackup
+  - 测试: 53 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R90: UI/UX 最终打磨 BookmarkFinalPolish**
-  - 动画优化
-  - 布局微调
-  - 交互细节
-  - 测试: 6+ 用例
+- [x] **R90: UI/UX 最终打磨 BookmarkFinalPolish** — `lib/bookmark-final-polish.js`
+  - 7 个动画/交互函数 + 3 个工具函数
+  - animateNodeEntry/animateEdgeDraw/optimizeLayout/enhanceDragDrop
+  - addRippleEffect/showTooltip/smoothScrollTo
+  - 测试: 87 用例 ✅
   - 复杂度: Medium
 
 - [ ] **R91: 发布候选版 BookmarkReleaseCandidate**
