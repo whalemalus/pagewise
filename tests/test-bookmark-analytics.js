@@ -14,8 +14,8 @@ const { BookmarkAnalytics } = await import('../lib/bookmark-analytics.js');
 
 // ==================== 辅助: 构造书签 ====================
 
-function bm(id, { title = `Bookmark ${id}`, url = '', folderPath, tags, dateAdded } = {}) {
-  return { id: String(id), title, url, ...(folderPath ? { folderPath } : {}), ...(tags ? { tags } : {}), ...(dateAdded ? { dateAdded } : {}) };
+function bm(id, { title = `Bookmark ${id}`, url = '', folderPath, tags, dateAdded, visitCount } = {}) {
+  return { id: String(id), title, url, ...(folderPath ? { folderPath } : {}), ...(tags ? { tags } : {}), ...(dateAdded ? { dateAdded } : {}), ...(typeof visitCount === 'number' ? { visitCount } : {}) };
 }
 
 // ==================== 测试 ====================
@@ -469,6 +469,236 @@ describe('BookmarkAnalytics', () => {
 
     it('47. 格式错误时返回原值', () => {
       assert.equal(BookmarkAnalytics._monthToQuarter('bad'), 'bad');
+    });
+  });
+
+  // ─── getVisitStats ─────────────────────────────────────────────────────
+
+  describe('getVisitStats', () => {
+
+    it('48. 空数组返回默认结构', () => {
+      const vs = BookmarkAnalytics.getVisitStats([]);
+      assert.equal(vs.totalVisits, 0);
+      assert.equal(vs.bookmarksVisited, 0);
+      assert.equal(vs.unvisitedBookmarks, 0);
+      assert.equal(vs.avgVisits, 0);
+      assert.equal(vs.maxVisits, 0);
+      assert.deepEqual(vs.topVisited, []);
+      assert.equal(vs.distribution.length, 5);
+    });
+
+    it('49. 非数组输入返回默认结构', () => {
+      const vs = BookmarkAnalytics.getVisitStats(null);
+      assert.equal(vs.totalVisits, 0);
+      assert.equal(vs.distribution.length, 5);
+    });
+
+    it('50. 全部未访问 — 0桶填满', () => {
+      const vs = BookmarkAnalytics.getVisitStats([
+        bm(1, { url: 'https://a.com' }),
+        bm(2, { url: 'https://b.com' }),
+      ]);
+      assert.equal(vs.totalVisits, 0);
+      assert.equal(vs.bookmarksVisited, 0);
+      assert.equal(vs.unvisitedBookmarks, 2);
+      assert.equal(vs.distribution[0].count, 2);
+    });
+
+    it('51. 有访问记录 — 统计正确', () => {
+      const vs = BookmarkAnalytics.getVisitStats([
+        bm(1, { url: 'https://a.com', visitCount: 3 }),
+        bm(2, { url: 'https://b.com', visitCount: 8 }),
+        bm(3, { url: 'https://c.com' }),  // no visitCount
+      ]);
+      assert.equal(vs.totalVisits, 11);
+      assert.equal(vs.bookmarksVisited, 2);
+      assert.equal(vs.unvisitedBookmarks, 1);
+      assert.equal(vs.avgVisits, 3.67);
+      assert.equal(vs.maxVisits, 8);
+    });
+
+    it('52. 分布桶正确分类', () => {
+      const vs = BookmarkAnalytics.getVisitStats([
+        bm(1, { visitCount: 0 }),     // 0
+        bm(2, { visitCount: 2 }),     // 1-5
+        bm(3, { visitCount: 5 }),     // 1-5
+        bm(4, { visitCount: 7 }),     // 6-10
+        bm(5, { visitCount: 25 }),    // 11-50
+        bm(6, { visitCount: 100 }),   // 50+
+      ]);
+      assert.equal(vs.distribution[0].count, 1);  // 0
+      assert.equal(vs.distribution[1].count, 2);  // 1-5
+      assert.equal(vs.distribution[2].count, 1);  // 6-10
+      assert.equal(vs.distribution[3].count, 1);  // 11-50
+      assert.equal(vs.distribution[4].count, 1);  // 50+
+    });
+
+    it('53. topVisited 排序正确且限10', () => {
+      const bms = [];
+      for (let i = 1; i <= 15; i++) {
+        bms.push(bm(i, { url: `https://d${i}.com`, title: `Page ${i}`, visitCount: i }));
+      }
+      const vs = BookmarkAnalytics.getVisitStats(bms);
+      assert.equal(vs.topVisited.length, 10);
+      assert.equal(vs.topVisited[0].visitCount, 15);
+      assert.equal(vs.topVisited[9].visitCount, 6);
+    });
+
+    it('54. visitCount为负值视为0', () => {
+      const vs = BookmarkAnalytics.getVisitStats([
+        bm(1, { visitCount: -5 }),
+      ]);
+      assert.equal(vs.totalVisits, 0);
+      assert.equal(vs.unvisitedBookmarks, 1);
+    });
+  });
+
+  // ─── getCollectionTrend ────────────────────────────────────────────────
+
+  describe('getCollectionTrend', () => {
+
+    it('55. 返回正确长度的数组', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend([], 7);
+      assert.equal(trend.length, 7);
+      assert.equal(trend[0].count, 0);
+      assert.equal(trend[0].cumulative, 0);
+    });
+
+    it('56. 默认30天', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend([]);
+      assert.equal(trend.length, 30);
+    });
+
+    it('57. 结果按日期升序', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend([], 5);
+      for (let i = 1; i < trend.length; i++) {
+        assert.ok(trend[i].date > trend[i - 1].date, `${trend[i].date} should be > ${trend[i - 1].date}`);
+      }
+    });
+
+    it('58. cumulative 递增', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend([], 5);
+      for (let i = 1; i < trend.length; i++) {
+        assert.ok(trend[i].cumulative >= trend[i - 1].cumulative);
+      }
+    });
+
+    it('59. 非数组输入返回空趋势', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend(null, 5);
+      assert.equal(trend.length, 5);
+    });
+
+    it('60. 无效 days 参数回退30', () => {
+      const trend = BookmarkAnalytics.getCollectionTrend([], -3);
+      assert.equal(trend.length, 30);
+    });
+  });
+
+  // ─── getDomainDistribution ─────────────────────────────────────────────
+
+  describe('getDomainDistribution', () => {
+
+    it('61. 空数组返回空分布', () => {
+      assert.deepEqual(BookmarkAnalytics.getDomainDistribution([]), []);
+    });
+
+    it('62. 含 color 字段和百分比', () => {
+      const dd = BookmarkAnalytics.getDomainDistribution([
+        bm(1, { url: 'https://github.com/a' }),
+        bm(2, { url: 'https://github.com/b' }),
+        bm(3, { url: 'https://stackoverflow.com/q' }),
+      ]);
+      assert.equal(dd.length, 2);
+      assert.equal(dd[0].domain, 'github.com');
+      assert.equal(dd[0].count, 2);
+      assert.equal(dd[0].percentage, 66.67);
+      assert.equal(typeof dd[0].color, 'string');
+      assert.ok(dd[0].color.startsWith('#'));
+    });
+
+    it('63. 按 count 降序', () => {
+      const dd = BookmarkAnalytics.getDomainDistribution([
+        bm(1, { url: 'https://a.com' }),
+        bm(2, { url: 'https://b.com' }),
+        bm(3, { url: 'https://b.com/x' }),
+      ]);
+      assert.equal(dd[0].domain, 'b.com');
+      assert.equal(dd[0].count, 2);
+    });
+
+    it('64. topN 限制', () => {
+      const bms = [];
+      for (let i = 0; i < 20; i++) bms.push(bm(i, { url: `https://d${i}.com` }));
+      const dd = BookmarkAnalytics.getDomainDistribution(bms, 5);
+      assert.equal(dd.length, 5);
+    });
+
+    it('65. 全无url时返回空', () => {
+      const dd = BookmarkAnalytics.getDomainDistribution([bm(1), bm(2)]);
+      assert.deepEqual(dd, []);
+    });
+  });
+
+  // ─── getActivityHeatmap ────────────────────────────────────────────────
+
+  describe('getActivityHeatmap', () => {
+
+    it('66. 空数组返回全零矩阵', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([]);
+      assert.equal(hm.labels.length, 7);
+      assert.equal(hm.hours.length, 24);
+      assert.equal(hm.matrix.length, 7);
+      assert.equal(hm.matrix[0].length, 24);
+      assert.equal(hm.maxValue, 0);
+      assert.equal(hm.totalEntries, 0);
+    });
+
+    it('67. 矩阵内所有值为0', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([]);
+      for (const row of hm.matrix) {
+        for (const val of row) {
+          assert.equal(val, 0);
+        }
+      }
+    });
+
+    it('68. labels 包含周一到周日', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([]);
+      assert.deepEqual(hm.labels, ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']);
+    });
+
+    it('69. hours 包含 00 到 23', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([]);
+      assert.equal(hm.hours.length, 24);
+      assert.equal(hm.hours[0], '00');
+      assert.equal(hm.hours[23], '23');
+    });
+
+    it('70. weeks 参数有效 — 非法值回退4', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([], -1);
+      assert.equal(hm.totalEntries, 0);
+    });
+
+    it('71. 矩阵行数和列数固定', () => {
+      const hm = BookmarkAnalytics.getActivityHeatmap([], 2);
+      assert.equal(hm.matrix.length, 7);
+      for (const row of hm.matrix) {
+        assert.equal(row.length, 24);
+      }
+    });
+  });
+
+  // ─── _formatDate ───────────────────────────────────────────────────────
+
+  describe('_formatDate', () => {
+
+    it('72. 日期格式化为 YYYY-MM-DD', () => {
+      assert.equal(BookmarkAnalytics._formatDate(new Date(2024, 0, 5)), '2024-01-05');
+      assert.equal(BookmarkAnalytics._formatDate(new Date(2024, 11, 31)), '2024-12-31');
+    });
+
+    it('73. 单位数月份和日期补零', () => {
+      assert.equal(BookmarkAnalytics._formatDate(new Date(2024, 2, 1)), '2024-03-01');
     });
   });
 });
