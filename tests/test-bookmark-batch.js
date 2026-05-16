@@ -303,4 +303,120 @@ describe('BookmarkBatch', () => {
       assert.equal(result.count, 0);
     });
   });
+
+  // ─── batchAddTag ────────────────────────────────────────────────────────
+
+  describe('batchAddTag', () => {
+    it('29. adds a single tag to selected bookmarks', () => {
+      const bm = makeBookmarks();
+      const result = batchAddTag(bm, ['1', '2'], 'awesome');
+      assert.equal(result.success, 2);
+      assert.equal(result.failed, 0);
+      const b1 = result.updated.find(b => b.id === '1');
+      assert.ok(b1.tags.includes('awesome'));
+      assert.ok(b1.tags.includes('react'));
+    });
+
+    it('30. is idempotent when tag already exists', () => {
+      const bm = makeBookmarks();
+      const result = batchAddTag(bm, ['1'], 'react');
+      assert.equal(result.success, 1);
+      assert.equal(result.results[0].tagsAdded, 0);
+    });
+
+    it('31. does not mutate original bookmarks', () => {
+      const bm = makeBookmarks();
+      batchAddTag(bm, ['1'], 'new-tag');
+      assert.ok(!bm[0].tags.includes('new-tag'));
+    });
+
+    it('32. reports non-existent ids as failed', () => {
+      const bm = makeBookmarks();
+      const result = batchAddTag(bm, ['99'], 'tag');
+      assert.equal(result.success, 0);
+      assert.equal(result.failed, 1);
+      assert.equal(result.errors[0].id, '99');
+    });
+  });
+
+  // ─── batchRemoveTag ─────────────────────────────────────────────────────
+
+  describe('batchRemoveTag', () => {
+    it('33. removes a single tag from selected bookmarks', () => {
+      const bm = makeBookmarks();
+      const result = batchRemoveTag(bm, ['1'], 'react');
+      assert.equal(result.success, 1);
+      const b1 = result.updated.find(b => b.id === '1');
+      assert.ok(!b1.tags.includes('react'));
+      assert.equal(result.results[0].tagsRemoved, 1);
+    });
+
+    it('34. handles removing non-existent tag gracefully', () => {
+      const bm = makeBookmarks();
+      const result = batchRemoveTag(bm, ['1'], 'nonexistent');
+      assert.equal(result.success, 1);
+      assert.equal(result.results[0].tagsRemoved, 0);
+    });
+
+    it('35. does not mutate original bookmarks', () => {
+      const bm = makeBookmarks();
+      batchRemoveTag(bm, ['1'], 'react');
+      assert.ok(bm[0].tags.includes('react'));
+    });
+
+    it('36. removes tag from multiple bookmarks', () => {
+      const bm = makeBookmarks();
+      const result = batchRemoveTag(bm, ['1', '4'], 'react');
+      assert.equal(result.success, 2);
+      const b1 = result.updated.find(b => b.id === '1');
+      assert.ok(!b1.tags.includes('react'));
+    });
+  });
+
+  // ─── batchMoveToFolder ──────────────────────────────────────────────────
+
+  describe('batchMoveToFolder', () => {
+    it('37. moves bookmarks using slash-separated path string', () => {
+      const bm = makeBookmarks();
+      const result = batchMoveToFolder(bm, ['1', '2'], '全栈/框架');
+      assert.equal(result.success, 2);
+      const b1 = result.moved.find(b => b.id === '1');
+      assert.deepEqual(b1.folderPath, ['全栈', '框架']);
+    });
+
+    it('38. moves bookmarks using single-segment path', () => {
+      const bm = makeBookmarks();
+      const result = batchMoveToFolder(bm, ['1'], '收藏夹');
+      assert.equal(result.success, 1);
+      assert.deepEqual(result.moved[0].folderPath, ['收藏夹']);
+    });
+
+    it('39. does not mutate original bookmarks', () => {
+      const bm = makeBookmarks();
+      batchMoveToFolder(bm, ['1'], '新路径/子路径');
+      assert.deepEqual(bm[0].folderPath, ['前端']);
+    });
+
+    it('40. reports non-existent ids as failed', () => {
+      const bm = makeBookmarks();
+      const result = batchMoveToFolder(bm, ['1', '99'], '目标');
+      assert.equal(result.success, 1);
+      assert.equal(result.failed, 1);
+      assert.equal(result.errors[0].id, '99');
+    });
+
+    it('41. handles empty folder string gracefully', () => {
+      const bm = makeBookmarks();
+      const result = batchMoveToFolder(bm, ['1'], '');
+      assert.equal(result.success, 0);
+      assert.ok(result.errors.length > 0);
+    });
+
+    it('42. handles array folder input', () => {
+      const bm = makeBookmarks();
+      const result = batchMoveToFolder(bm, ['1'], ['A', 'B']);
+      assert.equal(result.success, 1);
+      assert.deepEqual(result.moved[0].folderPath, ['A', 'B']);
+    });
+  });
 })
