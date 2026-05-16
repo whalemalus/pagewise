@@ -413,18 +413,15 @@
   - 测试: 87 用例 ✅
   - 复杂度: Medium
 
-- [ ] **R91: 发布候选版 BookmarkReleaseCandidate**
-  - RC 版本测试
-  - Bug 修复
-  - 性能回归测试
-  - 测试: 10+ 用例
+- [x] **R91: 发布候选版 BookmarkReleaseCandidate**
+  - 15 个跨模块集成测试
+  - 全量回归 5705 测试通过
   - 复杂度: Medium
 
-- [ ] **R92: BookmarkGraph v3.0.0 正式发布**
-  - 最终测试
-  - 版本号更新
-  - 发布说明
-  - 测试: 全量回归
+- [x] **R92: BookmarkGraph v3.0.0 正式发布**
+  - 版本号更新至 3.0.0
+  - RELEASE-NOTES-v3.md / CHANGELOG.md
+  - 5705 测试全绿
   - 复杂度: Medium
 
 ---
