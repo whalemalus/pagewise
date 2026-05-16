@@ -16,6 +16,9 @@ const {
   batchTag,
   batchMove,
   batchExport,
+  batchAddTag,
+  batchRemoveTag,
+  batchMoveToFolder,
 } = await import('../lib/bookmark-batch.js');
 
 // ==================== 辅助函数 ====================
