@@ -4,6 +4,71 @@
 
 ---
 
+## [3.0.0] - 2026-05-16
+
+BookmarkGraph v3.0.0 — 里程碑版本，经过 92 轮飞轮迭代，全面完成书签知识图谱系统、深度测试、兼容性验证与可靠性保障。
+
+### 新增
+
+#### 书签知识图谱（R60-R92）
+- **17 个书签模块**：BookmarkCollector、BookmarkIndexer、BookmarkGraphEngine、BookmarkVisualizer、BookmarkDetailPanel、BookmarkSearch、BookmarkRecommender、BookmarkClusterer、BookmarkStatusManager、BookmarkTagger、BookmarkDedup、BookmarkFolderAnalyzer、BookmarkGapDetector、BookmarkImportExport、BookmarkTagEditor、BookmarkLearningPath、BookmarkLinkChecker
+- **交互式图谱可视化**：力导向图展示书签关系
+- **多维搜索**：按标题、URL、文件夹、标签多维搜索过滤
+- **相似书签推荐**：AI 驱动的相关书签建议
+- **书签聚类**：按主题和域名自动分组
+- **Gap 检测**：发现书签集合中的缺失主题
+- **去重与链接检查**：检测重复书签、验证链接可访问性
+- **文件夹分析**：书签文件夹结构的统计分析
+- **Popup 集成**：弹窗新增书签图谱入口
+- **Sidebar 书签标签页**：侧边栏完整的书签管理
+- **Options 页图谱**：设置页全屏图谱可视化
+
+#### 深度测试体系（R80-R92）
+- **深度功能测试**：20+ 个 depth 测试文件，覆盖书签、图谱、i18n、错误处理、成本估算、日志、复习会话、实体提取、去重、同步、快捷键、嵌入引擎、页面摘要、插件、探索模式、聊天模式
+- **兼容性测试**：模块系统、Chrome API、Manifest 验证
+- **可靠性测试**：Service Worker 生命周期、边界情况、错误处理
+- **QA 测试套件**：选择工具栏、技能引擎、间隔复习、学习路径、Wiki、高亮、知识库、AI 客户端、对话
+- **端到端测试**：上下文菜单、选择检测、聊天模式、探索模式、页面摘要、选择工具栏
+- **书签安全审计**：安全性与数据完整性验证
+
+#### 高级功能
+- **截图视觉问答**：页面截图捕获与视觉 AI 问答
+- **性能监控**：实时 AI 请求响应时间追踪
+- **代码执行沙箱**：AI 回答中 HTML/JavaScript 代码直接运行
+- **对话分支**：从任意 AI 回答节点分叉探索（最多 10 个分支）
+- **Prompt 模板库**：5 个内置 + 最多 20 个自定义模板
+- **多页面联合分析**：同时分析最多 5 个标签页
+- **多模态图片理解**：页面图片提取与 AI 视觉问答
+
+### 性能优化
+
+- **虚拟滚动**：知识列表大数据量高性能渲染
+- **倒排索引**：知识库全文检索加速
+- **懒渲染消息**：大对话历史按需渲染
+- **语义搜索**：bigram 向量余弦相似度检索
+
+### 架构
+
+- **MessageRenderer 类提取**：消息渲染逻辑独立，sidebar.js 减少 125 行
+- **KnowledgePanel 类提取**：知识面板逻辑独立，sidebar.js 减少 646 行
+- **模块总数**：35+ 个核心库模块
+
+### 测试
+
+- **测试文件**：70+ 个
+- **测试套件**：150+ 个
+- **测试用例**：2600+ 个
+- **框架**：Node.js 内置 test runner，零外部依赖
+- **Mock 基础设施**：Chrome API mock + IndexedDB mock
+
+### 文档
+
+- **RELEASE-NOTES-v3.md**：完整 v3.0.0 发布说明
+- **CHANGELOG.md**：全版本变更记录
+- **CLAUDE.md**：项目开发规范
+
+---
+
 ## [2.3.0] - 2026-05-04
 
 BookmarkGraph Phase 5 — 测试验证与发布，完成书签知识图谱功能的全面测试和发布准备。

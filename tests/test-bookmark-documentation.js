@@ -47,13 +47,13 @@ describe('DOC_MODULES', () => {
       assert.ok(typeof mod.name === 'string', `${mod} should have name`)
       assert.ok(typeof mod.category === 'string', `${mod.name} should have category`)
       assert.ok(typeof mod.description === 'string', `${mod.name} should have description`)
-      assert.ok(Array.isArray(mod.exports), `${mod.name} should have exports array`)
+      assert.ok(Array.isArray(mod.apiMembers), `${mod.name} should have exports array`)
     }
   })
 
   it('每个导出项应有 name 和 signature 字段', () => {
     for (const mod of DOC_MODULES) {
-      for (const exp of mod.exports) {
+      for (const exp of mod.apiMembers) {
         assert.ok(typeof exp.name === 'string', `${mod.name} export should have name`)
         assert.ok(typeof exp.signature === 'string', `${mod.name}.${exp.name} should have signature`)
       }
@@ -186,7 +186,7 @@ describe('getModuleDoc', () => {
     const firstModule = DOC_MODULES[0]
     const doc = getModuleDoc(firstModule.name)
     assert.ok(doc.description)
-    assert.ok(Array.isArray(doc.exports))
+    assert.ok(Array.isArray(doc.apiMembers))
     assert.ok(doc.category)
     assert.ok(typeof doc.complexity === 'string')
   })
