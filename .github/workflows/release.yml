@@ -18,7 +18,9 @@ jobs:
           node-version: "22"
 
       - name: Run tests before release
-        run: node --test tests/test-*.js 2>&1
+        run: |
+          TEST_FILES=$(find tests -name "test-*.js" -not -name "test-e2e-*" -not -path "tests/e2e/*" | sort)
+          node --test $TEST_FILES 2>&1
 
       - name: Package extension
         run: bash scripts/package.sh
