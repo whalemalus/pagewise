@@ -129,17 +129,24 @@ function sendMessageWithRetry(data, maxRetries, interval) {
 
 // ==================== Side Panel 配置 ====================
 
-PW.action.onClicked.addListener(async (tab) => {
-  await openSidePanel(tab.id);
-});
+if (PW.action?.onClicked) {
+  PW.action.onClicked.addListener(async (tab) => {
+    await openSidePanel(tab.id);
+  });
+}
 
-setSidePanelBehavior({ openPanelOnActionClick: true });
+try {
+  setSidePanelBehavior({ openPanelOnActionClick: true });
+} catch (e) {
+  console.warn('[PageWise SW] setSidePanelBehavior not available:', e.message);
+}
 
 // ==================== 快捷键 ====================
 
 const openSidePanels = new Set();
 
-PW.commands.onCommand.addListener(async (command) => {
+if (PW.commands?.onCommand) {
+  PW.commands.onCommand.addListener(async (command) => {
   const [tab] = await PW.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
 
@@ -187,7 +194,8 @@ PW.commands.onCommand.addListener(async (command) => {
       break;
     }
   }
-});
+  });
+}
 
 // ==================== 消息路由 ====================
 

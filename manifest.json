@@ -37,6 +37,10 @@
         "<all_urls>"
       ],
       "js": [
+        "lib/selection-detector-global.js",
+        "lib/selection-handler-global.js",
+        "lib/selection-toolbar-global.js",
+        "lib/explore-mode-global.js",
         "content/content.js"
       ],
       "css": [
