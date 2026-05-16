@@ -403,9 +403,22 @@
 
   // ==================== 页面内容提取 ====================
 
+  /** @type {number} 代码块最大数量（防止 GitHub 等页面提取过多） */
+  const MAX_CODE_BLOCKS = 30;
+
+  /** @type {number} 单个代码块最大字符数 */
+  const MAX_SINGLE_CODE_CHARS = 5000;
+
+  /** @type {number} 代码块总字符数上限 */
+  const MAX_TOTAL_CODE_CHARS = 30000;
+
+  /** @type {number} 正文内容最大字符数 */
+  const MAX_CONTENT_CHARS = 50000;
+
   /**
    * 提取页面核心内容
-   * 采用 Reader Mode 思路，过滤噪音，保留正文
+   * 采用 Reader Mode 思路，过滤噪音，保留正文。
+   * 对内容大小有严格限制，防止 GitHub 等复杂页面导致消息传递崩溃。
    */
   function extractPageContent() {
     const url = location.href;
@@ -425,26 +438,59 @@
       paragraphs = extractFromDocument();
     }
 
-    // 提取代码块
-    const codeBlocks = [...document.querySelectorAll('pre code, code')]
-      .filter(el => el.offsetHeight > 0 && el.textContent.trim().length > 10)
-      .map(el => ({
+    // 提取代码块（带大小限制，防止 GitHub 等页面导致内存问题）
+    const codeBlocks = [];
+    const seenCode = new Set();
+    const codeEls = document.querySelectorAll('pre code, code');
+    let totalCodeChars = 0;
+
+    for (const el of codeEls) {
+      if (codeBlocks.length >= MAX_CODE_BLOCKS) break;
+      if (totalCodeChars >= MAX_TOTAL_CODE_CHARS) break;
+
+      // 跳过不可见元素（用 getBoundingClientRect 代替 offsetHeight，更准确）
+      try {
+        const rect = el.getBoundingClientRect();
+        if (rect.height === 0) continue;
+      } catch (e) {
+        continue;
+      }
+
+      const raw = el.textContent?.trim() || '';
+      if (raw.length <= 10) continue;
+
+      // 截断单个代码块
+      const code = raw.length > MAX_SINGLE_CODE_CHARS
+        ? raw.slice(0, MAX_SINGLE_CODE_CHARS) + '\n// ... truncated'
+        : raw;
+
+      // 去重（嵌套 code 标签用 Set 替代 O(n²) findIndex）
+      if (seenCode.has(code)) continue;
+      seenCode.add(code);
+
+      totalCodeChars += code.length;
+      codeBlocks.push({
         lang: el.className.replace(/language-|lang-/, '') || 'text',
-        code: el.textContent.trim()
-      }))
-      // 去重（嵌套 code 标签）
-      .filter((item, i, arr) => arr.findIndex(c => c.code === item.code) === i);
+        code,
+      });
+    }
 
     // 提取页面元信息
     const meta = extractMeta();
 
+    // 拼接正文并截断
+    let content = paragraphs.join('\n\n');
+    if (content.length > MAX_CONTENT_CHARS) {
+      content = content.slice(0, MAX_CONTENT_CHARS) + '\n\n... [content truncated]';
+    }
+
     // 检测页面语言
-    const pageLanguage = detectPageLanguage(paragraphs.join('\n\n'));
+    const pageLanguage = detectPageLanguage(content);
 
     return {
       url,
       title,
-      content: paragraphs.join('\n\n'),
+      content,
       codeBlocks,
       meta,
       language: pageLanguage,
@@ -453,12 +499,21 @@
     };
   }
 
+  /** @type {number} 从主内容区提取的最大段落数 */
+  const MAX_PARAGRAPHS = 300;
+
   /**
    * 从指定元素中提取内容
    */
   function extractFromElement(el) {
-    const blocks = el.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th');
+    let blocks;
+    try {
+      blocks = el.querySelectorAll('p, h1, h2, h3, h4, h5, h6, li, blockquote, pre, td, th');
+    } catch (e) {
+      return [];
+    }
     return [...blocks]
+      .slice(0, MAX_PARAGRAPHS)
       .filter(block => isVisible(block))
       .map(block => {
         const tag = block.tagName.toLowerCase();
@@ -1288,7 +1343,21 @@
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     switch (request.action) {
       case 'extractContent':
-        sendResponse(extractPageContent());
+        try {
+          sendResponse(extractPageContent());
+        } catch (e) {
+          console.error('[PageWise] extractContent 失败:', e);
+          sendResponse({
+            url: location.href,
+            title: document.title,
+            content: '',
+            codeBlocks: [],
+            meta: {},
+            language: 'other',
+            error: e.message,
+            extractedAt: new Date().toISOString()
+          });
+        }
         break;
 
       case 'extractYouTubeSubtitles': {
@@ -1424,33 +1493,57 @@
       }
 
       case 'extractPageImages':
-        sendResponse(extractPageImages());
+        try {
+          sendResponse(extractPageImages());
+        } catch (e) {
+          sendResponse({ images: [], error: e.message });
+        }
         break;
 
       case 'extractAPIEndpoints':
-        sendResponse(extractAPIEndpoints());
+        try {
+          sendResponse(extractAPIEndpoints());
+        } catch (e) {
+          sendResponse({ endpoints: [], error: e.message });
+        }
         break;
 
       case 'detectApiDoc':
-        sendResponse(detectApiDoc());
+        try {
+          sendResponse(detectApiDoc());
+        } catch (e) {
+          sendResponse({ isApiDoc: false, hasSwaggerUI: false, error: e.message });
+        }
         break;
 
       case 'detectGitHubRepo':
-        sendResponse(detectGitHubRepo());
+        try {
+          sendResponse(detectGitHubRepo());
+        } catch (e) {
+          sendResponse({ isGitHubRepo: false, isRepoRoot: false, owner: '', repo: '', error: e.message });
+        }
         break;
 
       case 'extractGitHubRepoInfo': {
-        const ghInfo = detectGitHubRepo();
-        if (!ghInfo.isRepoRoot) {
-          sendResponse({ error: '不是 GitHub 仓库根目录页面' });
-          break;
+        try {
+          const ghInfo = detectGitHubRepo();
+          if (!ghInfo.isRepoRoot) {
+            sendResponse({ error: '不是 GitHub 仓库根目录页面' });
+            break;
+          }
+          sendResponse(extractGitHubRepoInfo());
+        } catch (e) {
+          sendResponse({ error: e.message });
         }
-        sendResponse(extractGitHubRepoInfo());
         break;
       }
 
       case 'detectPdfPage':
-        sendResponse(detectPdfPage());
+        try {
+          sendResponse(detectPdfPage());
+        } catch (e) {
+          sendResponse({ isPdf: false, pdfUrl: '', method: '', error: e.message });
+        }
         break;
 
       case 'extractPdfContent': {

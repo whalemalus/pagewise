@@ -59,8 +59,10 @@ contextMenuManager.listenForClicks();
 // ==================== 右键菜单 ====================
 
 onContextMenuClicked(async (info, tab) => {
+  try {
   // 只处理原有菜单项，增强菜单项由 ContextMenuManager 处理
   if (info.menuItemId !== 'askAI' && info.menuItemId !== 'summarizePage') return;
+  if (!tab || !tab.id) return;
 
   const action = info.menuItemId === 'askAI' ? 'contextMenuAsk' : 'contextMenuSummarize';
   const selection = info.selectionText || '';
@@ -98,6 +100,9 @@ onContextMenuClicked(async (info, tab) => {
 
   // 方式2：带重试的消息发送
   sendMessageWithRetry(data, 8, 300);
+  } catch (e) {
+    logError('context-menu', '右键菜单处理异常', { error: e.message });
+  }
 });
 
 /**
@@ -131,7 +136,11 @@ function sendMessageWithRetry(data, maxRetries, interval) {
 
 if (PW.action?.onClicked) {
   PW.action.onClicked.addListener(async (tab) => {
-    await openSidePanel(tab.id);
+    try {
+      await openSidePanel(tab.id);
+    } catch (e) {
+      logError('side-panel', '打开侧边栏失败', { error: e.message, tabId: tab?.id });
+    }
   });
 }
 
@@ -147,155 +156,177 @@ const openSidePanels = new Set();
 
 if (PW.commands?.onCommand) {
   PW.commands.onCommand.addListener(async (command) => {
-  const [tab] = await PW.tabs.query({ active: true, currentWindow: true });
-  if (!tab) return;
+    try {
+      const [tab] = await PW.tabs.query({ active: true, currentWindow: true });
+      if (!tab) return;
 
-  logInfo('shortcut', `快捷键触发: ${command}`, { tabId: tab.id });
+      logInfo('shortcut', `快捷键触发: ${command}`, { tabId: tab.id });
 
-  switch (command) {
-    case 'summarize-page': {
-      await openSidePanel(tab.id);
-      openSidePanels.add(tab.id);
-      const data = {
-        action: 'shortcutSummarize',
-        tabId: tab.id,
-        tabUrl: tab.url,
-        tabTitle: tab.title,
-        timestamp: Date.now()
-      };
-      sendMessageWithRetry(data, 5, 400);
-      break;
-    }
+      switch (command) {
+        case 'summarize-page': {
+          await openSidePanel(tab.id);
+          openSidePanels.add(tab.id);
+          const data = {
+            action: 'shortcutSummarize',
+            tabId: tab.id,
+            tabUrl: tab.url,
+            tabTitle: tab.title,
+            timestamp: Date.now()
+          };
+          sendMessageWithRetry(data, 5, 400);
+          break;
+        }
 
-    case 'toggle-sidebar': {
-      if (openSidePanels.has(tab.id)) {
-        try {
-          await closeSidePanel(tab.id);
-        } catch (e) {}
-        openSidePanels.delete(tab.id);
-      } else {
-        await openSidePanel(tab.id);
-        openSidePanels.add(tab.id);
+        case 'toggle-sidebar': {
+          if (openSidePanels.has(tab.id)) {
+            try {
+              await closeSidePanel(tab.id);
+            } catch (e) {}
+            openSidePanels.delete(tab.id);
+          } else {
+            await openSidePanel(tab.id);
+            openSidePanels.add(tab.id);
+          }
+          break;
+        }
+
+        case 'chat': {
+          await openSidePanel(tab.id);
+          openSidePanels.add(tab.id);
+          const chatData = {
+            action: 'openChat',
+            tabId: tab.id,
+            tabUrl: tab.url,
+            tabTitle: tab.title,
+            timestamp: Date.now()
+          };
+          sendMessageWithRetry(chatData, 5, 400);
+          break;
+        }
       }
-      break;
+    } catch (e) {
+      logError('shortcut', '快捷键处理异常', { error: e.message, command });
     }
-
-    case 'chat': {
-      await openSidePanel(tab.id);
-      openSidePanels.add(tab.id);
-      const chatData = {
-        action: 'openChat',
-        tabId: tab.id,
-        tabUrl: tab.url,
-        tabTitle: tab.title,
-        timestamp: Date.now()
-      };
-      sendMessageWithRetry(chatData, 5, 400);
-      break;
-    }
-  }
   });
 }
 
 // ==================== 消息路由 ====================
 
 PW.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  switch (request.action) {
-    case 'extractFromTab':
-      PW.tabs.sendMessage(request.tabId, { action: 'extractContent' })
-        .then(sendResponse)
-        .catch(err => {
-          logError('message-router', 'extractFromTab 失败', { tabId: request.tabId, error: err.message });
-          sendResponse({ error: err.message });
-        });
-      return true;
-
-    case 'getCurrentTab':
-      PW.tabs.query({ active: true, currentWindow: true })
-        .then(([tab]) => sendResponse(tab))
-        .catch(err => {
-          logError('message-router', 'getCurrentTab 失败', { error: err.message });
-          sendResponse({ error: err.message });
-        });
-      return true;
-
-    case 'collectAllTabs':
-      PW.tabs.query({})
-        .then(tabs => {
-          const tabInfos = tabs.map(t => ({
-            id: t.id,
-            title: t.title || '未知页面',
-            url: t.url || '',
-            favIconUrl: t.favIconUrl || ''
-          }));
-          sendResponse(tabInfos);
-        })
-        .catch(err => {
-          logError('message-router', 'collectAllTabs 失败', { error: err.message });
-          sendResponse({ error: err.message });
-        });
-      return true;
-
-    case 'collectTabContent': {
-      const tabIds = request.tabIds || [];
-      if (tabIds.length === 0) {
-        sendResponse([]);
-        return false;
-      }
-      const limitedIds = tabIds.slice(0, 5);
-      const promises = limitedIds.map(async (tabId) => {
-        try {
-          const response = await PW.tabs.sendMessage(tabId, { action: 'extractContent' });
-          if (response && response.content) {
-            return {
-              tabId,
-              title: response.title || '未知页面',
-              url: response.url || '',
-              content: (response.content || '').slice(0, 3000),
-              codeBlocks: response.codeBlocks || []
-            };
-          }
-          return { tabId, error: '页面内容为空' };
-        } catch (err) {
-          const msg = err.message || '';
-          if (msg.includes('Cannot access') || msg.includes('Receiving end does not exist')) {
-            return { tabId, error: '无法访问该页面（可能是 chrome:// 等受限页面）' };
-          }
-          return { tabId, error: msg || '提取失败' };
-        }
-      });
-      Promise.all(promises).then(results => sendResponse(results));
-      return true;
-    }
-
-    case 'extractPdfViaJs': {
-      const pdfUrl = request.url;
-      if (!pdfUrl) {
-        sendResponse({ success: false, error: '缺少 PDF URL' });
-        return false;
-      }
-      // 动态加载 pdf-extractor 模块
-      import('../lib/pdf-extractor.js')
-        .then(({ PdfExtractor }) => PdfExtractor.extractFromUrl(pdfUrl))
-        .then(result => {
-          logInfo('pdf-extractor', `PDF 提取成功: ${result.numPages} 页, ${result.text.length} 字`);
-          sendResponse({
-            success: true,
-            text: result.text,
-            numPages: result.numPages,
-            metadata: result.metadata,
-            pages: result.pages
+  try {
+    switch (request.action) {
+      case 'extractFromTab':
+        PW.tabs.sendMessage(request.tabId, { action: 'extractContent' })
+          .then(sendResponse)
+          .catch(err => {
+            logError('message-router', 'extractFromTab 失败', { tabId: request.tabId, error: err.message });
+            sendResponse({ error: err.message });
           });
-        })
-        .catch(err => {
-          logError('pdf-extractor', 'PDF 提取失败', { error: err.message, url: pdfUrl });
-          sendResponse({ success: false, error: err.message });
-        });
-      return true;
-    }
+        return true;
 
-    case 'openSettings':
-      PW.runtime.openOptionsPage();
-      break;
+      case 'getCurrentTab':
+        PW.tabs.query({ active: true, currentWindow: true })
+          .then(([tab]) => sendResponse(tab))
+          .catch(err => {
+            logError('message-router', 'getCurrentTab 失败', { error: err.message });
+            sendResponse({ error: err.message });
+          });
+        return true;
+
+      case 'collectAllTabs':
+        PW.tabs.query({})
+          .then(tabs => {
+            const tabInfos = tabs.map(t => ({
+              id: t.id,
+              title: t.title || '未知页面',
+              url: t.url || '',
+              favIconUrl: t.favIconUrl || ''
+            }));
+            sendResponse(tabInfos);
+          })
+          .catch(err => {
+            logError('message-router', 'collectAllTabs 失败', { error: err.message });
+            sendResponse({ error: err.message });
+          });
+        return true;
+
+      case 'collectTabContent': {
+        const tabIds = request.tabIds || [];
+        if (tabIds.length === 0) {
+          sendResponse([]);
+          return false;
+        }
+        const limitedIds = tabIds.slice(0, 5);
+        const promises = limitedIds.map(async (tabId) => {
+          try {
+            const response = await PW.tabs.sendMessage(tabId, { action: 'extractContent' });
+            if (response && response.content) {
+              return {
+                tabId,
+                title: response.title || '未知页面',
+                url: response.url || '',
+                content: (response.content || '').slice(0, 3000),
+                codeBlocks: response.codeBlocks || []
+              };
+            }
+            return { tabId, error: '页面内容为空' };
+          } catch (err) {
+            const msg = err.message || '';
+            if (msg.includes('Cannot access') || msg.includes('Receiving end does not exist')) {
+              return { tabId, error: '无法访问该页面（可能是 chrome:// 等受限页面）' };
+            }
+            return { tabId, error: msg || '提取失败' };
+          }
+        });
+        Promise.all(promises).then(results => sendResponse(results));
+        return true;
+      }
+
+      case 'extractPdfViaJs': {
+        const pdfUrl = request.url;
+        if (!pdfUrl) {
+          sendResponse({ success: false, error: '缺少 PDF URL' });
+          return false;
+        }
+        // 动态加载 pdf-extractor 模块
+        import('../lib/pdf-extractor.js')
+          .then(({ PdfExtractor }) => PdfExtractor.extractFromUrl(pdfUrl))
+          .then(result => {
+            logInfo('pdf-extractor', `PDF 提取成功: ${result.numPages} 页, ${result.text.length} 字`);
+            sendResponse({
+              success: true,
+              text: result.text,
+              numPages: result.numPages,
+              metadata: result.metadata,
+              pages: result.pages
+            });
+          })
+          .catch(err => {
+            logError('pdf-extractor', 'PDF 提取失败', { error: err.message, url: pdfUrl });
+            sendResponse({ success: false, error: err.message });
+          });
+        return true;
+      }
+
+      case 'openSettings':
+        try {
+          PW.runtime.openOptionsPage();
+        } catch (e) {
+          logError('message-router', 'openOptionsPage 失败', { error: e.message });
+        }
+        break;
+
+      default:
+        // 不处理未知 action（Content Script 和 Sidebar 之间的直传消息会被忽略）
+        logWarn('message-router', `未知 action: ${request.action}`);
+        break;
+    }
+  } catch (e) {
+    logError('message-router', '消息处理异常', { error: e.message, action: request?.action });
+    try {
+      sendResponse({ error: e.message });
+    } catch (sendErr) {
+      // sendResponse 可能已失效
+    }
   }
 });

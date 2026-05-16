@@ -3,6 +3,7 @@
  */
 
 import { AIClient, estimateMessagesTokens } from '../lib/ai-client.js';
+import { storageGet, storageSet } from '../lib/storage-adapter.js';
 import { AICache } from '../lib/ai-cache.js';
 import { SkillEngine } from '../lib/skill-engine.js';
 import { PageSense } from '../lib/page-sense.js';
@@ -5446,10 +5447,8 @@ ${sendContent}
    */
   async exportBackup() {
     try {
-      // 1) 收集设置
-      const settings = await new Promise((resolve) => {
-        chrome.storage.sync.get(null, (result) => resolve(result || {}));
-      });
+      // 1) 收集设置（自动降级 sync → local）
+      const settings = await storageGet(null);
 
       // 2) 收集所有知识条目
       const { KnowledgeBase } = await import('../lib/knowledge-base.js');
@@ -5508,10 +5507,8 @@ ${sendContent}
       );
       if (!confirmed) return;
 
-      // 4) 恢复设置到 chrome.storage.sync
-      await new Promise((resolve) => {
-        chrome.storage.sync.set(data.settings, resolve);
-      });
+      // 4) 恢复设置（自动降级 sync → local）
+      await storageSet(data.settings);
       this.settings = data.settings;
       this.loadSettingsForm();
       this.applyTheme();

@@ -22,6 +22,7 @@ import { BookmarkVisualizer } from '../lib/bookmark-visualizer.js';
 import { BookmarkDetailPanel } from '../lib/bookmark-detail-panel.js';
 import { BookmarkSearch } from '../lib/bookmark-search.js';
 import { BookmarkRecommender } from '../lib/bookmark-recommender.js';
+import { storageGet } from '../lib/storage-adapter.js';
 
 const kb = new KnowledgeBase();
 
@@ -207,11 +208,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   let aiGateway = null;
 
   try {
-    const dmConfig = await new Promise((resolve) => {
-      chrome.storage.sync.get({ pagewiseDocMind: { enabled: false, serverUrl: '', apiKey: '' } }, (result) => {
-        resolve(result.pagewiseDocMind);
-      });
-    });
+    const dmResult = await storageGet({ pagewiseDocMind: { enabled: false, serverUrl: '', apiKey: '' } });
+    const dmConfig = dmResult.pagewiseDocMind;
 
     if (dmConfig.enabled && dmConfig.serverUrl && dmConfig.apiKey) {
       docMindClient = new DocMindClient({
