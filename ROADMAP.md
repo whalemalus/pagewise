@@ -1,7 +1,7 @@
 # ROADMAP — 智阅 PageWise
 
 > 项目路线图，每月更新
-> 最后更新: 2026-05-09
+> 最后更新: 2026-05-16
 
 ---
 
@@ -9,17 +9,86 @@
 
 | 指标 | 数值 |
 |------|------|
-| 版本 | v2.3.0 |
-| 迭代轮次 | R74 |
-| 测试总数 | 2992 (pass 2975, fail 17) |
-| 测试文件 | 115 |
-| 核心代码 | ~26,773 行 (lib/), 66 模块 |
-| 测试代码 | ~29,000+ 行 (tests/) |
-| Bookmark 模块 | 26 个 (13,898 行) |
+| 版本 | v3.0.0 |
+| 迭代轮次 | R102 |
+| 测试总数 | 5857 (pass 5857, fail 0) |
+| 测试套件 | 1315 |
+| 测试文件 | 201 |
+| 核心代码 | ~48,855 行 (lib/), 119 模块 |
+| 测试代码 | ~70,446 行 (tests/) |
+| Bookmark 模块 | 59 个 (lib/) |
+| Bookmark 测试 | 65 个 (tests/) |
+| CI/CD | ✅ GitHub Actions (lint + test + release) |
 
 ---
 
 ## ✅ 已完成里程碑
+
+### v3.0.0 — BookmarkGraph v3.0.0 里程碑 (2026-05-16)
+
+经过 102 轮飞轮迭代，全面完成书签知识图谱系统、深度测试、兼容性验证与可靠性保障。
+
+#### 书签知识图谱核心 (R43-R74)
+- [x] BookmarkCollector — 书签采集器 (R43)
+- [x] BookmarkIndexer — 倒排索引搜索 (R44)
+- [x] BookmarkGraphEngine — 图谱构建引擎 (R45)
+- [x] BookmarkVisualizer — Canvas 力导向图 (R46)
+- [x] BookmarkDetailPanel — 详情面板 (R47)
+- [x] BookmarkRecommender — 相似推荐 (R48)
+- [x] BookmarkSearch — 综合搜索 (R49)
+- [x] BookmarkPopup — 弹窗概览 (R50)
+- [x] BookmarkOptionsPage — 选项页图谱标签 (R51)
+- [x] BookmarkGraph MVP E2E 测试 (R52)
+- [x] BookmarkClusterer — 自动聚类 (R53)
+- [x] BookmarkStatusManager — 状态管理 (R54)
+- [x] BookmarkTagger — 标签系统 (R55)
+- [x] BookmarkDedup — 重复检测 (R56)
+- [x] BookmarkFolderAnalyzer — 文件夹分析 (R57)
+- [x] BookmarkGapDetector — 知识空白检测 (R58)
+- [x] BookmarkImportExport — 导入导出 (R59)
+- [x] BookmarkTagEditor — 标签编辑器 (R60)
+- [x] BookmarkLearningPath — 学习路径 (R61)
+- [x] BookmarkLinkChecker — 链接健康检查 (R63)
+- [x] BookmarkContentPreview — 书签内容预览 (R64)
+- [x] BookmarkSemanticSearch — 语义搜索引擎 (R65)
+- [x] BookmarkKnowledgeCorrelation — 知识关联 (R66)
+- [x] BookmarkLearningProgress — 学习进度追踪 (R67)
+- [x] BookmarkAIRecommendations — AI 智能推荐 (R68)
+- [x] BookmarkStatistics — 统计仪表盘 (R69)
+- [x] BookmarkDarkTheme — 暗色主题适配 (R70)
+- [x] BookmarkKeyboardShortcuts — 快捷键系统 (R71)
+- [x] BookmarkGraph V2.0 E2E 测试 (R72)
+- [x] BookmarkKnowledgeIntegration — 书签-知识库联动 (R73)
+- [x] BookmarkAutoCategorize — 自动分类引擎 (R74)
+
+#### 书签高级功能 (R75-R102)
+- [x] BookmarkSmartCollections — 智能集合 (R75)
+- [x] BookmarkSharing — 书签分享 (R76)
+- [x] BookmarkAdvancedAnalytics — 高级分析 (R77)
+- [x] BookmarkPerformanceOptimization — 性能优化 (R78)
+- [x] BookmarkI18n — 国际化 (R80)
+- [x] BookmarkOnboarding — 引导向导 (R81)
+- [x] BookmarkStorePrep — Chrome Web Store 准备 (R83)
+- [x] BookmarkSecurityAudit — 安全审计 (R84)
+- [x] BookmarkPerformanceBenchmark — 性能基准 (R85)
+- [x] BookmarkErrorHandler — 错误处理 (R86)
+- [x] BookmarkDocumentation — 用户文档 (R87)
+- [x] BookmarkMigration — 数据迁移 (R88)
+- [x] BookmarkBackup — 备份恢复 (R89)
+- [x] BookmarkFinalPolish — UI/UX 打磨 (R90)
+- [x] BookmarkSync — 多设备同步 (R93)
+- [x] BookmarkBatch — 批量操作 (R95)
+- [x] BookmarkSearchHistory — 搜索历史 (R96)
+- [x] BookmarkScheduler — 定时任务 (R97)
+- [x] BookmarkNotifications — 通知系统 (R98)
+- [x] BookmarkAdvancedTags — 高级标签 (R99)
+- [x] BookmarkAnalytics — 访问统计 (R100)
+- [x] BookmarkDuplicateDetector — 重复检测 V2 (R102)
+
+#### 基础设施
+- [x] GitHub CI/CD — 自动化 lint + test + release
+- [x] KnowledgePanel E2E 17 个失败测试修复
+- [x] 5857 测试全部通过 (100%)
 
 ### v2.3.0 — BookmarkGraph 功能完善 (2026-05-05)
 - [x] BookmarkContentPreview — 书签内容预览 (R64)
@@ -79,13 +148,9 @@
 
 ---
 
-## 🚧 当前阶段 — 技术债务清理 + E2E 测试续接
+## 🚧 当前阶段 — E2E 测试续接 + Chrome Web Store 发布
 
-### Phase 0: 技术债务 (P0, 本周优先)
-- [ ] **修复 KnowledgePanel E2E 17 个失败测试** — 已持续 3 周，需专项修复
-- [ ] **更新迭代引擎** — Phase 5 超时、Phase 1/2 文档持久化问题
-
-### Phase 1: 核心模块 E2E 测试 (R36-R45, 未完成部分)
+### Phase 1: 核心模块 E2E 测试 (剩余部分)
 - [x] R36: AI Client E2E
 - [x] R37: AI Cache E2E
 - [x] R38: Knowledge Base E2E
@@ -93,56 +158,60 @@
 - [x] R40: Page Sense + Content E2E
 - [x] R41: PDF Extractor E2E
 - [x] R42: Skill Engine + Custom Skills E2E
-- [ ] **R75: Spaced Repetition E2E** ← 下一步
-- [ ] R76: Knowledge Graph + Entity Extractor E2E
-- [ ] R77: Wiki Store + Query E2E
+- [ ] **R103: Spaced Repetition E2E** ← 下一步
+- [ ] R104: Knowledge Graph + Entity Extractor E2E
+- [ ] R105: Wiki Store + Query E2E
 
-### Phase 1.5: Bookmark 系列质量巩固
-- [ ] Bookmark 模块集成测试 (26 模块联动)
-- [ ] BookmarkDarkTheme P1 修复 (removeListener, system 模式监听)
-- [ ] Bookmark E2E 全链路测试 (采集→图谱→搜索→推荐)
+### Phase 1.5: Chrome Web Store 发布
+- [ ] Chrome Web Store 提交 (使用 R83 StorePrep 材料)
+- [ ] 权限最小化最终审查
+- [ ] 隐私政策更新 (覆盖新功能)
+- [ ] 商店 Listing 最终确认
 
-### Phase 2: 集成测试 (R46-R50)
-- [ ] R46: AI Pipeline 集成 (Page Sense → AI → KB)
-- [ ] R47: Sidebar 面板集成
-- [ ] R48: 搜索+检索集成 (倒排索引 + 语义搜索 + 知识图谱)
-- [ ] R49: Settings 全局集成
-- [ ] R50: Error Handler 全局集成
+### Phase 2: 集成测试 (R106-R110)
+- [ ] R106: AI Pipeline 集成 (Page Sense → AI → KB)
+- [ ] R107: Sidebar 面板集成
+- [ ] R108: 搜索+检索集成 (倒排索引 + 语义搜索 + 知识图谱)
+- [ ] R109: Settings 全局集成
+- [ ] R110: Error Handler 全局集成
 
-### Phase 3: 边界 & 可靠性测试 (R51-R55)
-- [ ] R51: Network Resilience
-- [ ] R52: Storage Limits
-- [ ] R53: Large Data (1000+ messages, 10000+ KB entries)
-- [ ] R54: Concurrent Access (多 Tab, SW 重启)
-- [ ] R55: Input Validation (XSS, 超长文本)
+### Phase 3: 边界 & 可靠性测试 (R111-R115)
+- [ ] R111: Network Resilience
+- [ ] R112: Storage Limits
+- [ ] R113: Large Data (1000+ messages, 10000+ KB entries)
+- [ ] R114: Concurrent Access (多 Tab, SW 重启)
+- [ ] R115: Input Validation (XSS, 超长文本)
 
-### Phase 4: 跨模块集成 (R56-R60)
-- [ ] R56: Knowledge → Learning 联动
-- [ ] R57: Wiki ↔ Knowledge 双向同步
-- [ ] R58: Contradiction Detector
-- [ ] R59: Batch Summary + Cost
-- [ ] R60: Highlight ↔ Knowledge 关联
+### Phase 4: 跨模块集成 (R116-R120)
+- [ ] R116: Knowledge → Learning 联动
+- [ ] R117: Wiki ↔ Knowledge 双向同步
+- [ ] R118: Contradiction Detector
+- [ ] R119: Batch Summary + Cost
+- [ ] R120: Highlight ↔ Knowledge 关联
 
-### Phase 5: 设计审查 & Issue 提交 (R61-R65)
-- [ ] R61: API 一致性审查
-- [ ] R62: Error Handling 一致性审查
-- [ ] R63: Performance Hotspot 审查
-- [ ] R64: Security Audit
-- [ ] R65: 设计问题汇总 + GitHub Issue 提交
+### Phase 5: 设计审查 & Issue 提交 (R121-R125)
+- [ ] R121: API 一致性审查
+- [ ] R122: Error Handling 一致性审查
+- [ ] R123: Performance Hotspot 审查
+- [ ] R124: Security Audit
+- [ ] R125: 设计问题汇总 + GitHub Issue 提交
 
 ---
 
 ## 🔮 未来规划
 
-### v2.4.0 — Bookmark 智能化增强
-- [ ] Bookmark 知识图谱与主知识库深度融合
-- [ ] Bookmark 学习进度可视化
-- [ ] Bookmark 多设备同步
+### v3.1.0 — Chrome Web Store 首次上架
+- [ ] Chrome Web Store 提交与审核
+- [ ] 用户反馈收集机制
+- [ ] 自动更新推送
 
-### v3.0.0 — 平台化
-- [ ] Plugin 生态系统
-- [ ] 多设备同步 (需后端)
+### v3.2.0 — 智能化增强
+- [ ] Bookmark 知识图谱与主知识库深度融合
 - [ ] AI Agent 自主浏览学习
+- [ ] 多设备同步 (需后端)
+
+### v4.0.0 — 平台化
+- [ ] Plugin 生态系统
 - [ ] Firefox / Edge 支持
 - [ ] Web App 版本
 - [ ] 开放 API
@@ -150,4 +219,4 @@
 ---
 
 *基于飞轮迭代流程 (flywheel-iteration v1.2.0)*
-*最后更新: 2026-05-09 by 周回顾自动任务*
+*最后更新: 2026-05-16 by 周回顾自动任务*
