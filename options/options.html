@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智阅 PageWise - 设置</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
@@ -15,8 +18,8 @@
 
     <!-- Tab 导航 -->
     <nav class="tab-nav" id="tabNav">
-      <button class="tab-btn active" data-tab="settings"data-i18n="options.tabSettings">⚙ 设置</button>
-      <button class="tab-btn" data-tab="bookmark"data-i18n="options.tabBookmarks">🕸 书签图谱</button>
+      <button class="tab-btn active" data-tab="settings"data-i18n="options.tabSettings">CFG 设置</button>
+      <button class="tab-btn" data-tab="bookmark"data-i18n="options.tabBookmarks">GRAPH 书签图谱</button>
     </nav>
 
     <!-- 设置标签页 -->
@@ -81,7 +84,7 @@
         </div>
 
         <div id="aiGatewayConflict" class="gateway-conflict" style="display:none;">
-          <p class="conflict-title">⚠ 配置冲突</p>
+          <p class="conflict-title">! 配置冲突</p>
           <div id="conflictDetails"></div>
           <div class="conflict-actions">
             <button class="btn-primary btn-sm" id="btnUseRemote">使用 DocMind 配置</button>

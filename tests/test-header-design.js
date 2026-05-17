@@ -19,8 +19,9 @@ describe('头部导航设计', () => {
     assert.ok(tabs && tabs.length >= 6, `应有 6 个 tab，实际 ${tabs?.length}`);
   });
 
-  it('CSS 包含 brand-name 渐变', () => {
-    assert.ok(css.includes('background-clip: text'));
+  it('CSS brand-name 使用 display 字体', () => {
+    assert.ok(css.includes('.brand-name'));
+    assert.ok(css.includes('text-transform: uppercase'));
   });
 
   it('CSS 包含 tab pill 样式', () => {

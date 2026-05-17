@@ -7,9 +7,11 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans SC', sans-serif;
+  font-family: 'Source Serif 4', 'Source Serif Pro', Georgia, 'Noto Serif SC', serif;
   font-size: 14px;
+  line-height: 1.7;
   color: #1a1a1a;
+  background-color: #fafaf5;
   width: 100%;
   min-width: 280px;
 }
@@ -24,21 +26,27 @@ body {
   justify-content: space-between;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid #eae7da;
 }
 
 .popup-header h1 {
-  font-size: 16px;
-  font-weight: 700;
-  color: #6366f1;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 400;
+  color: #3553ff;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
 .version {
-  font-size: 11px;
-  color: #9ca3af;
-  background: #f3f4f6;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 12px;
+  color: #7a7a78;
+  background: #f3f1e8;
   padding: 2px 8px;
   border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .popup-body {
@@ -53,9 +61,9 @@ body {
   align-items: center;
   gap: 12px;
   padding: 12px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  border-radius: 8px;
+  border: 1px solid #eae7da;
+  background: #fafaf5;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s;
   text-align: left;
@@ -63,18 +71,17 @@ body {
 }
 
 .popup-btn:hover {
-  border-color: #6366f1;
-  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.1);
+  border-color: #3553ff;
 }
 
 .popup-btn.primary {
-  background: #6366f1;
+  background: #3553ff;
   color: white;
-  border-color: #6366f1;
+  border-color: #3553ff;
 }
 
 .popup-btn.primary:hover {
-  background: #4f46e5;
+  background: #2a42dd;
 }
 
 .popup-btn.primary .btn-desc {
@@ -82,8 +89,14 @@ body {
 }
 
 .btn-icon {
-  font-size: 20px;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #3553ff;
   flex-shrink: 0;
+  min-width: 36px;
+  text-align: center;
 }
 
 .btn-text {
@@ -106,15 +119,18 @@ body {
   align-items: center;
   justify-content: space-between;
   padding-top: 12px;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #eae7da;
 }
 
 .link-btn {
   border: none;
   background: none;
-  color: #6366f1;
+  color: #3553ff;
   cursor: pointer;
-  font-size: 12px;
+  font-family: 'VT323', 'Courier New', monospace;
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   padding: 4px 0;
 }
 
@@ -124,5 +140,5 @@ body {
 
 .stats {
   font-size: 11px;
-  color: #9ca3af;
+  color: #7a7a78;
 }

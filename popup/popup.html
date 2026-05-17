@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智阅 PageWise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
@@ -15,7 +18,7 @@
 
     <div class="popup-body">
       <button class="popup-btn primary" id="btnOpenSidebar">
-        <span class="btn-icon">💬</span>
+        <span class="btn-icon">CHAT</span>
         <div class="btn-text">
           <span class="btn-label" data-i18n="popup.openSidebar">打开侧边栏</span>
           <span class="btn-desc" data-i18n="popup.startChat">开始问答</span>
@@ -23,7 +26,7 @@
       </button>
 
       <button class="popup-btn" id="btnQuickSummary">
-        <span class="btn-icon">📋</span>
+        <span class="btn-icon">SUM</span>
         <div class="btn-text">
           <span class="btn-label" data-i18n="popup.quickSummary">总结当前页面</span>
           <span class="btn-desc" data-i18n="popup.quickSummaryDesc">一键提取要点</span>
@@ -31,7 +34,7 @@
       </button>
 
       <button class="popup-btn" id="btnKnowledge">
-        <span class="btn-icon">📚</span>
+        <span class="btn-icon">KB</span>
         <div class="btn-text">
           <span class="btn-label" data-i18n="popup.knowledgeBase">知识库</span>
           <span class="btn-desc" data-i18n="popup.knowledgeBaseDesc">查看已保存的知识</span>
@@ -39,7 +42,7 @@
       </button>
 
       <button class="popup-btn" id="btnBookmarks">
-        <span class="btn-icon">🔖</span>
+        <span class="btn-icon">BKM</span>
         <div class="btn-text">
           <span class="btn-label" data-i18n="popup.bookmarkGraph">书签图谱</span>
           <span class="btn-desc" data-i18n="popup.bookmarkGraphDesc">浏览和管理书签</span>
@@ -48,7 +51,7 @@
     </div>
 
     <div class="popup-footer">
-      <button class="link-btn" id="btnSettings"data-i18n="popup.settings">⚙️ 设置</button>
+      <button class="link-btn" id="btnSettings"data-i18n="popup.settings">CFG 设置</button>
       <span class="stats" id="statsInfo" data-i18n="sidebar.loading">加载中...</span>
     </div>
   </div>

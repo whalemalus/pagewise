@@ -41,9 +41,9 @@ describe('设计系统 CSS 变量', () => {
     assert.ok(css.includes('-webkit-font-smoothing'));
   });
 
-  it('圆角值 >= 8px', () => {
+  it('圆角值已定义', () => {
     const match = css.match(/--radius:\s*(\d+)px/);
     assert.ok(match, '应定义 --radius');
-    assert.ok(parseInt(match[1]) >= 8, '--radius 应 >= 8px');
+    assert.ok(parseInt(match[1]) >= 4, '--radius 应 >= 4px');
   });
 });

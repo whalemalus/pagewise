@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>智阅 PageWise</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,300..900;1,8..60,300..900&family=VT323&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="sidebar.css">
 </head>
 <body>
@@ -59,17 +62,17 @@
     <!-- 页面上下文信息 -->
     <div class="page-context" id="pageContext">
       <div class="page-info">
-        <span class="page-icon">📄</span>
+        <span class="page-icon">▸</span>
         <span class="page-title" id="pageTitle" data-i18n="sidebar.loading">加载中...</span>
       </div>
       <div class="page-actions">
-        <button class="btn-icon" id="btnScreenshot" data-i18n-title="sidebar.screenshotBtn" data-i18n-aria-label="sidebar.screenshotBtn" title="截图提问" aria-label="截图提问">📸</button>
-        <button class="btn-icon" id="btnExtract" data-i18n-title="sidebar.extractBtn" data-i18n-aria-label="sidebar.extractBtn" title="提取页面内容" aria-label="提取页面内容">📥</button>
-        <button class="btn-icon" id="btnRefresh" data-i18n-title="sidebar.refreshBtn" data-i18n-aria-label="sidebar.refreshBtn" title="刷新" aria-label="刷新页面">🔄</button>
-        <button class="btn-icon" id="btnHistoryHeader" data-i18n-title="sidebar.historyHeaderBtn" data-i18n-aria-label="sidebar.historyHeaderBtn" title="历史对话" aria-label="历史对话">🕐</button>
-        <button class="btn-icon" id="btnExportConversation" data-i18n-title="sidebar.exportBtn" data-i18n-aria-label="sidebar.exportBtn" title="导出对话为 Markdown" aria-label="导出对话为 Markdown">📤</button>
-        <button class="btn-icon" id="btnClearChat" data-i18n-title="sidebar.clearBtn" data-i18n-aria-label="sidebar.clearBtn" title="清空对话" aria-label="清空对话">🗑️</button>
-        <button class="btn-icon" id="btnPageSummary" data-i18n-title="sidebar.pageSummaryBtn" data-i18n-aria-label="sidebar.pageSummaryBtn" title="一键全文总结" aria-label="一键全文总结">📄</button>
+        <button class="btn-icon" id="btnScreenshot" data-i18n-title="sidebar.screenshotBtn" data-i18n-aria-label="sidebar.screenshotBtn" title="截图提问" aria-label="截图提问">SNAP</button>
+        <button class="btn-icon" id="btnExtract" data-i18n-title="sidebar.extractBtn" data-i18n-aria-label="sidebar.extractBtn" title="提取页面内容" aria-label="提取页面内容">EXT</button>
+        <button class="btn-icon" id="btnRefresh" data-i18n-title="sidebar.refreshBtn" data-i18n-aria-label="sidebar.refreshBtn" title="刷新" aria-label="刷新页面">REF</button>
+        <button class="btn-icon" id="btnHistoryHeader" data-i18n-title="sidebar.historyHeaderBtn" data-i18n-aria-label="sidebar.historyHeaderBtn" title="历史对话" aria-label="历史对话">HIST</button>
+        <button class="btn-icon" id="btnExportConversation" data-i18n-title="sidebar.exportBtn" data-i18n-aria-label="sidebar.exportBtn" title="导出对话为 Markdown" aria-label="导出对话为 Markdown">EXP</button>
+        <button class="btn-icon" id="btnClearChat" data-i18n-title="sidebar.clearBtn" data-i18n-aria-label="sidebar.clearBtn" title="清空对话" aria-label="清空对话">CLR</button>
+        <button class="btn-icon" id="btnPageSummary" data-i18n-title="sidebar.pageSummaryBtn" data-i18n-aria-label="sidebar.pageSummaryBtn" title="一键全文总结" aria-label="一键全文总结">SUM</button>
       </div>
     </div>
 
@@ -85,24 +88,24 @@
       <!-- 分支信息条 -->
       <div class="branch-bar hidden" id="branchBar">
         <div class="branch-bar-info">
-          <span class="branch-bar-icon">🔀</span>
+          <span class="branch-bar-icon">⟐</span>
           <span class="branch-bar-text" id="branchBarText">分支自: ...</span>
         </div>
         <div class="branch-bar-actions">
-          <button class="btn-branch-return" id="btnReturnMain" aria-label="返回主对话">↩️ 返回主对话</button>
+          <button class="btn-branch-return" id="btnReturnMain" aria-label="返回主对话">← 返回主对话</button>
         </div>
       </div>
 
       <div class="chat-area" id="chatArea" aria-live="polite" aria-label="对话区域">
         <div class="welcome-message">
-          <div class="welcome-icon">🤖</div>
+          <div class="welcome-icon">AI</div>
           <h2 data-i18n="sidebar.welcomeTitle">你好！我是你的技术知识助手</h2>
           <p data-i18n="sidebar.welcomeDesc">浏览网页时遇到不懂的技术内容，直接问我就好。</p>
           <div class="quick-actions">
-            <button class="btn-quick" id="btnSummarize" data-i18n-aria-label="quickActions.summarize" data-i18n="quickActions.summarize" aria-label="总结当前页面">📋 总结当前页面</button>
-            <button class="btn-quick" id="btnExplain" data-i18n-aria-label="quickActions.explain" data-i18n="quickActions.explain" aria-label="解释选中内容">💡 解释选中内容</button>
-            <button class="btn-quick" id="btnMultiTabChat" data-i18n-aria-label="quickActions.multiTab" data-i18n="quickActions.multiTab" aria-label="分析所有标签页">📑 分析所有标签页</button>
-            <button class="btn-quick" id="btnHistory" data-i18n-aria-label="quickActions.history" data-i18n="quickActions.history" aria-label="查看历史对话">🕐 历史对话</button>
+            <button class="btn-quick" id="btnSummarize" data-i18n-aria-label="quickActions.summarize" data-i18n="quickActions.summarize" aria-label="总结当前页面">SUM 总结当前页面</button>
+            <button class="btn-quick" id="btnExplain" data-i18n-aria-label="quickActions.explain" data-i18n="quickActions.explain" aria-label="解释选中内容">QRY 解释选中内容</button>
+            <button class="btn-quick" id="btnMultiTabChat" data-i18n-aria-label="quickActions.multiTab" data-i18n="quickActions.multiTab" aria-label="分析所有标签页">TAB 分析所有标签页</button>
+            <button class="btn-quick" id="btnHistory" data-i18n-aria-label="quickActions.history" data-i18n="quickActions.history" aria-label="查看历史对话">LOG 历史对话</button>
           </div>
         </div>
       </div>
@@ -111,7 +114,7 @@
       <div class="review-overlay hidden" id="reviewOverlay">
         <div class="review-container">
           <div class="review-header">
-            <h3 class="review-title">📚 知识复习</h3>
+            <h3 class="review-title">REVIEW 知识复习</h3>
             <div class="review-progress" id="reviewProgress">0 / 0</div>
             <button class="btn-icon review-close" id="btnCloseReview" aria-label="关闭复习">&times;</button>
           </div>
@@ -131,22 +134,22 @@
               <p class="rating-label">请选择你的掌握程度</p>
               <div class="rating-buttons">
                 <button class="btn-rate btn-rate-again" data-quality="1" data-difficulty="again" aria-label="重来">
-                  <span class="rate-emoji">😰</span>
+                  <span class="rate-emoji">1</span>
                   <span class="rate-label">重来</span>
                   <span class="rate-hint">1天</span>
                 </button>
                 <button class="btn-rate btn-rate-hard" data-quality="2" data-difficulty="hard" aria-label="困难">
-                  <span class="rate-emoji">🤔</span>
+                  <span class="rate-emoji">2</span>
                   <span class="rate-label">困难</span>
                   <span class="rate-hint">1天</span>
                 </button>
                 <button class="btn-rate btn-rate-good" data-quality="3" data-difficulty="good" aria-label="良好">
-                  <span class="rate-emoji">😊</span>
+                  <span class="rate-emoji">3</span>
                   <span class="rate-label">良好</span>
                   <span class="rate-hint">按计划</span>
                 </button>
                 <button class="btn-rate btn-rate-easy" data-quality="5" data-difficulty="easy" aria-label="简单">
-                  <span class="rate-emoji">😄</span>
+                  <span class="rate-emoji">5</span>
                   <span class="rate-label">简单</span>
                   <span class="rate-hint">加倍</span>
                 </button>
@@ -156,11 +159,11 @@
 
           <!-- 复习完成统计 -->
           <div class="review-summary hidden" id="reviewSummary">
-            <div class="summary-icon">🎉</div>
+            <div class="summary-icon">★</div>
             <h3>复习完成！</h3>
             <div class="summary-stats" id="summaryStats"></div>
             <div class="streak-display hidden" id="streakDisplay">
-              <div class="streak-flame">🔥</div>
+              <div class="streak-flame">⚡</div>
               <div class="streak-info">
                 <span class="streak-count" id="streakCount">0</span>
                 <span class="streak-label">天连续复习</span>
@@ -188,7 +191,7 @@
       <!-- 全文总结结果 -->
       <div class="summary-container hidden" id="summaryContainer">
         <div class="summary-header">
-          <span class="summary-header-icon">📄</span>
+          <span class="summary-header-icon">SUM</span>
           <span class="summary-header-title">全文总结</span>
           <div class="summary-header-actions">
             <select class="summary-length-select" id="summaryLengthSelect" aria-label="摘要长度">
@@ -206,8 +209,8 @@
           <div class="summary-content" id="summaryContent"></div>
         </div>
         <div class="summary-footer hidden" id="summaryFooter">
-          <button class="btn-sm btn-primary-sm" id="btnSaveSummaryToKB" aria-label="保存到知识库">💾 保存到知识库</button>
-          <button class="btn-sm" id="btnCopySummary" aria-label="复制摘要">📋 复制</button>
+          <button class="btn-sm btn-primary-sm" id="btnSaveSummaryToKB" aria-label="保存到知识库">SAVE 保存到知识库</button>
+          <button class="btn-sm" id="btnCopySummary" aria-label="复制摘要">COPY 复制</button>
         </div>
       </div>
 
@@ -216,13 +219,13 @@
         <!-- 截图预览 -->
         <div class="screenshot-preview hidden" id="screenshotPreview">
           <img class="screenshot-thumb" id="screenshotThumb" alt="截图预览" />
-          <span class="screenshot-label">📸 截图已附加</span>
+          <span class="screenshot-label">SNAP 截图已附加</span>
           <button class="btn-icon screenshot-remove" id="btnRemoveScreenshot" title="移除截图" aria-label="移除截图">&times;</button>
         </div>
 
         <!-- 模板工具栏 -->
         <div class="template-toolbar">
-          <button class="btn-template" id="btnTemplate" title="Prompt 模板" aria-label="打开 Prompt 模板">📋 模板</button>
+          <button class="btn-template" id="btnTemplate" title="Prompt 模板" aria-label="打开 Prompt 模板">TPL 模板</button>
         </div>
 
         <!-- 模板列表弹窗 -->
@@ -230,7 +233,7 @@
           <div class="template-popup-header">
             <span class="template-popup-title">Prompt 模板</span>
             <div class="template-popup-actions">
-              <button class="btn-sm btn-primary-sm" id="btnSaveAsTemplate" title="从输入框保存为模板" aria-label="新建模板">➕ 新建</button>
+              <button class="btn-sm btn-primary-sm" id="btnSaveAsTemplate" title="从输入框保存为模板" aria-label="新建模板">+ 新建</button>
               <button class="btn-icon template-popup-close" id="btnCloseTemplate" aria-label="关闭模板列表">&times;</button>
             </div>
           </div>
@@ -275,7 +278,7 @@
           <button class="btn-stop hidden" id="btnStop" title="停止回答" aria-label="停止回答">⏹️</button>
         </div>
         <div class="input-hint">
-          <span id="selectionHint" class="hidden">📎 已附带选中文本</span>
+          <span id="selectionHint" class="hidden">▪ 已附带选中文本</span>
           <span id="tokenDisplay" class="token-display"></span>
         </div>
       </div>
@@ -285,20 +288,20 @@
     <div class="panel" id="panelKnowledge" role="tabpanel" aria-label="知识库面板">
     <div class="knowledge-toolbar">
       <div class="knowledge-tabs">
-        <button class="knowledge-subtab active" data-subtab="entries" data-i18n="knowledge.entries" role="tab" aria-selected="true">📚 知识条目</button>
-        <button class="knowledge-subtab" data-subtab="highlights" role="tab" data-i18n="knowledge.highlights" aria-selected="false">📌 高亮标注</button>
-        <button class="knowledge-subtab" data-subtab="graph" role="tab" data-i18n="knowledge.graph" aria-selected="false">🕸️ 图谱</button>
-        <button class="knowledge-subtab" data-subtab="learning-path" role="tab" data-i18n="knowledge.learningPath" aria-selected="false">🗺️ 学习路径</button>
+        <button class="knowledge-subtab active" data-subtab="entries" data-i18n="knowledge.entries" role="tab" aria-selected="true">KB 知识条目</button>
+        <button class="knowledge-subtab" data-subtab="highlights" role="tab" data-i18n="knowledge.highlights" aria-selected="false">HIL 高亮标注</button>
+        <button class="knowledge-subtab" data-subtab="graph" role="tab" data-i18n="knowledge.graph" aria-selected="false">NET 图谱</button>
+        <button class="knowledge-subtab" data-subtab="learning-path" role="tab" data-i18n="knowledge.learningPath" aria-selected="false">PATH 学习路径</button>
       </div>
       <div class="search-box">
           <input type="text" id="searchInput" data-i18n-placeholder="knowledge.searchPlaceholder" placeholder="搜索知识库..." aria-label="搜索知识库">
           <div class="search-mode-toggle" id="searchModeToggle">
-            <button class="search-mode-btn active" data-mode="keyword" title="关键词搜索" aria-label="关键词搜索">🔤</button>
-            <button class="search-mode-btn" data-mode="semantic" title="语义搜索" aria-label="语义搜索">🧠</button>
+            <button class="search-mode-btn active" data-mode="keyword" title="关键词搜索" aria-label="关键词搜索">KW</button>
+            <button class="search-mode-btn" data-mode="semantic" title="语义搜索" aria-label="语义搜索">SEM</button>
           </div>
         </div>
         <div class="knowledge-actions">
-          <button class="btn-sm" id="btnSelectMode" data-i18n="knowledge.selectMode" data-i18n-aria-label="knowledge.selectMode" aria-label="进入选择模式">☑️ 选择模式</button>
+          <button class="btn-sm" id="btnSelectMode" data-i18n="knowledge.selectMode" data-i18n-aria-label="knowledge.selectMode" aria-label="进入选择模式">SEL 选择模式</button>
           <button class="btn-sm btn-primary-sm" id="btnImport" data-i18n="knowledge.import" data-i18n-aria-label="knowledge.import" aria-label="导入知识条目">导入</button>
           <button class="btn-sm" id="btnExportMd" data-i18n="knowledge.exportMd" data-i18n-aria-label="knowledge.exportMd" aria-label="导出为 Markdown">导出 MD</button>
           <button class="btn-sm" id="btnExportJson" data-i18n="knowledge.exportJson" data-i18n-aria-label="knowledge.exportJson" aria-label="导出为 JSON">导出 JSON</button>
@@ -313,9 +316,9 @@
         </label>
         <span class="batch-count" id="batchCount">已选 0 条</span>
         <div class="batch-actions">
-          <button class="btn-sm btn-batch" id="btnBatchTag" title="批量打标签" aria-label="批量打标签">🏷️ 批量打标签</button>
-          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDelete" title="批量删除" aria-label="批量删除">🗑️ 批量删除</button>
-          <button class="btn-sm btn-batch" id="btnBatchExport" title="批量导出" aria-label="批量导出">📤 批量导出</button>
+          <button class="btn-sm btn-batch" id="btnBatchTag" title="批量打标签" aria-label="批量打标签">TAG 批量打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDelete" title="批量删除" aria-label="批量删除">DEL 批量删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExport" title="批量导出" aria-label="批量导出">EXP 批量导出</button>
         </div>
       </div>
 
@@ -323,7 +326,7 @@
 
       <div class="knowledge-list" id="knowledgeList">
         <div class="empty-state" id="emptyKnowledge">
-          <div class="empty-icon">📚</div>
+          <div class="empty-icon">◇</div>
           <p data-i18n="knowledge.emptyTitle">还没有保存的知识条目</p>
           <p class="text-muted" data-i18n="knowledge.emptyDesc">在问答中点击「保存」即可添加到知识库</p>
         </div>
@@ -333,9 +336,9 @@
       <div class="batch-floating-bar hidden" id="batchFloatingBar">
         <span class="batch-floating-count" id="batchFloatingCount">已选 0 条</span>
         <div class="batch-floating-actions">
-          <button class="btn-sm btn-batch" id="btnBatchTagFloat" aria-label="批量打标签">🏷️ 打标签</button>
-          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDeleteFloat" aria-label="批量删除">🗑️ 删除</button>
-          <button class="btn-sm btn-batch" id="btnBatchExportFloat" aria-label="批量导出">📤 导出</button>
+          <button class="btn-sm btn-batch" id="btnBatchTagFloat" aria-label="批量打标签">TAG 打标签</button>
+          <button class="btn-sm btn-batch btn-batch-danger" id="btnBatchDeleteFloat" aria-label="批量删除">DEL 删除</button>
+          <button class="btn-sm btn-batch" id="btnBatchExportFloat" aria-label="批量导出">EXP 导出</button>
         </div>
         <button class="btn-sm" id="btnBatchExit" aria-label="退出选择模式">退出选择</button>
       </div>
@@ -351,7 +354,7 @@
       </div>
       <div class="detail-content" id="detailContent"></div>
       <div class="related-entries hidden" id="relatedEntries">
-        <h3 class="related-title">🔗 相关知识</h3>
+        <h3 class="related-title">REL 相关知识</h3>
         <div class="related-list" id="relatedList"></div>
       </div>
     </div>
@@ -364,7 +367,7 @@
         </div>
         <div class="highlights-list" id="highlightsList">
           <div class="empty-state" id="emptyHighlights">
-            <div class="empty-icon">📌</div>
+            <div class="empty-icon">▲</div>
             <p>还没有高亮标注</p>
             <p class="text-muted">选中文本后使用高亮功能保存</p>
           </div>
@@ -374,11 +377,11 @@
       <!-- 知识图谱面板 -->
       <div class="knowledge-graph-panel hidden" id="knowledgeGraphPanel">
         <div class="graph-toolbar">
-          <input type="text" class="graph-search" id="graphSearchInput" placeholder="🔍 搜索节点..." aria-label="搜索图谱节点" />
+          <input type="text" class="graph-search" id="graphSearchInput" placeholder="搜索节点..." aria-label="搜索图谱节点" />
           <span class="graph-info" id="graphInfo">加载中...</span>
-          <button class="btn-sm hidden" id="btnGraphBack" aria-label="返回全景图谱">↩️ 返回全景</button>
-          <button class="btn-sm" id="btnExportGraph" aria-label="导出图谱为图片">📸 导出图片</button>
-          <button class="btn-sm" id="btnRefreshGraph" aria-label="刷新知识图谱">🔄 刷新图谱</button>
+          <button class="btn-sm hidden" id="btnGraphBack" aria-label="返回全景图谱">← 返回全景</button>
+          <button class="btn-sm" id="btnExportGraph" aria-label="导出图谱为图片">IMG 导出图片</button>
+          <button class="btn-sm" id="btnRefreshGraph" aria-label="刷新知识图谱">REF 刷新图谱</button>
         </div>
         <div class="graph-legend" id="graphLegend"></div>
         <canvas id="knowledgeGraphCanvas" class="graph-canvas"></canvas>
@@ -398,12 +401,12 @@
       <!-- 学习路径面板 -->
       <div class="learning-path-panel hidden" id="learningPathPanel">
         <div class="lp-toolbar">
-          <button class="btn-sm btn-primary-sm" id="btnGenerateLearningPath" aria-label="生成学习路径">🤖 生成学习路径</button>
+          <button class="btn-sm btn-primary-sm" id="btnGenerateLearningPath" aria-label="生成学习路径">AI 生成学习路径</button>
           <span class="lp-status" id="learningPathStatus"></span>
         </div>
         <div class="lp-content" id="learningPathContent">
           <div class="empty-state" id="emptyLearningPath">
-            <div class="empty-icon">🗺️</div>
+            <div class="empty-icon">◆</div>
             <p>点击上方按钮，AI 将基于你的知识库生成个性化学习路径</p>
           </div>
         </div>
@@ -417,10 +420,10 @@
           <input type="text" id="wikiSearchInput" placeholder="搜索 Wiki..." aria-label="搜索 Wiki">
         </div>
         <div class="wiki-filters" id="wikiTypeFilters">
-          <button class="wiki-filter-btn active" data-wiki-type="all" aria-label="全部">📋 全部</button>
-          <button class="wiki-filter-btn" data-wiki-type="entity" aria-label="实体">🏷️ 实体</button>
-          <button class="wiki-filter-btn" data-wiki-type="concept" aria-label="概念">💡 概念</button>
-          <button class="wiki-filter-btn" data-wiki-type="qa" aria-label="知识">❓ 知识</button>
+          <button class="wiki-filter-btn active" data-wiki-type="all" aria-label="全部">ALL 全部</button>
+          <button class="wiki-filter-btn" data-wiki-type="entity" aria-label="实体">ENT 实体</button>
+          <button class="wiki-filter-btn" data-wiki-type="concept" aria-label="概念">CON 概念</button>
+          <button class="wiki-filter-btn" data-wiki-type="qa" aria-label="知识">Q&A 知识</button>
         </div>
       </div>
       <div class="wiki-stats" id="wikiStats"></div>
@@ -428,7 +431,7 @@
         <!-- 页面列表 -->
         <div class="wiki-page-list" id="wikiPageList">
           <div class="empty-state" id="emptyWiki">
-            <div class="empty-icon">📚</div>
+            <div class="empty-icon">◇</div>
             <p>Wiki 还没有内容</p>
             <p class="text-muted">使用知识库的自动分类功能后，实体和概念会自动出现在这里</p>
           </div>
@@ -442,7 +445,7 @@
           <div class="wiki-detail-content" id="wikiDetailContent"></div>
           <div class="wiki-detail-sections">
             <div class="wiki-backlinks hidden" id="wikiBacklinks">
-              <h3 class="wiki-section-title">🔗 反向链接</h3>
+              <h3 class="wiki-section-title">REF 反向链接</h3>
               <div class="wiki-backlink-list" id="wikiBacklinkList"></div>
             </div>
           </div>
@@ -469,7 +472,7 @@
           <button class="tag-chip" data-category="export" aria-label="导出技能">导出</button>
           <button class="tag-chip" data-category="custom" aria-label="自定义技能">自定义</button>
           <button class="tag-chip" data-category="store" aria-label="技能商店">商店</button>
-          <button class="btn-import-skill" id="btnImportSkill" title="导入技能文件">📥 导入</button>
+          <button class="btn-import-skill" id="btnImportSkill" title="导入技能文件">IMP 导入</button>
         </div>
         <input type="file" id="skillFileInput" accept=".json,.md,.markdown" style="display:none">
       </div>
@@ -521,7 +524,7 @@
 
       <!-- 创建技能按钮 -->
       <div class="skills-create-bar">
-        <button class="btn-create-skill" id="btnCreateSkill" aria-label="创建自定义技能">➕ 创建技能</button>
+        <button class="btn-create-skill" id="btnCreateSkill" aria-label="创建自定义技能">+ 创建技能</button>
         <span class="skills-custom-count" id="skillsCustomCount"></span>
       </div>
 
@@ -539,12 +542,12 @@
           <h3 id="previewTitle">-</h3>
           <div class="page-preview-meta" id="previewMeta"></div>
           <div class="page-preview-actions">
-            <button class="btn-multi-tab" id="btnMultiTab" data-i18n-aria-label="quickActions.multiTab" data-i18n="quickActions.multiTab" aria-label="分析所有标签页">📑 分析所有标签页</button>
+            <button class="btn-multi-tab" id="btnMultiTab" data-i18n-aria-label="quickActions.multiTab" data-i18n="quickActions.multiTab" aria-label="分析所有标签页">TAB 分析所有标签页</button>
           </div>
         </div>
         <div class="page-preview-content" id="previewContent">
           <div class="empty-state">
-            <div class="empty-icon">📄</div>
+            <div class="empty-icon">▸</div>
             <p>打开侧边栏后自动提取页面内容</p>
           </div>
         </div>
@@ -558,12 +561,12 @@
       <div class="bookmarks-panel">
         <div class="bookmarks-header">
           <div class="bookmarks-header-left">
-            <h3 class="bookmarks-title">🔖 书签图谱</h3>
+            <h3 class="bookmarks-title">GRAPH 书签图谱</h3>
             <span class="bookmarks-count" id="bookmarksCount" aria-live="polite"></span>
           </div>
           <div class="bookmarks-header-actions">
-            <button class="btn-sm" id="btnOpenFullGraph" aria-label="查看完整图谱">📊 完整图谱</button>
-            <button class="btn-icon" id="btnRefreshBookmarks" title="刷新书签" aria-label="刷新书签">🔄</button>
+            <button class="btn-sm" id="btnOpenFullGraph" aria-label="查看完整图谱">MAP 完整图谱</button>
+            <button class="btn-icon" id="btnRefreshBookmarks" title="刷新书签" aria-label="刷新书签">REF</button>
           </div>
         </div>
 
@@ -580,13 +583,13 @@
 
         <!-- 文件夹导航 -->
         <div class="bookmarks-folder-nav" id="bookmarksFolderNav" role="toolbar" aria-label="书签文件夹导航">
-          <button class="folder-nav-item active" data-folder="*" aria-label="全部文件夹">📁 全部</button>
+          <button class="folder-nav-item active" data-folder="*" aria-label="全部文件夹">ALL 全部</button>
         </div>
 
         <!-- 书签列表 -->
         <div class="bookmarks-list" id="bookmarksList" role="list" aria-label="书签列表">
           <div class="empty-state" id="emptyBookmarks">
-            <div class="empty-icon">🔖</div>
+            <div class="empty-icon">◇</div>
             <p>暂无书签</p>
             <p class="text-muted">Chrome 中的书签将显示在这里</p>
           </div>
@@ -599,7 +602,7 @@
           </div>
           <div class="bookmarks-detail-content" id="bookmarksDetailContent"></div>
           <div class="bookmarks-detail-similar" id="bookmarksDetailSimilar">
-            <h4 class="bookmarks-similar-title">🔗 相似书签</h4>
+            <h4 class="bookmarks-similar-title">SIM 相似书签</h4>
             <div class="bookmarks-similar-list" id="bookmarksSimilarList"></div>
           </div>
         </div>
@@ -612,19 +615,19 @@
         <div class="logs-filters">
           <select id="logLevelFilter" class="log-select">
             <option value="all">全部级别</option>
-            <option value="error">❌ Error</option>
-            <option value="warn">⚠️ Warn</option>
-            <option value="info">ℹ️ Info</option>
-            <option value="debug">🔍 Debug</option>
+            <option value="error">ERR Error</option>
+            <option value="warn">WRN Warn</option>
+            <option value="info">INF Info</option>
+            <option value="debug">DBG Debug</option>
           </select>
           <select id="logModuleFilter" class="log-select">
             <option value="all">全部模块</option>
           </select>
         </div>
         <div class="logs-actions">
-          <button class="btn-icon" id="btnRefreshLogs" title="刷新日志">🔄</button>
-          <button class="btn-icon" id="btnClearLogs" title="清除日志">🗑️</button>
-          <button class="btn-icon" id="btnExportLogs" title="导出日志">📤</button>
+          <button class="btn-icon" id="btnRefreshLogs" title="刷新日志">REF</button>
+          <button class="btn-icon" id="btnClearLogs" title="清除日志">CLR</button>
+          <button class="btn-icon" id="btnExportLogs" title="导出日志">EXP</button>
         </div>
       </div>
       <div class="logs-list" id="logsList">
@@ -720,57 +723,57 @@
         </div>
 
         <div class="stats-section">
-          <h3 class="section-title">📊 使用统计</h3>
+          <h3 class="section-title">STATS 使用统计</h3>
           <div class="stats-grid" id="statsGrid">加载中...</div>
           <div class="stats-streak" id="statsStreak" style="display:none">
             <div class="stats-streak-badge">
-              <span class="stats-streak-icon">🔥</span>
+              <span class="stats-streak-icon">⚡</span>
               <span class="stats-streak-count" id="statsStreakCount">0</span>
               <span class="stats-streak-label">天连续学习</span>
             </div>
           </div>
           <div class="stats-qa-count" id="statsQACount" style="display:none">
             <div class="stats-qa-badge">
-              <span class="stats-qa-icon">💬</span>
+              <span class="stats-qa-icon">Q&A</span>
               <span class="stats-qa-number" id="statsQANumber">0</span>
               <span class="stats-qa-label">条 Q&A 知识</span>
             </div>
           </div>
           <div class="stats-skills">
-            <h4 class="stats-subtitle">🏆 常用技能 Top 5</h4>
+            <h4 class="stats-subtitle">TOP 常用技能 Top 5</h4>
             <div class="stats-skills-list" id="statsSkillsList">暂无数据</div>
           </div>
           <div class="stats-tags">
-            <h4 class="stats-subtitle">🏷️ 热门标签 Top 5</h4>
+            <h4 class="stats-subtitle">TAG 热门标签 Top 5</h4>
             <div class="stats-tags-chart" id="statsTagsChart">暂无数据</div>
           </div>
           <div class="stats-growth">
-            <h4 class="stats-subtitle">📈 知识增长趋势（按周）</h4>
+            <h4 class="stats-subtitle">GRO 知识增长趋势（按周）</h4>
             <div class="stats-growth-chart" id="statsGrowthChart">暂无数据</div>
           </div>
           <div class="stats-trend">
-            <h4 class="stats-subtitle">📊 最近 7 天使用趋势</h4>
+            <h4 class="stats-subtitle">TRD 最近 7 天使用趋势</h4>
             <div class="stats-trend-chart" id="statsTrendChart">暂无数据</div>
           </div>
           <div class="stats-wordcloud">
-            <h4 class="stats-subtitle">☁️ 知识词云</h4>
+            <h4 class="stats-subtitle">WRD 知识词云</h4>
             <div class="stats-wordcloud-container" id="statsWordCloud">暂无数据</div>
           </div>
           <button class="btn-sm btn-danger" id="btnResetStats" style="margin-top:10px" aria-label="重置统计数据">重置统计数据</button>
         </div>
 
         <div class="onboarding-section">
-          <h3 class="section-title">🚀 新手引导</h3>
+          <h3 class="section-title">GUIDE 新手引导</h3>
           <p class="text-muted" style="font-size:12px;margin-bottom:8px">如果你想重新查看首次使用引导，点击下方按钮。</p>
           <button class="btn-sm" id="btnRetriggerOnboarding" aria-label="重新触发新手引导">重新触发引导</button>
         </div>
 
         <div class="backup-section">
-          <h3 class="section-title">💾 数据备份</h3>
+          <h3 class="section-title">BACK 数据备份</h3>
           <p class="text-muted" style="font-size:12px;margin-bottom:8px">导出或导入所有设置和知识库数据，方便迁移或备份恢复。</p>
           <div class="backup-actions" style="display:flex;gap:8px;">
-            <button class="btn-sm" id="btnExportBackup" aria-label="导出备份">📦 导出备份</button>
-            <button class="btn-sm" id="btnImportBackup" aria-label="导入备份">📥 导入备份</button>
+            <button class="btn-sm" id="btnExportBackup" aria-label="导出备份">EXP 导出备份</button>
+            <button class="btn-sm" id="btnImportBackup" aria-label="导入备份">IMP 导入备份</button>
           </div>
           <input type="file" id="backupFileInput" accept=".json" style="display:none">
         </div>
@@ -783,7 +786,7 @@
     <div class="onboarding-backdrop"></div>
     <div class="onboarding-card" id="onboardingCard">
       <div class="onboarding-header">
-        <div class="onboarding-icon" id="onboardingIcon">👋</div>
+        <div class="onboarding-icon" id="onboardingIcon">★</div>
         <h2 class="onboarding-title" id="onboardingTitle">欢迎</h2>
       </div>
       <div class="onboarding-body">
@@ -809,7 +812,7 @@
     <div class="tab-selector-overlay"></div>
     <div class="tab-selector-dialog">
       <div class="tab-selector-header">
-        <h3>📑 选择要分析的标签页</h3>
+        <h3>TAB 选择要分析的标签页</h3>
         <button class="tab-selector-close" id="tabSelectorClose" aria-label="关闭标签页选择器">&times;</button>
       </div>
       <div class="tab-selector-hint">最多同时分析 5 个标签页，内容将合并后交给 AI 联合分析</div>
